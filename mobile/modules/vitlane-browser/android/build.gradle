@@ -1,0 +1,26 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.vitlane.browser'
+version = '0.3.1'
+
+android {
+  namespace 'com.vitlane.browser'
+  defaultConfig {
+    versionCode 3
+    versionName '0.3.1'
+  }
+}
+
+dependencies {
+  testImplementation 'junit:junit:4.13.2'
+}
+
+// Keep the compiled DOM adapter in sync with its reviewed/tested JavaScript source.
+def verifyBrowserPageScript = tasks.register('verifyBrowserPageScript', Exec) {
+  workingDir projectDir.parentFile
+  commandLine 'node', 'scripts/sync-browser-page-script.mjs', '--check'
+}
+tasks.named('preBuild').configure { dependsOn verifyBrowserPageScript }

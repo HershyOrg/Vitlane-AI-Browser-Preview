@@ -15,6 +15,7 @@ iOS WebKit adapter와 개발용 AI bridge입니다. 이 디렉터리는 이전 s
 | macOS 공식 Chrome live harness | 단일 쿠팡 상품의 별도 profile·로컬 승인·서명 단계 구현; 실계정 smoke 대기 |
 | pinned Chromium patch 재현성 | hash·apply 검증 통과 |
 | Android Chromium native source | 현재 쿠팡 상품 1개의 승인 패널 → 옵션·수량 검증 → `바로구매` 실행 경로 구현 |
+| Android OpenAI 직접 연결 | 네이티브 API 키·모델 입력, Responses API 계획과 로컬 승인 명령 발급 source 구현; 전체 Chromium 빌드·실기기 미검증 |
 | Android Chromium native compile/APK | **미실행** |
 | Android 실기기 | **미실행** |
 | iOS Expo local module | 쿠팡 고정 recipe validator/executor, 승인 digest 재계산·step 순서 고정과 1회 navigation handoff source 구현; Swift policy smoke 통과, Xcode build 미실행 |
@@ -45,9 +46,9 @@ mobile RN Run / Browser / Handoff / Result UI
              ▼
       SanitizedObservation
              ▼
-      Vitlane development bridge → model provider
+      Android: OpenAI Responses API 직접 호출 / iOS·desktop: 개발 bridge
              ▼
-      HMAC-signed AuthorizedCommand
+      Android native local permit / development bridge permit
              ▼
       native binding/policy check → one allowlisted action → fresh observation
 ```
@@ -74,6 +75,30 @@ checkout 화면으로 이동할 수 있다. cookie와 저장소는 기기 profil
 dedicated profile 분리와 운영용 profile 복구는 native build 이후 별도 검증 관문이다.
 
 신뢰 경계와 구현 범위는 이 문서의 구조·현재 상태·검증 절을 공개 스냅샷의 기준으로 삼는다.
+
+## Android 서버 없는 네이티브 경로
+
+Chromium 안의 **AI** 패널에서 OpenAI API 키와 모델을 입력한다. 기본 모델은
+`gpt-5-mini`다. 이 Android 경로는 Vitlane 서버나 개발 bridge 없이
+`https://api.openai.com/v1/responses`만 호출하며, API 키는 페이지 JavaScript·모델
+입력·설정 파일에 넣지 않는다. 키는 foreground session 메모리에만 유지하고
+브라우저가 background로 가거나 종료되면 비운다. 모델 ID만 로컬 설정에 저장한다.
+
+모델에는 정제된 공개 페이지 관찰과 제한된 작업 이력만 전달한다. `store: false`,
+최대 출력 4,096토큰과 네트워크 시간 제한을 사용한다. 모델의 제안은 현재 페이지와
+실행 범위를 다시 검증한 후, API 키와 별개로 생성한 실행별 random key로 서명한다.
+프로토콜 v1의 `serverPermit` 필드명은 유지하지만 이 경로의 발급자는 네이티브 코드다.
+
+사용자가 현재 쿠팡 상품의 정확한 옵션·수량·가격 상한을 승인하면 그 snapshot으로
+구매 준비 명령을 네이티브에서 직접 만든다. 구매 승인은 모델에 전달하지 않으며 모델이
+만들 수도 없다. 이 결정적 경로에는 OpenAI 호출이 필요하지 않다. 주문서 진입 뒤
+로그인·최종 가격 확인·최종 주문·결제는 사용자가 직접 진행한다.
+
+**구현 범위:** 기존 자동 링크 이동과 검색 제출 제한은 유지한다. 현재 페이지 읽기,
+스크롤, 검색어 준비와 승인된 상품의 구매 준비 코드가 연결된 상태이며, 상품을 자동으로
+검색·이동하며 구매하는 완성된 앱은 아니다. Chromium 전체 빌드·APK·실기기·실판매처
+검증도 남아 있다. `mobile/dist/Vitlane-Chat-*.apk`는 별도 Expo 대화 앱이므로 이
+Chromium 엔진을 포함하지 않는다.
 
 ## macOS 공식 Chrome에서 single-item 검수
 

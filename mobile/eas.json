@@ -7,10 +7,16 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_VITLANE_DATA_MODE": "fixture"
+        "EXPO_PUBLIC_VITLANE_DATA_MODE": "openai"
       },
       "android": {
         "buildType": "apk"
+      }
+    },
+    "development-fixture": {
+      "extends": "development",
+      "env": {
+        "EXPO_PUBLIC_VITLANE_DATA_MODE": "fixture"
       }
     },
     "development-simulator": {
@@ -26,6 +32,15 @@
         "EXPO_PUBLIC_VITLANE_EXECUTION_MODE": "LIVE"
       }
     },
+    "chat-apk": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_VITLANE_DATA_MODE": "openai"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "server-apk": {
       "distribution": "internal",
       "env": {
@@ -39,8 +54,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_VITLANE_DATA_MODE": "server",
-        "EXPO_PUBLIC_VITLANE_EXECUTION_MODE": "LIVE"
+        "EXPO_PUBLIC_VITLANE_DATA_MODE": "openai"
       }
     }
   }

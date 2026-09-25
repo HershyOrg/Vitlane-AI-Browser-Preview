@@ -30,13 +30,11 @@ import org.chromium.content_public.browser.WebContents;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -63,10 +61,10 @@ import javax.crypto.spec.SecretKeySpec;
 /**
  * Foreground-only native owner for Vitlane's constrained browser agent.
  *
- * <p>The model can only propose an action. This class verifies the bridge HMAC, local run binding,
+ * <p>The model can only propose an action. This class verifies a native-issued HMAC, local run binding,
  * page identity, sequence, lease and control generation before the fixed isolated-world agent may
- * inspect or execute it. The bridge credential remains in native process memory and is never sent
- * to JavaScript or persisted.
+ * inspect or execute it. The OpenAI key remains in native process memory and is never sent
+ * to page JavaScript or persisted. Run permits use a separate random key, never the API key.
  */
 public final class LaneAgentCoordinator {
     private static final int PROTOCOL_VERSION = 1;
@@ -171,15 +169,16 @@ public final class LaneAgentCoordinator {
     private Dialog mPanel;
     private TextView mStatus;
     private EditText mGoalInput;
-    private EditText mEndpointInput;
-    private EditText mTokenInput;
+    private EditText mModelInput;
+    private EditText mApiKeyInput;
     private EditText mCoupangQuantityInput;
     private EditText mCoupangUnitCeilingInput;
     private EditText mCoupangTotalCeilingInput;
     private EditText mCoupangOptionsInput;
     private Button mStartButton;
-    private String mEndpoint;
-    private String mToken = "";
+    private String mModel = "gpt-5-mini";
+    private String mApiKey = "";
+    private final byte[] mPermitKey = new byte[32];
     private String mGoal = "";
     private String mLog;
     private String mRunId = "";
@@ -242,8 +241,8 @@ public final class LaneAgentCoordinator {
     public LaneAgentCoordinator(Activity activity, Supplier<Tab> currentTab) {
         mActivity = activity;
         mCurrentTab = currentTab;
-        mEndpoint = activity.getPreferences(0).getString(
-                "lane.endpoint", "http://127.0.0.1:8787");
+        mModel = activity.getPreferences(0).getString(
+                "lane.openai.model", "gpt-5-mini");
         mLog = tr("현재 브라우저의 로그인 세션은 그대로 유지됩니다. 공개 상품 페이지에서는 "
                         + "계정 영역을 제외한 상품 내용으로 검색과 비교를 돕습니다. 계정·장바구니·"
                         + "결제 화면은 수집하지 않습니다.",
@@ -378,16 +377,21 @@ public final class LaneAgentCoordinator {
                 mGoal, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         mGoalInput.setMinLines(2);
         body.addView(mGoalInput);
-        body.addView(label(tr("AI 연결 주소", "AI connection URL"), 13));
-        mEndpointInput = input("https://your-ai.example", mEndpoint,
-                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        body.addView(mEndpointInput);
-        body.addView(label(tr("연결 키", "Connection key"), 13));
-        mTokenInput = input(tr("서버의 BRIDGE_TOKEN", "Server BRIDGE_TOKEN"), mToken,
+        body.addView(label(tr("OpenAI 모델", "OpenAI model"), 13));
+        mModelInput = input("gpt-5-mini", mModel,
+                InputType.TYPE_CLASS_TEXT);
+        body.addView(mModelInput);
+        body.addView(label(tr("OpenAI API 키", "OpenAI API key"), 13));
+        mApiKeyInput = input("sk-…", mApiKey,
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        mTokenInput.setSaveEnabled(false);
-        mTokenInput.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
-        body.addView(mTokenInput);
+        mApiKeyInput.setSaveEnabled(false);
+        mApiKeyInput.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
+        body.addView(mApiKeyInput);
+        body.addView(label(tr(
+                "별도 서버 없이 OpenAI에 직접 연결합니다. API 키는 이 실행 중에만 보관하며 "
+                        + "브라우저를 나가면 지웁니다. API 사용 요금은 본인 계정에 청구됩니다.",
+                "Connects directly to OpenAI. Your API key is held for this foreground session "
+                        + "and cleared when you leave the browser. Usage is billed to your account."), 12));
         body.addView(label(tr(
                 "로그인 쿠키는 현재 브라우저 안에 유지되고 전송되지 않습니다. 로그인된 공개 상품 "
                         + "페이지에서는 계정·프로필 영역을 제외한 상품 텍스트와 검색 후보만 "
@@ -498,27 +502,22 @@ public final class LaneAgentCoordinator {
             if (approvedPreparation != null && mGoal.isEmpty()) {
                 mGoal = "Prepare the explicitly approved Coupang offer for checkout review";
             }
-            mEndpoint = mEndpointInput.getText().toString().trim().replaceAll("/+$", "");
-            mToken = mTokenInput.getText().toString().trim();
-            URI endpoint = new URI(mEndpoint);
-            String host = endpoint.getHost();
-            boolean local = "127.0.0.1".equals(host) || "localhost".equals(host)
-                    || "::1".equals(host);
-            if (host == null || endpoint.getUserInfo() != null || endpoint.getQuery() != null
-                    || endpoint.getFragment() != null || (endpoint.getPort() != -1 && !local)
-                    || !("https".equals(endpoint.getScheme())
-                            || (local && "http".equals(endpoint.getScheme())))) {
-                throw new Exception(tr("연결 주소는 HTTPS 또는 localhost HTTP를 사용하세요.",
-                        "Use HTTPS, or HTTP on localhost, for the bridge."));
+            mModel = mModelInput.getText().toString().trim();
+            mApiKey = mApiKeyInput.getText().toString().trim();
+            if (!mModel.matches("^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$")) {
+                throw new Exception(tr("OpenAI 모델 ID를 확인하세요.",
+                        "Check the OpenAI model ID."));
             }
             if (mGoal.isEmpty() || mGoal.length() > 4000) {
                 throw new Exception(tr("할 일을 4,000자 이내로 입력하세요.",
                         "Describe the task in 4,000 characters or fewer."));
             }
-            if (mToken.getBytes(StandardCharsets.UTF_8).length < 32) {
-                throw new Exception(tr("연결 키를 확인하세요. 32바이트 이상이어야 합니다.",
-                        "Check the connection key. It must contain at least 32 bytes."));
+            if (approvedPreparation == null && (!mApiKey.startsWith("sk-")
+                    || mApiKey.length() > 1024 || mApiKey.matches(".*\\s.*"))) {
+                throw new Exception(tr("OpenAI API 키를 확인하세요.",
+                        "Check your OpenAI API key."));
             }
+            new SecureRandom().nextBytes(mPermitKey);
             mTaskTab = mCurrentTab.get();
             if (mTaskTab == null || mTaskTab.isOffTheRecord()) {
                 throw new Exception(tr("일반 탭에서 웹사이트를 먼저 여세요.",
@@ -539,8 +538,8 @@ public final class LaneAgentCoordinator {
             } else {
                 mApprovedPreparation = null;
             }
-            mActivity.getPreferences(0).edit().putString("lane.endpoint", mEndpoint).apply();
-            // The bridge token deliberately remains only in process memory.
+            mActivity.getPreferences(0).edit().putString("lane.openai.model", mModel).apply();
+            // The API key deliberately remains only in process memory.
             mHistory = new JSONArray();
             mJournal.clear();
             mSteps = 0;
@@ -952,26 +951,45 @@ public final class LaneAgentCoordinator {
                 request.put("approvedPreparation",
                         new JSONObject(mApprovedPreparation.toString()));
             }
-            final String payload = request.toString();
-            final String endpoint = mEndpoint;
-            final String token = mToken;
+            final JSONObject stepRequest = new JSONObject(request.toString());
+            final String model = mModel;
+            final String apiKey = mApiKey;
             mSteps++;
             mCurrentAction.setText(tr("현재 작업 · 다음 안전한 동작 결정",
                     "Current action · Choosing the next safe action"));
             append(mSteps + " · " + tr("다음 동작을 확인하고 있습니다…",
                     "Checking the next action…"));
+            if (mApprovedPreparation != null) {
+                // The purchase recipe comes exclusively from the user's native approval.
+                // It is neither proposed by nor sent to the model.
+                handle(generation, authorizeLocalAction(approvedCoupangAction(observation)));
+                return;
+            }
             mNetwork.execute(() -> {
                 try {
                     if (generation != mGeneration) return;
-                    JSONObject response = post(generation, endpoint, token, payload);
+                    JSONObject action = LaneOpenAiPlanner.plan(apiKey, model, stepRequest,
+                            connection -> {
+                                mConnection = connection;
+                                if (connection != null && generation != mGeneration) {
+                                    connection.disconnect();
+                                    throw new IllegalStateException("Cancelled");
+                                }
+                            });
                     mUi.post(() -> {
-                        if (valid(generation)) handle(generation, response);
+                        if (!valid(generation)) return;
+                        try {
+                            handle(generation, authorizeLocalAction(action));
+                        } catch (Exception e) {
+                            stop(tr("현재 페이지와 승인 범위에 맞지 않는 동작입니다.",
+                                    "The action does not match this page and the approved scope."));
+                        }
                     });
                 } catch (Exception e) {
                     mUi.post(() -> {
                         if (valid(generation)) {
-                            stop(tr("AI 연결에 실패했습니다. 서버 주소, 연결 키, 모델 설정을 확인하세요.",
-                                    "The AI connection failed. Check the server URL, key, and model settings."));
+                            stop(tr("OpenAI 연결에 실패했습니다. 인터넷, API 키, 사용량과 모델을 확인하세요.",
+                                    "OpenAI connection failed. Check your network, API key, usage, and model."));
                         }
                     });
                 }
@@ -981,41 +999,57 @@ public final class LaneAgentCoordinator {
         }
     }
 
-    private JSONObject post(int generation, String endpoint, String token, String payload)
-            throws Exception {
-        HttpURLConnection connection =
-                (HttpURLConnection) new URL(endpoint + "/v1/step").openConnection();
-        mConnection = connection;
-        try {
-            if (generation != mGeneration) throw new Exception("Cancelled");
-            connection.setRequestMethod("POST");
-            connection.setInstanceFollowRedirects(false);
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(55000);
-            connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", "Bearer " + token);
-            connection.setRequestProperty("Content-Type", "application/json");
-            byte[] body = payload.getBytes(StandardCharsets.UTF_8);
-            if (body.length > 262144) throw new Exception("Request too large");
-            connection.setFixedLengthStreamingMode(body.length);
-            try (java.io.OutputStream output = connection.getOutputStream()) {
-                output.write(body);
-            }
-            if (connection.getResponseCode() != 200) throw new Exception("Bridge error");
-            try (InputStream input = connection.getInputStream();
-                    ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[4096];
-                int count;
-                while ((count = input.read(buffer)) != -1) {
-                    if (output.size() + count > 32768) throw new Exception("Response too large");
-                    output.write(buffer, 0, count);
-                }
-                return new JSONObject(output.toString("UTF-8"));
-            }
-        } finally {
-            mConnection = null;
-            connection.disconnect();
+    private JSONObject authorizeLocalAction(JSONObject action) throws Exception {
+        // Validate before signing. The model never supplies authority or a page identity.
+        verifyAllowedAction(action, true);
+        JSONObject command = new JSONObject()
+                .put("protocolVersion", PROTOCOL_VERSION)
+                .put("commandId", "command_" + UUID.randomUUID())
+                .put("runId", mRunId).put("deviceId", mDeviceId)
+                .put("profileRef", mProfileRef).put("sequence", mSequence)
+                .put("leaseEpoch", mLeaseEpoch).put("controlGeneration", mControlGeneration)
+                .put("expiresAt", formatTimestamp(System.currentTimeMillis() + 30_000))
+                .put("actionHash", hex(sha256(canonicalize(action)))).put("action", action);
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(mPermitKey, "HmacSHA256"));
+        String permit = "hmac-sha256:" + Base64.encodeToString(
+                mac.doFinal(canonicalize(command).getBytes(StandardCharsets.UTF_8)),
+                Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+        command.put("serverPermit", permit); // Protocol v1 name; issuer is native in this mode.
+        return new JSONObject().put("authorizedCommand", command);
+    }
+
+    private JSONObject approvedCoupangAction(JSONObject observation) throws Exception {
+        verifyLocalApprovedPreparation(mApprovedPreparation, true);
+        if (!"sanitized".equals(observation.getJSONObject("privacy")
+                .getString("collectionStatus"))) {
+            throw new Exception("SENSITIVE_PAGE_REQUIRES_HANDOFF");
         }
+        JSONObject snapshot = approvedSnapshotFromLocal(mApprovedPreparation);
+        JSONObject item = snapshot.getJSONArray("items").getJSONObject(0);
+        JSONObject expectedPage = mApprovedPreparation.getJSONObject("expectedPage");
+        JSONObject bindings = lineFromItem(item)
+                .put("approvedPreparation", snapshot)
+                .put("approval", new JSONObject(snapshot.getJSONObject("approval").toString()))
+                .put("targetLineIndex", 0)
+                .put("expectedOrigin", expectedPage.getString("origin"))
+                .put("expectedPath", expectedPage.getString("pathname"));
+        String step = expectedLocalCoupangStep(mApprovedPreparation);
+        if ("select_option".equals(step)) {
+            int optionIndex = mApprovedPreparation.getInt("cursor") - 2;
+            JSONObject choice = item.getJSONObject("options")
+                    .getJSONArray("choices").getJSONObject(optionIndex);
+            bindings.put("targetOptionIndex", optionIndex)
+                    .put("groupName", choice.getString("groupName"))
+                    .put("valueName", choice.getString("valueName"));
+        }
+        JSONObject page = new JSONObject(observation.getJSONObject("nativeMetadata").toString());
+        page.remove("foreground");
+        page.put("observationId", observation.getString("observationId"));
+        return new JSONObject().put("kind", "run_preparation_step").put("page", page)
+                .put("adapterId", COUPANG_ADAPTER).put("recipeVersion", "1")
+                .put("stepId", step).put("bindings", bindings)
+                .put("reason", "Execute only the native user-approved purchase preparation step");
     }
 
     private void handle(int generation, JSONObject response) {
@@ -1302,7 +1336,7 @@ public final class LaneAgentCoordinator {
                 .put("actionHash", actionHash)
                 .put("action", action);
         Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(mToken.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        mac.init(new SecretKeySpec(mPermitKey, "HmacSHA256"));
         String expected = "hmac-sha256:" + Base64.encodeToString(
                 mac.doFinal(canonicalize(unsigned).getBytes(StandardCharsets.UTF_8)),
                 Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
@@ -2013,16 +2047,15 @@ public final class LaneAgentCoordinator {
         HttpURLConnection connection = mConnection;
         if (connection != null) connection.disconnect();
         append(reason);
-        mToken = "";
-        if (mTokenInput != null) mTokenInput.setText("");
+        Arrays.fill(mPermitKey, (byte) 0);
         mControlBar.setVisibility(View.GONE);
         if (mStartButton != null) {
             mStartButton.setEnabled(true);
             mStartButton.setText(tr("현재 탭에서 시작", "Start in current tab"));
         }
         if (mGoalInput != null) mGoalInput.setEnabled(true);
-        if (mEndpointInput != null) mEndpointInput.setEnabled(true);
-        if (mTokenInput != null) mTokenInput.setEnabled(true);
+        if (mModelInput != null) mModelInput.setEnabled(true);
+        if (mApiKeyInput != null) mApiKeyInput.setEnabled(true);
         mTaskContents = null;
         mTaskTab = null;
         if (!reopenPanel && mPanel != null) mPanel.dismiss();
@@ -2030,6 +2063,8 @@ public final class LaneAgentCoordinator {
     }
 
     public void onBackgrounded() {
+        mApiKey = "";
+        if (mApiKeyInput != null) mApiKeyInput.setText("");
         if (mRunning) {
             mDestroyed = true;
             cancelRun(tr("브라우저를 벗어나 작업을 중지했습니다.",
@@ -2040,6 +2075,8 @@ public final class LaneAgentCoordinator {
     }
 
     public void destroy() {
+        mApiKey = "";
+        if (mApiKeyInput != null) mApiKeyInput.setText("");
         mDestroyed = true;
         cancelRun(tr("종료됨", "Closed"), false);
         if (mPanel != null) mPanel.dismiss();
