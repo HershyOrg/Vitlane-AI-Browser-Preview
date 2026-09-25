@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Vitlane public preview</title>
+  <desc id="desc">An abstract blue shopping lane with six neutral product cards.</desc>
+  <rect width="1200" height="630" fill="#f5f7fa"/>
+  <path d="M-80 520C220 300 390 610 660 360S1050 160 1280 260" fill="none" stroke="#2367d1" stroke-width="22" stroke-linecap="round"/>
+  <g fill="#ffffff" stroke="#c8d2e3" stroke-width="3">
+    <rect x="120" y="130" width="250" height="280" rx="22"/>
+    <rect x="475" y="90" width="250" height="280" rx="22"/>
+    <rect x="830" y="130" width="250" height="280" rx="22"/>
+  </g>
+  <g fill="#dbe7f8">
+    <path d="M170 290c55-74 104-84 150-18l-18 50H165z"/>
+    <path d="M525 250c55-74 104-84 150-18l-18 50H520z"/>
+    <path d="M880 290c55-74 104-84 150-18l-18 50H875z"/>
+  </g>
+  <text x="600" y="560" text-anchor="middle" font-family="system-ui, sans-serif" font-size="52" font-weight="600" fill="#182235">Vitlane AI Browser</text>
+</svg>

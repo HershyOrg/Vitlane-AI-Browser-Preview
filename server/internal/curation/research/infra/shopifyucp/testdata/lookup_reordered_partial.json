@@ -1,0 +1,56 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "structuredContent": {
+      "ucp": {
+        "version": "2026-04-08",
+        "capabilities": {
+          "dev.ucp.shopping.catalog.lookup": [{"version": "2026-04-08"}]
+        }
+      },
+      "products": [
+        {
+          "id": "gid://shopify/p/product-b",
+          "title": "Product B",
+          "description": {"plain": "Returned before Product A."},
+          "price_range": {
+            "min": {"amount": 15000, "currency": "USD"},
+            "max": {"amount": 15000, "currency": "USD"}
+          },
+          "media": [{"type": "image", "url": "https://cdn.example/product-b.jpg"}],
+          "variants": [
+            {
+              "id": "variant-b",
+              "title": "Product B Variant",
+              "price": {"amount": 15000, "currency": "USD"},
+              "media": [{"type": "image", "url": "https://cdn.example/variant-b.jpg"}],
+              "inputs": [{"id": "variant-b", "match": "exact"}]
+            }
+          ]
+        },
+        {
+          "id": "product-a",
+          "title": "Product A",
+          "description": {"plain": "Uses product media fallback."},
+          "url": "https://merchant.example/products/product-a",
+          "price_range": {
+            "min": {"amount": 10000, "currency": "USD"},
+            "max": {"amount": 12000, "currency": "USD"}
+          },
+          "media": [{"type": "image", "url": "https://cdn.example/product-a.jpg"}],
+          "variants": [
+            {
+              "id": "variant-a-featured",
+              "title": "Product A Featured Variant",
+              "price": {"amount": 10000, "currency": "USD"},
+              "media": [],
+              "inputs": [{"id": "product-a", "match": "featured"}]
+            }
+          ]
+        }
+      ],
+      "messages": [{"type": "info", "code": "not_found", "content": "missing-c"}]
+    }
+  }
+}

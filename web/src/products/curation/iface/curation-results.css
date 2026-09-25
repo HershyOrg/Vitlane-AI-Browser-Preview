@@ -1,0 +1,288 @@
+/* A response in the body of the conversation (ADR-0086): Vitlane's words, one product per product
+   group, and one quiet line under them. Nothing opens inside the conversation; a product group's
+   candidates live in its sheet (curation-target-sheet.css). */
+.curation-response {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--vt-foundation-space-3);
+  justify-items: start;
+}
+.curation-response > * { min-width: 0; max-width: 100%; }
+.curation-response__text {
+  max-width: var(--vt-foundation-size-conversation-measure);
+  margin: 0;
+  line-height: var(--vt-foundation-font-line-height-body);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.curation-response__paragraph { display: block; }
+.curation-response__paragraph + .curation-response__paragraph { margin-block-start: var(--vt-foundation-space-2); }
+.curation-response__changes, .curation-response__caption {
+  max-width: var(--vt-foundation-size-conversation-measure);
+  margin: 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body));
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+.curation-response .curation-thread-report__headline { margin: 0; }
+.curation-response .curation-thread-report__receipt { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--vt-foundation-space-1); color: var(--vt-semantic-color-text-muted); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); }
+.curation-response__results { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-3); }
+.curation-response__results:empty { display: none; }
+
+/* Under a response, at the left edge like the words above it: what the research looked at, and under
+   that the way into the record. Nothing sits at the far right of a reading column. */
+.curation-response__foot { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 0; }
+.curation-response__foot-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--vt-foundation-space-2); }
+.curation-response__link.vt-button {
+  height: auto;
+  min-height: 1.75rem;
+  margin-inline-start: calc(var(--vt-foundation-space-2) * -1);
+  padding: var(--vt-foundation-space-1) var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body));
+}
+.curation-response__link.vt-button:hover:not(:disabled) { color: var(--vt-semantic-color-text-accent); }
+.curation-response__record { width: min(26rem, 92vw); max-height: min(28rem, 70dvh); overflow-y: auto; display: grid; gap: var(--vt-foundation-space-3); font-size: var(--vt-foundation-font-size-body); }
+.curation-response__record-time { color: var(--vt-semantic-color-text-muted); font-family: var(--vt-semantic-font-data); font-size: var(--vt-foundation-font-size-body); }
+
+/* A product name inside a reply is a link to that product. */
+.curation-response__ref.vt-button {
+  display: inline;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--vt-foundation-radius-none);
+  font: inherit;
+  font-weight: var(--vt-foundation-font-weight-medium);
+  line-height: inherit;
+  white-space: normal;
+  text-align: start;
+  text-decoration: underline;
+  text-decoration-color: var(--vt-semantic-color-border-strong);
+  text-underline-offset: 0.2em;
+  vertical-align: baseline;
+  color: var(--vt-semantic-color-text-primary);
+}
+.curation-response__ref.vt-button:hover:not(:disabled) { background: transparent; color: var(--vt-semantic-color-text-accent); text-decoration-color: currentColor; }
+
+.curation-response__plan-remove.vt-button { color: var(--vt-semantic-color-text-muted); }
+/* A planned product group before its research (ADR-0089): the same row a researched group gets, with its
+   budget where the product will be and the way to take it out on the right. Research replaces it in place. */
+.curation-result__plan-note { color: var(--vt-semantic-color-text-muted); font-weight: var(--vt-foundation-font-weight-regular); }
+.curation-result--plan > .curation-response__plan-remove.vt-button { align-self: center; margin-inline-start: var(--vt-foundation-space-3); }
+.curation-response__next { width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--vt-foundation-space-2) var(--vt-foundation-space-4); }
+.curation-response__next .curation-response__text { margin: 0; color: var(--vt-semantic-color-text-muted); }
+
+/* — Result group — */
+.curation-results { width: 100%; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-2); }
+.curation-results__list { width: 100%; margin: 0; padding: 0; list-style: none; }
+/* Lines only between rows: the list has no frame of its own. */
+.curation-results__list[data-layout="row"] > .curation-result + .curation-result { border-block-start: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); }
+.curation-results__notices { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-2); }
+.curation-results__notices:empty { display: none; }
+
+.curation-result { min-width: 0; }
+/* `Product group · why this product`: the one caption a row or a card carries. */
+.curation-result__caption { min-width: 0; word-break: keep-all; color: var(--vt-semantic-color-text-muted); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); font-weight: var(--vt-foundation-font-weight-regular); line-height: var(--vt-foundation-font-line-height-compact); overflow-wrap: anywhere; }
+.curation-result__why[data-reason="PICK"] { color: var(--vt-semantic-color-text-comparison); font-weight: var(--vt-foundation-font-weight-medium); }
+
+/* One product group, one row, two places to click: the product opens its own details, and the right
+   edge — how many candidates there are, and the word "open" — opens the product group's list. */
+.curation-result--row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; }
+.curation-result__row { min-width: 0; min-height: 4.625rem; padding: var(--vt-foundation-space-3) 0; display: grid; grid-template-columns: 2.75rem minmax(0, 1fr) auto; align-items: center; gap: var(--vt-foundation-space-4); }
+.curation-result__row.vt-button {
+  width: 100%;
+  height: auto;
+  border-radius: var(--vt-foundation-radius-none);
+  color: var(--vt-semantic-color-text-primary);
+  font-weight: var(--vt-foundation-font-weight-regular);
+  white-space: normal;
+  text-align: start;
+}
+.curation-result__row.vt-button:hover:not(:disabled) { background: transparent; }
+.curation-result__row.vt-button:hover:not(:disabled) .curation-result__name { color: var(--vt-semantic-color-text-accent); }
+/* The way into the list is a wide target (owner 2026-09-23): 12rem from the price to the edge and the row's full height.
+   It starts where the product's button ends, so no strip between the two belongs to neither. The width follows the
+   text size but never takes more than a quarter of the window, so enlarged text still leaves the product its name. */
+.curation-result__list.vt-button {
+  height: auto;
+  min-width: min(12rem, 24vw);
+  min-height: 4.625rem;
+  margin-inline-start: 0;
+  padding: var(--vt-foundation-space-2) 0 var(--vt-foundation-space-2) var(--vt-foundation-space-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--vt-foundation-space-2);
+  border-radius: var(--vt-foundation-radius-none);
+  color: var(--vt-semantic-color-text-primary);
+  font-weight: var(--vt-foundation-font-weight-regular);
+  white-space: nowrap;
+}
+.curation-result__list.vt-button:hover:not(:disabled) { background: transparent; }
+/* The next candidates peek out from behind one another: "there are more behind this one", in no language. */
+.curation-result__stack { display: inline-flex; align-items: center; }
+.curation-result__stack-item {
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  /* A hairline of its own: a product without an image is a plain tile, and a plain tile must still read as one. */
+  border: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-foundation-radius-control);
+  background: var(--vt-semantic-color-surface-base);
+}
+.curation-result__stack-item + .curation-result__stack-item { margin-inline-start: calc(var(--vt-foundation-space-2) * -1); }
+.curation-result__stack-item > * { width: 100%; height: 100%; }
+.curation-result__stack-item img { width: 100%; height: 100%; object-fit: cover; }
+.curation-result__stack-item .vt-product-media__placeholder > * { display: none; }
+.curation-result__list-count { font-family: var(--vt-semantic-font-data); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); color: var(--vt-semantic-color-text-muted); transition: color var(--vt-semantic-motion-interactive); }
+.curation-result__list.vt-button:hover:not(:disabled) .curation-result__list-count, .curation-result__list.vt-button:hover:not(:disabled) > svg { color: var(--vt-semantic-color-text-accent); }
+/* Under the last row, on the right: the way to every product group's candidates at once. */
+.curation-results__all.vt-button, .curation-results__combination.vt-button {
+  justify-self: end;
+  height: auto;
+  min-height: 0;
+  padding: var(--vt-foundation-space-1) 0;
+  border-radius: var(--vt-foundation-radius-none);
+  color: var(--vt-semantic-color-text-accent);
+  font-size: var(--curation-text-small, var(--vt-foundation-font-size-caption));
+  font-weight: var(--vt-foundation-font-weight-medium);
+}
+.curation-results__all.vt-button:hover:not(:disabled), .curation-results__combination.vt-button:hover:not(:disabled) { background: transparent; text-decoration: underline; text-underline-offset: 0.2em; }
+.curation-result__thumb { width: 2.75rem; height: 2.75rem; overflow: hidden; border-radius: var(--vt-foundation-radius-control); background: var(--vt-semantic-color-surface-subtle); }
+.curation-result__thumb > *, .curation-result__media > * { width: 100%; height: 100%; }
+.curation-result__thumb img, .curation-result__media img { width: 100%; height: 100%; object-fit: cover; }
+/* A thumbnail has no room for the placeholder's words; its accessible name still says the image is missing. */
+.curation-result__thumb .vt-product-media__placeholder strong { display: none; }
+.curation-result__text { min-width: 0; display: grid; gap: var(--vt-foundation-space-1); }
+/* The product's name, then its mall's logo right after it; a long name gives way before the logo does. */
+.curation-result__name-line { min-width: 0; display: flex; align-items: center; gap: var(--vt-foundation-space-2); }
+.curation-result__name-line > .curation-result__name { min-width: 0; }
+.curation-result__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--curation-text, var(--vt-foundation-font-size-body-strong)); font-weight: var(--vt-foundation-font-weight-medium); transition: color var(--vt-semantic-motion-interactive); }
+.curation-result__price { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--vt-foundation-space-1) var(--vt-foundation-space-2); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); }
+.curation-result__row .curation-result__price { display: grid; justify-items: end; }
+/* With a Target budget, keep the price and its comparison beside each other when there is room. */
+.curation-result__row .curation-result__price:has(.budget-delta) { display: flex; justify-content: flex-end; }
+.curation-result__row .curation-result__price:has(.budget-delta) > .budget-delta { margin-inline-start: 0; }
+/* A price never breaks inside its value because the column is squeezed (`anywhere` counts every character as a break when
+   sizing it); it breaks at its spaces, and inside a value only when that value alone is wider than the line (320px, 200%). */
+.curation-result__price-part { overflow-wrap: break-word; word-break: keep-all; }
+.curation-result__price-part.is-converted { white-space: nowrap; }
+.curation-result__pending { color: var(--vt-semantic-color-text-muted); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); }
+.curation-result__price > strong { min-width: 0; overflow-wrap: anywhere; font-family: var(--vt-semantic-font-data); font-size: var(--curation-text, var(--vt-foundation-font-size-body-strong)); font-weight: var(--vt-foundation-font-weight-medium); }
+.curation-result__unscored { color: var(--vt-semantic-color-text-muted); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); }
+
+/* One product group in the response: the product gets a card. */
+.curation-result--card { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-2); }
+.curation-result__head { margin: 0; font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); font-weight: var(--vt-foundation-font-weight-regular); }
+/* Image beside the facts while there is room; at a narrow width or large text the facts wrap under
+   the image instead of being squeezed beside it. */
+.curation-result__card {
+  min-width: 0;
+  padding: var(--vt-foundation-space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--vt-foundation-space-4) var(--vt-foundation-space-5);
+  border: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-foundation-radius-product);
+  background: var(--vt-semantic-color-surface-base);
+}
+.curation-result__media.vt-button { flex: 0 0 auto; width: 7rem; height: 7rem; padding: 0; overflow: hidden; border-radius: var(--vt-foundation-radius-control); background: var(--vt-semantic-color-surface-subtle); }
+.curation-result__info { flex: 1 1 14rem; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--vt-foundation-space-2); }
+.curation-result__title.vt-button { justify-self: start; max-width: 100%; height: auto; min-height: 0; padding: 0; color: var(--vt-semantic-color-text-primary); font-size: var(--curation-text-heading, var(--vt-foundation-font-size-heading-small)); font-weight: var(--vt-foundation-font-weight-heading); letter-spacing: var(--vt-foundation-font-letter-spacing-tight); line-height: var(--vt-foundation-font-line-height-compact); white-space: normal; text-align: start; }
+.curation-result__title.vt-button:hover:not(:disabled) { background: transparent; color: var(--vt-semantic-color-text-accent); }
+/* A single product group's card while its product is being researched keeps the card's shape, so the
+   product arrives in the same place and size (ADR-0089). */
+.curation-result__card.is-empty { cursor: default; }
+.curation-result__media-placeholder { flex: 0 0 auto; width: 7rem; height: 7rem; border-radius: var(--vt-foundation-radius-control); background: var(--vt-semantic-color-surface-subtle); }
+/* The card is one target: wherever the pointer is on it, the name answers as the row's name does. */
+.curation-result__card { cursor: pointer; }
+.curation-result__card:hover .curation-result__title.vt-button:not(:disabled) { color: var(--vt-semantic-color-text-accent); }
+.curation-result__numbers { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--vt-foundation-space-1) var(--vt-foundation-space-4); }
+.curation-result__where { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--vt-foundation-space-2); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); }
+.curation-result__seller { color: var(--vt-semantic-color-text-muted); }
+.curation-result__reason { max-width: var(--vt-foundation-size-conversation-measure); margin: 0; color: var(--vt-semantic-color-text-muted); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); line-height: var(--vt-foundation-font-line-height-body); }
+.curation-result__reason .candidate-comparison__axis { margin-inline-end: var(--vt-foundation-space-2); }
+.curation-result__status { margin: 0; color: var(--vt-semantic-color-text-muted); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); }
+.curation-result__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--vt-foundation-space-2); }
+/* Labels wrap at a narrow width with enlarged text instead of widening the page. */
+.curation-result__actions .vt-button { max-width: 100%; height: auto; min-height: 2rem; white-space: normal; text-align: start; }
+.curation-result__more.vt-button { margin-inline-start: auto; min-height: 0; }
+
+/* — What a research looked at — */
+.curation-result__facts.vt-button {
+  max-width: 100%;
+  height: auto;
+  min-height: 1.75rem;
+  margin-inline-start: calc(var(--vt-foundation-space-2) * -1);
+  padding: var(--vt-foundation-space-1) var(--vt-foundation-space-2);
+  gap: var(--vt-foundation-space-1);
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body));
+  font-weight: var(--vt-foundation-font-weight-regular);
+  white-space: normal;
+  text-align: start;
+}
+.curation-result__facts.vt-button:hover:not(:disabled) { color: var(--vt-semantic-color-text-primary); }
+.curation-result__facts-popover { width: min(24rem, 92vw); display: grid; gap: var(--vt-foundation-space-3); font-size: var(--vt-foundation-font-size-body); }
+.curation-result__facts-popover ul, .curation-result__facts-popover dl { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--vt-foundation-space-1); }
+.curation-result__facts-popover li, .curation-result__facts-popover dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: var(--vt-foundation-space-4); }
+.curation-result__facts-popover dl { padding-block-start: var(--vt-foundation-space-3); border-block-start: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); }
+.curation-result__facts-popover dt { color: var(--vt-semantic-color-text-primary); }
+.curation-result__facts-popover dd { margin: 0; font-family: var(--vt-semantic-font-data); }
+.curation-result__facts-popover li > span:last-child { color: var(--vt-semantic-color-text-muted); }
+.curation-result__facts-popover small { color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-caption); line-height: var(--vt-foundation-font-line-height-body); }
+
+/* Product groups no response holds yet keep their place at the end of the conversation. */
+.catalog-ui-curation__unheld { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-6); }
+
+@media (max-width: 52rem) {
+  /* The price moves under the name: a long or converted price, or 200% text, then wraps instead of widening the page. */
+  .curation-result__row { grid-template-columns: 2.75rem minmax(0, 1fr); gap: var(--vt-foundation-space-1) var(--vt-foundation-space-3); }
+  .curation-result__row .curation-result__thumb { grid-row: 1 / span 2; align-self: start; }
+  .curation-result__row .curation-result__price { grid-column: 2; grid-row: 2; justify-items: start; }
+  .curation-result__row .curation-result__price:has(.budget-delta) { justify-content: flex-start; }
+  .curation-result__list.vt-button { min-width: min(6rem, 30vw); margin-inline-start: 0; padding-inline-start: var(--vt-foundation-space-3); }
+  .curation-result__stack-item { width: 1.75rem; height: 1.75rem; }
+  .curation-result__card { gap: var(--vt-foundation-space-3); padding: var(--vt-foundation-space-3); }
+  .curation-result__media.vt-button, .curation-result__media-placeholder { width: 5.5rem; height: 5.5rem; }
+  .curation-result__title.vt-button { font-size: var(--curation-text, var(--vt-foundation-font-size-body-strong)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .curation-result__name, .curation-result__list-count { transition: none; }
+}
+
+/* Cart action uses the existing small accent-text entry above all candidates. */
+.curation-results__combination.vt-button {
+  max-width: 100%;
+  white-space: normal;
+  text-align: end;
+}
+
+
+/* The new sidebar summary has less room than the conversation. Keep its list
+   action below the product; enlarged text can use the full narrow width. */
+@media (max-width: 52rem) {
+  .curation-recommended-combination .curation-result--row { grid-template-columns: minmax(0, 1fr); }
+  .curation-recommended-combination .curation-result__list.vt-button { justify-self: end; min-height: 0; margin-inline-start: 0; }
+}
+@media (max-width: 30rem) {
+  .curation-recommended-combination .curation-result__row { grid-template-columns: minmax(0, 1fr); }
+  .curation-recommended-combination .curation-result__row .curation-result__thumb { display: none; }
+  .curation-recommended-combination .curation-result__row .curation-result__price { grid-column: 1; }
+  .curation-recommended-combination .curation-result__name { white-space: normal; overflow-wrap: anywhere; }
+}
+
+/* A message about this request (a proposal, a failure note) arrives inside its turn, after the rest
+   (ADR-0089): no sender line of its own — the turn already says who speaks — and the reply's words. */
+.curation-response__follow-ups { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-2); }
+.curation-response__follow-ups .curation-conversation-bubble { max-width: min(100%, var(--vt-foundation-size-conversation-measure)); }
+.curation-response__follow-ups .curation-conversation-bubble > header { display: none; }
+.curation-response__follow-ups .curation-conversation-bubble p { margin-block-start: 0; }
+/* In a turn a message keeps one shape whether it still waits or not; only the buttons become a word. */
+.curation-response__follow-ups .curation-follow-up .curation-conversation-bubble.is-vitlane { padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4); border-width: var(--vt-foundation-border-thin); border-style: solid; border-radius: var(--vt-foundation-radius-product); }
+.curation-response__follow-ups .curation-follow-up:not([data-message-status="PENDING"]) .curation-conversation-bubble.is-vitlane { border-color: var(--vt-semantic-color-border-default); background: var(--vt-semantic-color-surface-subtle); }
+.curation-follow-up__status { min-height: var(--vt-foundation-space-6); display: inline-flex; align-items: center; color: var(--vt-semantic-color-text-muted); font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body)); }

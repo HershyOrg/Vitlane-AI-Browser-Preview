@@ -1,0 +1,18 @@
+DROP TRIGGER curation_conversation_retry ON intelligence_jobs;
+DROP FUNCTION curation_conversation_retry();
+DROP TRIGGER curation_follow_up_criteria ON curation_target_criteria;
+DROP TRIGGER curation_follow_up_country ON curations;
+DROP TRIGGER curation_follow_up_budget ON curation_budgets;
+DROP TRIGGER curation_follow_up_target ON plan_targets;
+DROP FUNCTION curation_invalidate_follow_ups();
+DROP TRIGGER curation_conversation_auto ON curation_auto_resolutions;
+DROP TRIGGER curation_conversation_action ON curation_actions;
+DROP FUNCTION curation_conversation_auto();
+DROP FUNCTION curation_conversation_action();
+DROP FUNCTION curation_admit_request(uuid,uuid,uuid,text,text,text,text,bigint);
+DROP FUNCTION curation_follow_up_context(uuid,uuid);
+ALTER TABLE curation_auto_resolutions DROP COLUMN request_text;
+ALTER TABLE curation_auto_resolutions DROP COLUMN expected_conversation_version;
+DROP TABLE curation_follow_ups;
+DROP TABLE curation_conversation_requests;
+DROP TABLE curation_conversations;

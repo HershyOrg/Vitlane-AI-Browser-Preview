@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" role="img" aria-labelledby="t d">
+  <title id="t">All-day Walker sample product</title><desc id="d">Abstract gray walking shoe illustration.</desc>
+  <rect width="960" height="720" fill="#f2f4f4"/><ellipse cx="480" cy="575" rx="330" ry="38" fill="#d5dbda"/>
+  <path d="M153 456c110-20 191-78 241-177 13-27 46-37 72-22l145 84c52 30 95 67 128 113l62 85c14 19 1 46-23 46H234c-69 0-106-43-81-129Z" fill="#9da7a7"/>
+  <path d="M204 518h588c19 0 26 24 10 35l-28 20H226c-39 0-54-34-22-55Z" fill="#ffffff"/>
+  <path d="m389 322 145 78m-173-20 145 78m-172-17 145 78" stroke="#e9efef" stroke-width="16" stroke-linecap="round"/>
+  <text x="64" y="90" fill="#5b6666" font-family="system-ui,sans-serif" font-size="38" font-weight="700">ALL-DAY WALKER</text>
+</svg>

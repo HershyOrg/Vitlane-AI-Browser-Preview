@@ -1,0 +1,14 @@
+DROP TABLE IF EXISTS receipts;
+DROP TABLE IF EXISTS fulfillment_executions;
+DROP TABLE IF EXISTS chain_cursors;
+DROP TABLE IF EXISTS chain_events;
+DROP TABLE IF EXISTS chain_transactions;
+DROP TABLE IF EXISTS settlement_payments;
+DROP TABLE IF EXISTS settlement_authorizations;
+DROP TABLE IF EXISTS user_approvals;
+DROP TABLE IF EXISTS checkout_quotes;
+DROP TABLE IF EXISTS purchases;
+DROP TABLE IF EXISTS merchant_registry_entries;
+DROP TABLE IF EXISTS identity_assurances;
+DROP TABLE IF EXISTS wallet_challenges;
+ALTER TABLE wallets DROP COLUMN IF EXISTS ownership_message_hash;

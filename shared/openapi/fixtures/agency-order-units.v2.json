@@ -1,0 +1,299 @@
+{
+  "schemaVersion": "vitlane.agency-order-units.v2",
+  "stages": [
+    "ORDERED",
+    "PROCURING",
+    "PROCUREMENT_FAILED",
+    "CANCELLED",
+    "AWAITING_SHIPMENT",
+    "IN_TRANSIT",
+    "DELIVERED",
+    "EXCEPTION",
+    "RETURN_IN_PROGRESS",
+    "REFUND_REQUESTED",
+    "REFUND_PENDING",
+    "REFUNDED"
+  ],
+  "cases": [
+    {
+      "name": "결제 전·조달 계획 전 — 주문 접수",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "",
+        "Fulfillment": "",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "ORDERED"
+    },
+    {
+      "name": "조달 계획됨(자유 취소 구간)",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLANNED",
+        "Fulfillment": "",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "ORDERED"
+    },
+    {
+      "name": "조달 실행 중",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLACEMENT_PENDING",
+        "Fulfillment": "",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "PROCURING"
+    },
+    {
+      "name": "조달 실패 — 해당 MO 환불 예정",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "FAILED",
+        "Fulfillment": "",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "PROCUREMENT_FAILED"
+    },
+    {
+      "name": "취소로 대체됨",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "",
+        "Fulfillment": "SUPERSEDED_BY_CANCELLATION",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "CANCELLED"
+    },
+    {
+      "name": "배송 준비",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLACED",
+        "Fulfillment": "AWAITING_EFFECT",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "AWAITING_SHIPMENT"
+    },
+    {
+      "name": "배송 중",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLACED",
+        "Fulfillment": "IN_TRANSIT_EXPECTED",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "IN_TRANSIT"
+    },
+    {
+      "name": "수령 확인",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLACED",
+        "Fulfillment": "DELIVERED_EXPECTED",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "DELIVERED"
+    },
+    {
+      "name": "오배송 확인 중",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLACED",
+        "Fulfillment": "WRONG_ACTUAL",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "EXCEPTION"
+    },
+    {
+      "name": "오배송 실물 회수 중",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLACED",
+        "Fulfillment": "WRONG_ACTUAL",
+        "ReturnState": "RETURN_IN_TRANSIT",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "RETURN_IN_PROGRESS"
+    },
+    {
+      "name": "환불 심사 중(MO 요청이 물류 상태를 이긴다)",
+      "refundStatus": "REQUESTED",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLACED",
+        "Fulfillment": "DELIVERED_EXPECTED",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "REFUND_REQUESTED"
+    },
+    {
+      "name": "환불 실행 중",
+      "refundStatus": "REFUND_PENDING",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "FAILED",
+        "Fulfillment": "",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "REFUND_PENDING"
+    },
+    {
+      "name": "환불 완료",
+      "refundStatus": "REFUNDED",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "FAILED",
+        "Fulfillment": "",
+        "ReturnState": "",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "REFUNDED"
+    },
+    {
+      "name": "정상 수령 정정(판정 종결)",
+      "refundStatus": "AVAILABLE",
+      "facts": {
+        "MerchantOrderUnitID": "",
+        "MerchantOrderID": "",
+        "AllocationID": "",
+        "LineID": "",
+        "UnitIndex": 0,
+        "ShopDomain": "",
+        "RefundStatus": "",
+        "MerchantOrderState": "PLACED",
+        "Fulfillment": "RESOLVED",
+        "ReturnState": "CLOSED",
+        "ResolutionCause": "",
+        "ResolutionDecision": "",
+        "Shipment": null
+      },
+      "stage": "DELIVERED"
+    }
+  ]
+}

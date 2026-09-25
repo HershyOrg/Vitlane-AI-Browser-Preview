@@ -1,0 +1,693 @@
+/* The conversation fills the work area from top to bottom, so the composer sits on the bottom edge
+   however short the conversation is (ADR-0089). */
+.curation-workspace {
+  flex: 1 0 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-canvas);
+  font-family: var(--vt-semantic-font-body);
+}
+
+/* The workspace, rather than an artifact, owns the contextual input. The
+   shell remains in normal DOM order and CSS sticky positioning follows the
+   product body's scrollport without measured viewport coordinates. */
+/* The conversation is one reading column (ADR-0086): the words, the rows and the composer share one
+   width, centred in the work area — 57.6rem since 2026-09-23 (ADR-0089, 20% wider than the first
+   48rem). A product group's board lives in its sheet, so nothing here needs the full content width. */
+.curation-workspace__dock-shell {
+  width: min(100%, calc(var(--vt-foundation-size-conversation) + var(--vt-foundation-space-8) * 2));
+  min-width: 0;
+  margin-inline: auto;
+  padding-inline: var(--vt-foundation-space-8);
+  position: sticky;
+  z-index: var(--vt-layer-composer);
+  bottom: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.curation-composer-anchor {
+  width: 100%;
+  min-width: 0;
+  pointer-events: auto;
+}
+
+.curation-live-artifact__header p,
+.curation-feedback > p {
+  margin: 0;
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-medium);
+}
+
+.curation-transcript,
+.curation-target-list ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The conversation reads 10% larger than the rest of the product (owner 2026-09-23, ADR-0089). Rules for
+   rows, cards and replies take their sizes from these variables, so the same rows in a product group's
+   sheet keep the product's sizes. */
+.curation-workspace__main {
+  --curation-text: var(--vt-foundation-font-size-reading);
+  --curation-text-meta: var(--vt-foundation-font-size-reading-meta);
+  --curation-text-small: var(--vt-foundation-font-size-reading-small);
+  --curation-text-heading: var(--vt-foundation-font-size-reading-heading);
+  position: relative;
+  flex: 1 0 auto;
+  width: min(100%, calc(var(--vt-foundation-size-conversation) + var(--vt-foundation-space-8) * 2));
+  min-width: 0;
+  margin: 0 auto;
+  font-size: var(--curation-text);
+  padding: var(--vt-foundation-space-8) var(--vt-foundation-space-8) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.curation-transcript {
+  position: relative;
+  min-width: 0;
+  flex: 1 0 auto;
+  display: grid;
+  /* The transcript fills the column down to the composer; its turns stay packed at the top. */
+  align-content: start;
+  gap: var(--vt-foundation-space-6);
+}
+
+.curation-transcript__row,
+.curation-transcript__empty {
+  border: 0;
+}
+
+/* The workspace-owned composer is the only boundary below the transcript. */
+.curation-agent-work {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding-block: var(--vt-foundation-space-4);
+  border-bottom: 0;
+}
+
+.curation-action-activity {
+  display: grid;
+  gap: var(--vt-foundation-space-3);
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  border-top: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+  background: transparent;
+}
+
+.curation-action-activity.is-running { padding: var(--vt-foundation-space-1) 0; gap: 0; }
+/* The server's observed steps are the only running-work indicator. */
+.curation-step-activity.is-running { min-width: 0; width: 100%; display: flex; align-items: flex-start; gap: var(--vt-foundation-space-4); border: 0; }
+.curation-step-list { flex: 1; min-width: 0; list-style: none; margin: 0; padding: 0; display: grid; gap: var(--vt-foundation-space-3); }
+.curation-step { overflow-wrap: anywhere; display: flex; align-items: flex-start; gap: var(--vt-foundation-space-3); font-size: var(--vt-foundation-font-size-body); color: var(--vt-semantic-color-text-muted); }
+.curation-step > svg { flex-shrink: 0; margin-top: var(--vt-foundation-space-1); }
+.curation-step.is-running { color: var(--vt-semantic-color-text-primary); }
+.curation-step.is-running > svg, .curation-step.is-succeeded > svg { color: var(--vt-semantic-color-text-accent); }
+.curation-step-reason { display: block; }
+.curation-step-actions { flex: 0 1 auto; min-width: 0; max-width: 45%; }
+.curation-step-actions .curation-cancel-action { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.curation-step-actions p { overflow-wrap: anywhere; }
+.curation-step-spinner { animation: curation-step-spin 800ms linear infinite; transform-origin: center; }
+@keyframes curation-step-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .curation-step-spinner { animation: none; } }
+
+.curation-action-activity.is-failed {
+  border-left-color: var(--vt-semantic-color-action-danger);
+  background: var(--vt-semantic-color-surface-danger);
+}
+
+.curation-action-activity__header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--vt-foundation-space-3);
+  align-items: start;
+}
+
+.curation-action-activity__header > span {
+  width: var(--vt-foundation-space-2);
+  height: var(--vt-foundation-space-2);
+  margin-top: var(--vt-foundation-space-2);
+  border-radius: var(--vt-foundation-radius-pill);
+  background: var(--vt-semantic-color-action-primary);
+  animation: curation-work-pulse 1.2s ease-in-out infinite;
+}
+
+.curation-action-activity__header small,
+.curation-action-activity__header strong,
+.curation-action-activity__header p {
+  display: block;
+  margin: 0;
+}
+
+.curation-action-activity__header small,
+.curation-action-activity__header em {
+  color: var(--vt-semantic-color-text-accent);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-body);
+  font-style: normal;
+}
+
+.curation-action-activity__header strong {
+  margin-top: var(--vt-foundation-space-1);
+}
+
+.curation-action-activity__header p,
+.curation-agent-work__waiting {
+  margin-top: var(--vt-foundation-space-1);
+  color: var(--vt-semantic-color-text-muted);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.curation-transcript__row {
+  padding: var(--vt-foundation-space-3) 0;
+}
+
+.curation-transcript__row--action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.curation-transcript__row--message {
+  display: grid;
+}
+
+.curation-transcript__row--pending {
+  background: transparent;
+  box-shadow: none;
+}
+
+.curation-transcript__row--pending .curation-user-bubble,
+.curation-user-bubble.is-pending {
+  border-color: var(--vt-semantic-color-border-default);
+}
+
+.curation-transcript__row--pending .curation-user-bubble > span,
+.curation-user-bubble.is-pending > span {
+  color: var(--vt-semantic-color-text-muted);
+  font-weight: var(--vt-foundation-font-weight-control);
+}
+
+.curation-live-conversation-turn {
+  min-width: 0;
+  display: grid;
+  gap: var(--vt-foundation-space-3);
+}
+
+.curation-live-conversation-turn .curation-user-bubble {
+  justify-self: end;
+}
+
+.curation-user-bubble {
+  --curation-bubble-surface: var(--vt-semantic-color-surface-subtle);
+  min-width: min(18rem, 70%);
+  max-width: min(78%, var(--vt-foundation-size-conversation-measure));
+  overflow-wrap: anywhere;
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  display: grid;
+  gap: var(--vt-foundation-space-2);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-semantic-radius-overlay)
+    var(--vt-semantic-radius-overlay) 0 var(--vt-semantic-radius-overlay);
+  background: var(--curation-bubble-surface);
+}
+
+.curation-user-bubble header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-4);
+}
+
+.curation-user-bubble p {
+  margin: 0;
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.curation-user-bubble > span,
+.curation-user-bubble time {
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body));
+}
+
+.curation-conversation-bubble {
+  width: fit-content;
+  min-width: 0;
+  max-width: min(72%, var(--vt-foundation-size-conversation-measure));
+  overflow-wrap: anywhere;
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.curation-conversation-bubble.is-user {
+  --curation-bubble-surface: var(--vt-semantic-color-surface-subtle);
+  justify-self: end;
+  border-radius: var(--vt-semantic-radius-overlay)
+    var(--vt-semantic-radius-overlay) 0 var(--vt-semantic-radius-overlay);
+  background: var(--curation-bubble-surface);
+}
+
+:root.dark .curation-user-bubble,
+
+.curation-conversation-bubble.is-vitlane {
+  justify-self: start;
+  border-radius: var(--vt-semantic-radius-overlay)
+    var(--vt-semantic-radius-overlay) var(--vt-semantic-radius-overlay) 0;
+}
+
+/* Vitlane speaks in the body of the conversation, not in a bubble (ADR-0086).
+   Only the user's words keep a bubble; a proposal that waits for an answer
+   keeps a soft surface so its buttons read as one object. */
+.curation-conversation-bubble.is-vitlane {
+  max-width: min(100%, var(--vt-foundation-size-conversation-measure));
+  padding: 0;
+  border: 0;
+  border-radius: var(--vt-foundation-radius-none);
+  background: transparent;
+}
+.curation-conversation-bubble.is-vitlane header {
+  justify-content: flex-start;
+}
+.curation-follow-up[data-message-status="PENDING"] .curation-conversation-bubble.is-vitlane {
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  border-radius: var(--vt-foundation-radius-product);
+}
+
+.curation-conversation-bubble header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-1) var(--vt-foundation-space-4);
+}
+
+.curation-conversation-bubble strong,
+.curation-conversation-bubble p {
+  display: block;
+  margin: 0;
+}
+
+.curation-conversation-bubble strong {
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body));
+}
+
+.curation-conversation-bubble time {
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body));
+}
+
+.curation-conversation-bubble p {
+  margin-block-start: var(--vt-foundation-space-1);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+
+.curation-result-note {
+  max-width: var(--vt-foundation-size-conversation-measure);
+  margin: 0;
+  color: var(--vt-semantic-color-text-muted);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+
+.curation-transcript__row--live {
+  min-width: 0;
+  padding: var(--vt-foundation-space-8) 0;
+}
+
+.curation-live-artifact {
+  min-width: 0;
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-foundation-radius-product);
+  background: var(--vt-semantic-color-surface-base);
+  box-shadow: var(--vt-foundation-shadow-overlay);
+}
+
+/* Room for the request bar, which floats over the end of the conversation right above the composer:
+   the last words are never under it, and the room does not change when a request starts or ends. */
+.curation-workspace__initial-tail {
+  width: 100%;
+  height: calc(var(--vt-foundation-space-12) + var(--vt-foundation-space-2));
+  flex: 0 0 auto;
+}
+
+/* While the bar is open (its steps, a question waiting for the reader), the room grows by the sheet's
+   largest height, so the last words can still be read above it. The composer stays where it is. */
+.curation-workspace:has(.curation-thread__sheet) .curation-workspace__initial-tail {
+  height: calc(40dvh + var(--vt-foundation-space-12) + var(--vt-foundation-space-2));
+}
+
+@media (max-width: 40rem) {
+  .curation-workspace:has(.curation-thread__sheet) .curation-workspace__initial-tail {
+    height: calc(55dvh + var(--vt-foundation-space-12) + var(--vt-foundation-space-2));
+  }
+}
+
+.curation-live-artifact__header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-4);
+  align-items: start;
+  padding: var(--vt-foundation-space-4) var(--vt-foundation-space-6);
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.curation-live-artifact__header p {
+  color: var(--vt-semantic-color-text-accent);
+}
+
+.curation-live-artifact__header h2 {
+  margin: var(--vt-foundation-space-1) 0 0;
+  font-size: var(--vt-foundation-font-size-heading-small);
+}
+
+.curation-live-artifact__header time {
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-body);
+}
+
+.curation-live-artifact__body {
+  min-width: 0;
+  padding: var(--vt-foundation-space-6);
+}
+
+/* Phase 8 presents the latest answer as an open workspace. Target headings
+   provide the hierarchy; wrapping that hierarchy in another result card made
+   Target itself look like a Candidate. */
+.curation-workspace[data-phase="CURATING"] .curation-transcript__row--live,
+.curation-transcript__row--live:has(.curation-planning-workspace.is-idle-empty) {
+  padding-block: var(--vt-foundation-space-4) 0;
+}
+
+.curation-workspace[data-phase="CURATING"] .curation-live-artifact {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.curation-workspace[data-phase="CURATING"] .curation-live-artifact__header {
+  display: none;
+}
+
+.curation-workspace[data-phase="CURATING"] .curation-live-artifact__body {
+  padding: 0;
+}
+
+/* An empty plan and a plan written as a response (ADR-0086) both speak in the
+   body of the conversation, so the result frame and its title step aside. */
+.curation-live-artifact:has(.curation-planning-workspace.is-idle-empty),
+.curation-live-artifact:has(.curation-planning-response) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.curation-live-artifact:has(.curation-planning-workspace.is-idle-empty) > .curation-live-artifact__header,
+.curation-live-artifact:has(.curation-planning-response) > .curation-live-artifact__header { display: none; }
+.curation-live-artifact:has(.curation-planning-workspace.is-idle-empty) > .curation-live-artifact__body,
+.curation-live-artifact:has(.curation-planning-response) > .curation-live-artifact__body { padding: 0; }
+
+.curation-target-list > p,
+.curation-artifact-empty p {
+  max-width: var(--vt-foundation-size-conversation-measure);
+  margin: 0 0 var(--vt-foundation-space-4);
+  color: var(--vt-semantic-color-text-muted);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.curation-artifact-empty--recovery {
+  display: grid;
+  justify-items: start;
+  gap: var(--vt-foundation-space-2);
+}
+
+.curation-artifact-empty--recovery p {
+  margin-block-end: var(--vt-foundation-space-2);
+}
+
+.curation-artifact-state {
+  padding: var(--vt-foundation-space-1) var(--vt-foundation-space-2);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-semantic-radius-control);
+  color: var(--vt-semantic-color-text-muted);
+  background: var(--vt-semantic-color-surface-selected);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-control);
+}
+
+.curation-artifact-state.is-failed {
+  border-color: var(--vt-semantic-color-border-danger);
+  color: var(--vt-semantic-color-text-danger);
+  background: var(--vt-semantic-color-surface-danger);
+}
+
+.curation-target-list ol {
+  border-top: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.curation-target-list li {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  gap: var(--vt-foundation-space-3);
+  align-items: center;
+  min-height: var(--vt-foundation-size-touch);
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.curation-target-list li > span,
+.curation-target-list small {
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-body);
+}
+
+.curation-transcript__empty {
+  display: flex;
+  gap: var(--vt-foundation-space-4);
+  align-items: center;
+  padding: var(--vt-foundation-space-12) var(--vt-foundation-space-4);
+}
+
+.curation-transcript__empty > span {
+  color: var(--vt-semantic-color-text-accent);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-heading);
+}
+
+.curation-transcript__empty strong,
+.curation-transcript__empty p {
+  display: block;
+  margin: 0;
+}
+
+.curation-transcript__empty p {
+  margin-top: var(--vt-foundation-space-1);
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.curation-workspace button:focus-visible,
+.curation-workspace input:focus-visible,
+.curation-feedback button:focus-visible {
+  outline: var(--vt-foundation-border-focus) solid
+    var(--vt-semantic-color-action-primary);
+  outline-offset: var(--vt-foundation-space-1);
+}
+
+.curation-workspace button:disabled,
+.curation-workspace input:disabled {
+  cursor: not-allowed;
+  opacity: var(--vt-foundation-opacity-disabled);
+}
+
+.curation-feedback {
+  display: grid;
+  place-content: center;
+  justify-items: start;
+  min-height: min(42rem, calc(100dvh - var(--vt-foundation-size-header)));
+  padding: var(--vt-foundation-space-8);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-canvas);
+  font-family: var(--vt-semantic-font-body);
+}
+
+.curation-feedback__mark {
+  color: var(--vt-semantic-color-text-accent);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-display);
+  line-height: 1;
+}
+
+.curation-feedback > p {
+  margin-top: var(--vt-foundation-space-4);
+  color: var(--vt-semantic-color-text-accent);
+}
+
+.curation-feedback h1 {
+  max-width: 18ch;
+  margin: var(--vt-foundation-space-2) 0;
+  font-size: var(--vt-foundation-font-size-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+}
+
+.curation-feedback > span:last-of-type {
+  max-width: var(--vt-foundation-size-text-measure);
+  color: var(--vt-semantic-color-text-muted);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.curation-feedback button {
+  min-height: var(--vt-foundation-size-touch);
+  margin-top: var(--vt-foundation-space-4);
+  padding: 0 var(--vt-foundation-space-4);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-action-primary);
+  border-radius: var(--vt-foundation-radius-control);
+  color: var(--vt-semantic-color-text-on-action);
+  background: var(--vt-semantic-color-action-primary);
+  font-weight: var(--vt-foundation-font-weight-control);
+  cursor: pointer;
+}
+
+.curation-feedback--loading > div {
+  display: flex;
+  gap: var(--vt-foundation-space-2);
+  margin-top: var(--vt-foundation-space-4);
+}
+
+.curation-feedback--loading > div span {
+  width: 4rem;
+  height: var(--vt-foundation-space-2);
+  background: var(--vt-semantic-color-border-default);
+  animation: curation-loading 1s ease-in-out infinite alternate;
+}
+
+.curation-feedback--loading > div span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.curation-feedback--loading > div span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes curation-work-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes curation-loading {
+  to {
+    background: var(--vt-semantic-color-surface-selected);
+  }
+}
+
+@media (max-width: 48rem) {
+  .curation-workspace__main,
+  .curation-workspace__dock-shell {
+    padding: var(--vt-foundation-space-6) var(--vt-foundation-space-4) 0;
+  }
+
+  .curation-workspace__dock-shell {
+    padding-block-start: 0;
+  }
+
+  .curation-target-list li {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+
+  .curation-target-list small {
+    grid-column: 2;
+    padding-bottom: var(--vt-foundation-space-2);
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .curation-active-work > span,
+  .curation-feedback--loading > div span {
+    animation: none;
+  }
+}
+
+.curation-follow-up {
+  min-width: 0;
+  display: grid;
+  justify-items: start;
+}
+
+.curation-follow-up[data-message-status="PENDING"] .curation-conversation-bubble {
+  border-color: var(--vt-semantic-color-border-strong);
+  background: color-mix(in srgb, var(--vt-semantic-color-surface-selected) 75%, var(--vt-semantic-color-border-strong));
+}
+
+/* Action buttons in a Vitlane message sit bottom-right, primary last
+   (component-contracts §11). */
+.curation-follow-up__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--vt-foundation-space-2);
+  margin-top: var(--vt-foundation-space-2);
+}
+
+.curation-follow-up__wait {
+  align-self: center;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body));
+}
+
+.curation-follow-up__actions .vt-button {
+  height: var(--vt-foundation-space-6);
+  min-height: var(--vt-foundation-space-6);
+  padding: 0 var(--vt-foundation-space-2);
+  font-size: var(--curation-text-meta, var(--vt-foundation-font-size-body));
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+@media (max-width: 48rem) {
+  .curation-follow-up .curation-conversation-bubble {
+    max-width: 100%;
+  }
+}
+
+.catalog-ui-target__identity .catalog-ui-target__collapse { flex: 0 0 auto; }
+.catalog-ui-target__identity .catalog-ui-target__collapse[aria-expanded="true"] svg { transform: rotate(180deg); }
+.curation-new-response { position: sticky; top: var(--vt-foundation-space-2); z-index: 1; }
+.catalog-ui-target__heading { display: flex; align-items: center; gap: var(--vt-foundation-space-2); min-width: 0; }
+.catalog-ui-target__heading h2 { min-width: 0; overflow-wrap: anywhere; }
+
+.curation-follow-up, .curation-follow-up__actions, .curation-follow-up__actions button { scroll-margin-block-end: calc(var(--vt-foundation-space-18) * 2); }
+
+/* Initial progress stays inside the workspace-owned composer dock. */
+.curation-composer-progress { max-height: min(28dvh, 12rem); overflow-y: auto; }
+
+@media (max-width: 48rem) {
+  /* Leave room for the in-flow route control at 200% text zoom. */
+  .curation-composer-progress { max-height: min(20dvh, 12rem); }
+}
+
+
+.catalog-ui-target__vertical {
+  flex: 0 1 auto;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}

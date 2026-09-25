@@ -1,0 +1,50 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "structuredContent": {
+      "ucp": {
+        "version": "2026-04-08",
+        "capabilities": {
+          "dev.ucp.shopping.catalog.lookup": [{"version": "2026-04-08"}]
+        }
+      },
+      "products": [
+        {
+          "id": "product-one",
+          "title": "Product One",
+          "description": {"plain": "First conflicting product."},
+          "price_range": {
+            "min": {"amount": 1000, "currency": "USD"},
+            "max": {"amount": 1000, "currency": "USD"}
+          },
+          "variants": [
+            {
+              "id": "variant-one",
+              "title": "Variant One",
+              "price": {"amount": 1000, "currency": "USD"},
+              "inputs": [{"id": "ambiguous", "match": "exact"}]
+            }
+          ]
+        },
+        {
+          "id": "product-two",
+          "title": "Product Two",
+          "description": {"plain": "Second conflicting product."},
+          "price_range": {
+            "min": {"amount": 2000, "currency": "USD"},
+            "max": {"amount": 2000, "currency": "USD"}
+          },
+          "variants": [
+            {
+              "id": "variant-two",
+              "title": "Variant Two",
+              "price": {"amount": 2000, "currency": "USD"},
+              "inputs": [{"id": "ambiguous", "match": "exact"}]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

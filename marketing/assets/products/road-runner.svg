@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" role="img" aria-labelledby="t d">
+  <title id="t">Road Runner sample product</title><desc id="d">Abstract black road running shoe illustration.</desc>
+  <rect width="960" height="720" fill="#eef4f6"/><ellipse cx="480" cy="575" rx="330" ry="38" fill="#cedcdf"/>
+  <path d="M149 459c112-24 189-76 240-180 13-27 47-37 72-20l153 101c44 29 82 64 113 106l68 92c13 18 0 43-22 43H229c-68 0-105-48-80-142Z" fill="#202b32"/>
+  <path d="M197 533h598c18 0 25 23 10 34l-31 22H224c-37 0-51-35-27-56Z" fill="#48a7bd"/>
+  <path d="m384 322 151 91m-181-33 151 91m-178-31 151 91" stroke="#94d0dd" stroke-width="14" stroke-linecap="round"/>
+  <text x="64" y="90" fill="#29414a" font-family="system-ui,sans-serif" font-size="38" font-weight="700">ROAD RUNNER</text>
+</svg>

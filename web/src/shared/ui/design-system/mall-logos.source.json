@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "vitlane.merchant-badges.v2",
+  "name": "Vitlane generic merchant badges",
+  "rule": "Supported merchant codes use a neutral, source-owned vector badge. Merchant names remain plain localized text; no third-party logo, favicon, app icon, wordmark, brand color, or trade dress is embedded in this asset set.",
+  "assets": {
+    "merchant.svg": {
+      "kind": "source-owned-generic-vector",
+      "owner": "HershyOrg",
+      "license": "Repository root LICENSE",
+      "source": "mall-logos/merchant.svg",
+      "createdAt": "2026-09-25",
+      "sha256": "e3ffcaa86b4dd56f73f2c43aab6899d5fc47b91899223de0c17202d4fa31def5",
+      "viewBox": "0 0 64 64",
+      "note": "A generic storefront drawn for the public preview. It is not derived from or intended to identify any merchant brand."
+    }
+  },
+  "malls": {
+    "SHOPIFY": { "file": "merchant.svg" },
+    "AMAZON": { "file": "merchant.svg" },
+    "COUPANG": { "file": "merchant.svg" },
+    "ELEVENST": { "file": "merchant.svg" },
+    "NAVER_SMARTSTORE": { "file": "merchant.svg" },
+    "NAVER_BRANDSTORE": { "file": "merchant.svg" },
+    "MUSINSA": { "file": "merchant.svg" },
+    "TWENTYNINECM": { "file": "merchant.svg" },
+    "OLIVEYOUNG": { "file": "merchant.svg" },
+    "KURLY": { "file": "merchant.svg" },
+    "GMARKET": { "file": "merchant.svg" },
+    "AUCTION": { "file": "merchant.svg" },
+    "SSG": { "file": "merchant.svg" },
+    "ZIGZAG": { "file": "merchant.svg" },
+    "WCONCEPT": { "file": "merchant.svg" },
+    "OHOUSE": { "file": "merchant.svg" },
+    "LOTTEON": { "file": "merchant.svg" },
+    "DAISOMALL": { "file": "merchant.svg" }
+  }
+}

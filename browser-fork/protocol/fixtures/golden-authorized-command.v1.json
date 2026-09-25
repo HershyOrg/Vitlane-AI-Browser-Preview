@@ -1,0 +1,28 @@
+{
+  "protocolVersion": 1,
+  "commandId": "cmd_golden_001",
+  "runId": "run_001",
+  "deviceId": "device_001",
+  "profileRef": "profile_001",
+  "sequence": 1,
+  "leaseEpoch": 1,
+  "controlGeneration": 0,
+  "expiresAt": "2030-01-01T00:00:15.000Z",
+  "actionHash": "7fb192368643e2d984926c5c445b8392ea24122203c22125830d0e55169561a8",
+  "action": {
+    "kind": "scroll",
+    "page": {
+      "tabId": "tab_001",
+      "frameId": "frame_main",
+      "documentEpoch": 7,
+      "observationId": "obs_001",
+      "topOrigin": "https://shop.example.com",
+      "frameOrigin": "https://shop.example.com",
+      "pathname": "/products",
+      "queryOrFragmentPresent": false
+    },
+    "direction": "down",
+    "reason": "더 많은 공개 후보를 확인합니다."
+  },
+  "serverPermit": "hmac-sha256:sKW91OzpyXrv4HaeGcxp67kgzeO4f7ETe11fEukJ5Ho"
+}

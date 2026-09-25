@@ -1,0 +1,103 @@
+.curation-budget { width: 100%; min-width: 0; color: var(--vt-semantic-color-text-primary); }
+/* One height for the row with or without the cart button, so the composer does not grow when a plan turns into research. */
+.curation-budget__toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--vt-foundation-space-2); min-height: calc(var(--vt-foundation-space-2) * 4); margin-bottom: var(--vt-foundation-space-1); min-width: 0; }
+.curation-budget__toolbar > .catalog-ui-draft-trigger { margin-inline-start: auto; }
+.curation-budget__toolbar .vt-button { height: auto; min-height: var(--vt-foundation-space-6); padding-block: 0; padding-inline: var(--vt-foundation-space-2); font-size: var(--vt-foundation-font-size-body); }
+.curation-budget__allocation-row { display: flex; align-items: center; gap: var(--vt-foundation-space-2); min-width: 0; }
+.curation-budget__total-trigger.vt-button { flex: 0 1 auto; min-width: 0; max-width: 50%; min-height: var(--vt-foundation-space-6); height: auto; padding: 0 var(--vt-foundation-space-1); font-size: var(--vt-foundation-font-size-body); }
+.curation-budget__total-trigger > span { white-space: normal; }
+/* The bar sits on the composer's glass and stays transparent, so the same blur shows
+   through; a second glass layer would read more opaque than its surroundings. Only the
+   amounts, outline and dividers carry the accent (owner 2026-09-17). */
+.curation-budget__bar { display: flex; flex: 1 1 0; min-width: 0; min-height: var(--vt-foundation-space-6); border: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-text-accent); border-radius: var(--vt-foundation-radius-pill); overflow: hidden; background: transparent; color: var(--vt-semantic-color-text-accent); }
+.curation-budget__bar.is-unlimited { border-color: var(--vt-semantic-color-border-default); color: var(--vt-semantic-color-text-muted); }
+.curation-budget__bar > .curation-budget__segment.vt-button { flex-basis: 0; flex-grow: 1; flex-shrink: 1; min-width: 0; height: auto; min-height: var(--vt-foundation-space-6); border: 0; border-radius: 0; padding: 0 var(--vt-foundation-space-2); line-height: 1.35; font-size: var(--vt-foundation-font-size-body); background: transparent; color: inherit; box-shadow: none; transition: none; transform: none; overflow: hidden; }
+.curation-budget__bar > .curation-budget__segment.vt-button:hover { background: transparent; color: inherit; cursor: pointer; }
+.curation-budget__bar.is-unlimited > .curation-budget__segment.vt-button:disabled { opacity: 1; cursor: default; }
+.curation-budget__bar > .curation-budget__segment.vt-button:active { transform: none; }
+.curation-budget__bar > .curation-budget__segment.vt-button:focus-visible { outline: var(--vt-foundation-border-thin) solid currentColor; outline-offset: -3px; }
+.curation-budget__segment + .curation-budget__segment.vt-button { border-inline-start: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-text-accent); }
+.curation-budget__bar.is-unlimited > .curation-budget__segment + .curation-budget__segment.vt-button { border-inline-start-color: var(--vt-semantic-color-border-default); }
+.curation-budget__segment span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.budget-target-label { display: block; font-size: var(--vt-foundation-font-size-body); line-height: 1.5; opacity: .8; font-weight: var(--vt-foundation-font-weight-medium); }
+.budget-delta { display: inline; margin-inline-start: var(--vt-foundation-space-2); font-size: var(--vt-foundation-font-size-body); font-weight: var(--vt-foundation-font-weight-medium); line-height: 1.5; }
+.budget-delta.is-saving { color: var(--vt-semantic-color-text-comparison); font-weight: var(--vt-foundation-font-weight-regular); }
+.budget-delta.is-over { color: var(--vt-semantic-color-text-muted); }
+.budget-cart-summary { display: grid; grid-template-columns: 1fr auto; gap: var(--vt-foundation-space-2); padding: var(--vt-foundation-space-4); margin: var(--vt-foundation-space-3) 0; border-radius: var(--vt-semantic-radius-overlay); background: var(--vt-semantic-color-surface-canvas); font-size: var(--vt-foundation-font-size-body); }
+.budget-cart-summary small { grid-column: 1 / -1; font-size: var(--vt-foundation-font-size-body); line-height: 1.5; }
+
+/* Budget drafts stay attached to the bar. There is no modal backdrop. */
+.budget-popover[data-slot="popover-content"] { --radix-popover-content-available-height: calc(100dvh - 24px); z-index: 60; width: min(480px, calc(100vw - 24px)); max-height: min(440px, var(--radix-popover-content-available-height)); padding: var(--vt-foundation-space-3); overflow: visible; background: var(--vt-semantic-color-surface-base); border: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); border-radius: var(--vt-semantic-radius-overlay); box-shadow: var(--vt-semantic-shadow-overlay); animation: none; }
+.budget-popover__arrow {
+  fill: var(--vt-semantic-color-surface-base);
+  stroke: var(--vt-semantic-color-border-default);
+  stroke-width: var(--vt-foundation-border-thin);
+}
+.budget-popover .budget-editor { display: grid; min-width: 0; max-height: min(400px, calc(var(--radix-popover-content-available-height) - 24px)); overflow-y: auto; gap: var(--vt-foundation-space-2); }
+.budget-editor__heading { display: flex; align-items: center; justify-content: space-between; font-size: var(--vt-foundation-font-size-body); }
+.budget-editor__amount-row { display: grid; grid-template-columns: auto minmax(0, 1fr) 5.5em; align-items: center; gap: var(--vt-foundation-space-2); }
+.budget-editor__rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-2); min-width: 0; overflow-x: auto; }
+.budget-editor__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 4.5em 3.4em; align-items: center; gap: var(--vt-foundation-space-1); min-width: 22em; font-size: var(--vt-foundation-font-size-body); }
+.budget-editor__quantity { display: flex; align-items: center; gap: var(--vt-foundation-space-1); min-width: 0; }
+.budget-editor__target { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.budget-editor__row input, .budget-editor__row select { min-width: 0; padding-inline: var(--vt-foundation-space-1); font-size: inherit; }
+.budget-editor__row select { padding-inline-end: var(--vt-foundation-space-4); }
+.budget-editor__row [data-slot="native-select-icon"] { right: 0; width: var(--vt-foundation-space-3); }
+.budget-editor__summary { margin: 0; font-size: var(--vt-foundation-font-size-body); line-height: 1.5; color: var(--vt-semantic-color-text-muted); overflow-wrap: anywhere; }
+.budget-editor__modes, .budget-editor__footer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--vt-foundation-space-1); }
+.budget-editor__footer { justify-content: flex-end; }
+.budget-editor__error { margin: 0; font-size: var(--vt-foundation-font-size-body); line-height: 1.5; color: var(--vt-semantic-color-action-danger); }
+.budget-editor__modes > button, .budget-editor__footer > button { max-width: 100%; white-space: normal; height: auto; min-height: var(--vt-foundation-space-6); padding-block: var(--vt-foundation-space-1); }
+
+/* Initial settings still use their small, explicit setup dialog. */
+.budget-editor-overlay { z-index: 110; }
+.budget-editor[data-slot="dialog-content"] { z-index: 111; max-width: calc(100vw - 24px); grid-template-columns: minmax(0, 1fr); width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.budget-editor__fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-3); min-width: 0; }
+.budget-editor__fields label { display: grid; gap: var(--vt-foundation-space-1); font-size: var(--vt-foundation-font-size-body); }
+.budget-editor__fields input, .budget-editor__fields select { min-width: 0; width: 100%; }
+.budget-editor__fields small { color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-body); line-height: 1.5; }
+.budget-editor input:focus-visible, .budget-editor select:focus-visible { border-color: var(--vt-semantic-color-action-primary); outline: none; box-shadow: none; }
+.budget-editor [data-slot="dialog-header"] { min-width: 0; padding-inline-end: var(--vt-foundation-space-5); overflow-wrap: anywhere; }
+.curation-composer-budget-settings { display: grid; gap: var(--vt-foundation-space-1); width: 100%; min-width: 0; }
+.budget-settings-hint { font-size: var(--vt-foundation-font-size-body); color: var(--vt-semantic-color-text-muted); margin-block: var(--vt-foundation-space-2); }
+
+/* The composer is part of the page, not glass over it (ADR-0086): the canvas colour of the theme,
+   set apart from the conversation by one line and a soft shade rising above it (ADR-0089). Nothing
+   behind it shows through or blurs. */
+.curation-composer-anchor > .catalog-ui-composer-dock {
+  border-top: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-surface-canvas);
+  box-shadow: var(--vt-semantic-shadow-edge-above);
+  transition: box-shadow var(--vt-semantic-motion-interactive);
+}
+/* Scrolled to the end, nothing passes under the composer: the line stays, the shade goes (owner 2026-09-23). */
+.curation-composer-anchor[data-scroll-end="true"] > .catalog-ui-composer-dock { box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .curation-composer-anchor > .catalog-ui-composer-dock { transition: none; }
+}
+.catalog-ui-composer-dock .catalog-ui-focus-composer { border: 0; border-radius: 0; background: transparent; box-shadow: none; padding: var(--vt-foundation-space-2); }
+.catalog-ui-focus-composer .catalog-ui-focus-composer__context { padding: 0; border: 0; background: transparent; margin-bottom: var(--vt-foundation-space-2); }
+.catalog-ui-focus-composer .catalog-ui-focus-composer__entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--vt-foundation-space-1); padding: var(--vt-foundation-space-2); border: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); border-radius: var(--vt-foundation-radius-control); background: transparent; }
+.catalog-ui-focus-composer .catalog-ui-focus-composer__entry:focus-within { border-color: var(--vt-semantic-color-action-primary); }
+.catalog-ui-focus-composer .catalog-ui-focus-token.vt-button { grid-column: 1; grid-row: 2; justify-self: end; width: auto; max-width: 100%; min-width: 0; min-height: var(--vt-foundation-space-6); height: auto; padding: 0 var(--vt-foundation-space-2); font-size: var(--vt-foundation-font-size-body); color: var(--vt-semantic-color-text-muted); background: transparent; border-color: transparent; }
+.catalog-ui-focus-composer .catalog-ui-focus-token.vt-button:hover { background: transparent; }
+.catalog-ui-focus-composer .catalog-ui-focus-composer__send.vt-button { grid-column: 2; grid-row: 2; }
+.init-composer .shell-intent-composer__submit.vt-button, .catalog-ui-focus-composer .catalog-ui-focus-composer__send.vt-button { border-radius: var(--vt-foundation-radius-pill); width: var(--vt-foundation-space-8); min-width: var(--vt-foundation-space-8); height: var(--vt-foundation-space-8); padding: 0; }
+.catalog-ui-focus-composer textarea[data-slot="textarea"] { grid-column: 1 / -1; grid-row: 1; min-height: var(--vt-foundation-space-12); border: 0; border-radius: 0; box-shadow: none; outline: none; padding: var(--vt-foundation-space-2); background: transparent; }
+.catalog-ui-focus-composer textarea[data-slot="textarea"]:focus-visible { box-shadow: none; outline: none; }
+@media (max-width: 420px) {
+  .curation-budget__toolbar { gap: var(--vt-foundation-space-1); }
+  .curation-budget__toolbar .vt-button { padding-inline: var(--vt-foundation-space-1); gap: var(--vt-foundation-space-1); }
+  .curation-budget__toolbar .curation-composer-settings-trigger { flex: 1 1 auto; justify-content: flex-start; }
+  .curation-budget__toolbar .curation-composer-settings-trigger > svg { display: none; }
+  .curation-budget__toolbar .curation-composer-settings-trigger > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .curation-budget__toolbar .catalog-ui-draft-trigger__label { display: none; }
+  .curation-budget__allocation-row { flex-wrap: wrap; }
+  .curation-budget__bar { flex-basis: calc(var(--vt-foundation-space-8) * 4); }
+  .curation-budget__total-trigger.vt-button { max-width: 100%; }
+  .curation-budget__total-trigger > svg { display: none; }
+  .budget-editor__row { grid-template-columns: minmax(0, .75fr) minmax(0, 1.5fr) 4.1em 3em; }
+}
+
+/* Keep each signed amount together when the price row wraps. */
+.budget-delta__amount { display: inline-block; white-space: nowrap; overflow-wrap: normal; }

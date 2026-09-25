@@ -1,0 +1,10 @@
+{
+  "chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java": "e35eaa221f03c602488f3809d6f5d6d2219f695cccc2d3a660205ded5773a829",
+  "chrome/android/chrome_java_sources.gni": "b37df46a19dbe55f1c4fe0fb023f1c9daf36cacd2636d84ec26740453143cd8b",
+  "content/public/android/java/src/org/chromium/content_public/browser/WebContents.java": "f7fa85f2bb6aa86a331a5e1e7bd3bb30567f904377858356a24713441fe21fd4",
+  "content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java": "9b185f395290c0a1770f7ab0015d99084395f411ac6797d6439b2a03aebc2ebd",
+  "content/browser/web_contents/web_contents_android.h": "ac971d1a3af07f544082d03376969cb04354c8d18983b828eae38dcdf209b917",
+  "content/browser/web_contents/web_contents_android.cc": "b3e3aab009780b195c986aaa1042568a0724c8836dca7a974f1664051fa320ef",
+  "chrome/common/chrome_isolated_world_ids.h": "6b5384da3ab0cb04ff100b19b8981e8846d51d0d405acf595ccbaf048d1e219a",
+  "chrome/android/java/src/org/chromium/chrome/browser/common/ChromeIsolatedWorldIds.java": "fac8c3f2c9c3603068452fb14892e5f2df510375441a95cede80d118c9a4d12b"
+}

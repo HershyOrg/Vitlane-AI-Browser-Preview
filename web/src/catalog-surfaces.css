@@ -1,0 +1,323 @@
+/*
+ * Design Phase 8 — Authentication and curation operations.
+ *
+ * These surfaces consume the same generated Lane Signal tokens and shared
+ * controls as the product app. No page-owned palette or control geometry lives
+ * here.
+ */
+
+.catalog-ui-utility-label {
+  margin: 0;
+  color: var(--vt-semantic-color-text-accent);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-utility);
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+.catalog-ui-login-shell {
+  /* Always dark: the mapping comes from .vt-dark-scope in theme.css (ADR-0073). */
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.catalog-ui-login {
+  position: relative;
+  isolation: isolate;
+  color: var(--vt-semantic-color-text-primary);
+  width: min(100%, var(--vt-foundation-size-text-measure));
+  height: 100%;
+  margin-inline: auto;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  touch-action: pan-y;
+  border-inline: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+/* ADR-0078: the lane is seen through still reeded glass. The glass keeps the
+   lane surface so the shell, lane and login box stay three distinct darks. */
+.catalog-ui-login .catalog-ui-login__glass {
+  z-index: -1;
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.catalog-ui-login__panel {
+  position: relative;
+  min-height: 100%;
+  padding: var(--vt-foundation-space-8);
+  display: grid;
+  grid-template-rows: auto minmax(min-content, 1fr) auto;
+  gap: var(--vt-foundation-space-8);
+}
+
+.catalog-ui-login.is-pointer-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.catalog-ui-login__brand {
+  justify-self: start;
+}
+
+.catalog-ui-login__content {
+  width: min(
+    100%,
+    calc(
+      (var(--vt-foundation-size-candidate-media) * 3) +
+        (var(--vt-foundation-space-8) * 2)
+    )
+  );
+  margin-inline: auto;
+  padding: var(--vt-foundation-space-8);
+  align-self: center;
+  display: grid;
+  gap: var(--vt-foundation-space-8);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-strong);
+  border-radius: var(--vt-semantic-radius-overlay);
+  background: var(--popover);
+  box-shadow: var(--vt-semantic-shadow-overlay);
+}
+
+.catalog-ui-login__intro h1 {
+  margin: 0;
+  font-size: var(--vt-foundation-font-size-heading);
+  font-weight: var(--vt-foundation-font-weight-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  word-break: keep-all;
+}
+
+.catalog-ui-login__intro p {
+  margin: var(--vt-foundation-space-3) 0 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.catalog-ui-login__methods {
+  display: grid;
+  gap: var(--vt-foundation-space-3);
+}
+
+.catalog-ui-login__notice {
+  margin: 0;
+}
+
+.catalog-ui-login__capability-loading {
+  margin: 0;
+  padding: var(--vt-foundation-space-4);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-semantic-radius-control);
+  color: var(--vt-semantic-color-text-muted);
+  background: var(--vt-semantic-color-surface-canvas);
+  text-align: center;
+}
+
+.catalog-ui-login__google,
+.catalog-ui-login__dev {
+  width: 100%;
+}
+
+.catalog-ui-login__google {
+  min-height: calc(
+    var(--vt-foundation-size-touch) + var(--vt-foundation-space-3)
+  );
+  justify-content: center;
+  font-size: var(--vt-foundation-font-size-body-strong);
+}
+
+.catalog-ui-login__google-mark {
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--vt-semantic-radius-control);
+  color: var(--vt-semantic-color-text-on-action);
+  background: var(--vt-semantic-color-action-primary);
+  font-family: var(--vt-semantic-font-data);
+  font-weight: var(--vt-foundation-font-weight-heading);
+}
+
+.catalog-ui-login__dev {
+  margin-top: var(--vt-foundation-space-3);
+}
+
+.catalog-ui-login__review {
+  margin-top: var(--vt-foundation-space-2);
+}
+
+.catalog-ui-login__review-intro {
+  margin: 0 0 var(--vt-foundation-space-3);
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.catalog-ui-login__profiles {
+  display: grid;
+}
+
+.catalog-ui-login__profile {
+  display: grid;
+  gap: var(--vt-foundation-space-3);
+  padding-block: var(--vt-foundation-space-4);
+  border-top: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.catalog-ui-login__profile h3 {
+  margin: var(--vt-foundation-space-1) 0 var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-primary);
+  font-size: var(--vt-foundation-font-size-body);
+}
+
+.catalog-ui-login__profile p {
+  margin: 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.catalog-ui-login__profile-role {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-medium);
+}
+
+.catalog-ui-login__profile-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--vt-foundation-space-2);
+}
+
+.catalog-ui-login__profile-note {
+  align-self: center;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+  text-align: center;
+}
+
+.catalog-ui-login__footer {
+  padding-top: var(--vt-foundation-space-6);
+  border-top: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.catalog-ui-login__footer .shell-preview-banner {
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  justify-content: start;
+  gap: var(--vt-foundation-space-1);
+  border: 0;
+  color: var(--vt-semantic-color-text-test);
+  background: transparent;
+  text-align: start;
+}
+
+.catalog-ui-login__footer .shell-preview-banner span {
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.catalog-ui-auth-state {
+  width: min(
+    calc(100% - (var(--vt-semantic-space-page-inline) * 2)),
+    var(--vt-foundation-size-narrow-content)
+  );
+  min-height: 100vh;
+  margin-inline: auto;
+  display: grid;
+  align-content: center;
+  gap: var(--vt-foundation-space-6);
+}
+
+.catalog-ui-auth-state h1 {
+  margin: 0;
+  font-size: var(--vt-foundation-font-size-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+}
+
+.catalog-ui-admin-shell {
+  min-height: 100vh;
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-canvas);
+  font-family: var(--vt-semantic-font-body);
+}
+
+.catalog-ui-admin-main {
+  width: min(
+    calc(100% - (var(--vt-semantic-space-page-inline) * 2)),
+    var(--vt-foundation-size-content)
+  );
+  margin-inline: auto;
+  padding-block: var(--vt-foundation-space-12)
+    var(--vt-foundation-space-18);
+  display: grid;
+  gap: var(--vt-foundation-space-8);
+}
+
+.catalog-ui-admin-count {
+  min-width: calc(var(--vt-foundation-size-icon) * 4);
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+  text-align: end;
+}
+
+.catalog-ui-admin-count span {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.catalog-ui-admin-count strong {
+  color: var(--vt-semantic-color-text-accent);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-heading-small);
+  font-weight: var(--vt-foundation-font-weight-medium);
+}
+
+.catalog-ui-not-found {
+  align-content: center;
+  min-height: calc(
+    100vh - var(--vt-component-app-header-height) -
+      var(--vt-foundation-size-control)
+  );
+}
+
+@media (max-width: 40rem) {
+  .catalog-ui-login {
+    border-inline: 0;
+  }
+
+  .catalog-ui-login__panel {
+    padding: var(--vt-foundation-space-6) var(--vt-foundation-space-4)
+      var(--vt-foundation-space-4);
+    gap: var(--vt-foundation-space-6);
+  }
+
+  .catalog-ui-login__content {
+    padding: var(--vt-foundation-space-6);
+  }
+
+  .catalog-ui-login__profile-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-ui-admin-main,
+  .catalog-ui-auth-state {
+    width: calc(100% - (var(--vt-foundation-space-4) * 2));
+  }
+
+  .catalog-ui-admin-main {
+    padding-block: var(--vt-foundation-space-8)
+      var(--vt-foundation-space-12);
+  }
+
+}

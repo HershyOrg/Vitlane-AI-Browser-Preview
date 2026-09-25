@@ -1,0 +1,101 @@
+/* A product group's own surface (ADR-0086). The conversation shows one product per group; criteria,
+   sort and every candidate live here. Right side on a desktop, bottom sheet on a phone. It appears
+   without a scrim: the page behind is neither dimmed nor blurred; its line and a shade on the side it
+   came from set it apart (ADR-0089). */
+.curation-target-sheet__backdrop {
+  position: fixed;
+  z-index: 95;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.curation-target-sheet {
+  position: relative;
+  width: min(50rem, calc(100vw - var(--vt-foundation-space-12)));
+  height: 100dvh;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border-inline-start: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-surface-base);
+  box-shadow: var(--vt-semantic-shadow-edge-start);
+  animation: curation-target-sheet-side var(--vt-semantic-motion-interactive) var(--vt-foundation-motion-easing-enter);
+}
+@keyframes curation-target-sheet-side { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes curation-target-sheet-rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.curation-target-sheet__header {
+  min-width: 0;
+  padding: var(--vt-foundation-space-5) var(--vt-foundation-space-6) 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--vt-foundation-space-2) var(--vt-foundation-space-4);
+  border-block-end: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+}
+.curation-target-sheet__title { min-width: 0; margin: 0; padding-block: var(--vt-foundation-space-2) var(--vt-foundation-space-3); overflow-wrap: anywhere; font-size: var(--vt-foundation-font-size-heading-small); font-weight: var(--vt-foundation-font-weight-heading); letter-spacing: var(--vt-foundation-font-letter-spacing-tight); line-height: var(--vt-foundation-font-line-height-compact); }
+.curation-target-sheet__close.vt-button { grid-column: 2; grid-row: 1; }
+.curation-target-sheet__count { font-family: var(--vt-semantic-font-data); }
+
+/* Product groups as tabs: a text row with one underline, no pills (N9). */
+.curation-target-sheet__tabs { grid-column: 1; grid-row: 1; min-width: 0; display: flex; gap: var(--vt-foundation-space-5); overflow-x: auto; scrollbar-width: none; }
+.curation-target-sheet__tab.vt-button { flex: 0 0 auto; height: auto; min-height: var(--vt-foundation-size-touch); max-width: 16rem; padding: var(--vt-foundation-space-2) 0; gap: var(--vt-foundation-space-2); border-radius: var(--vt-foundation-radius-none); color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-body-strong); font-weight: var(--vt-foundation-font-weight-regular); }
+.curation-target-sheet__tab.vt-button:hover:not(:disabled) { background: transparent; color: var(--vt-semantic-color-text-primary); }
+.curation-target-sheet__tab.vt-button[aria-selected="true"] { color: var(--vt-semantic-color-text-primary); font-weight: var(--vt-foundation-font-weight-medium); box-shadow: inset 0 calc(var(--vt-foundation-border-focus) * -1) 0 var(--vt-semantic-color-action-primary); }
+.curation-target-sheet__tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.curation-target-sheet__tab-count { color: var(--vt-semantic-color-text-muted); font-family: var(--vt-semantic-font-data); font-size: var(--vt-foundation-font-size-body); font-weight: var(--vt-foundation-font-weight-regular); }
+
+.curation-target-sheet__body {
+  min-width: 0;
+  padding: var(--vt-foundation-space-4) var(--vt-foundation-space-6) var(--vt-foundation-space-8);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--vt-foundation-space-4);
+  /* Down only: cards travelling during a sort animation must not give the sheet a sideways range. */
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+}
+/* The product group's content keeps its class for the rules that still apply to it; in a sheet it has no frame of its own. */
+.curation-target-sheet .catalog-ui-target { padding-block-end: 0; border-bottom: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-4); }
+.curation-target-sheet__context { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--vt-foundation-space-1) var(--vt-foundation-space-3); color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-body); }
+/* The "All" tab: one heading per product group over its candidates; the heading goes to that group's own tab. */
+.curation-target-sheet .catalog-ui-target + .catalog-ui-target { margin-block-start: var(--vt-foundation-space-6); padding-block-start: var(--vt-foundation-space-6); border-block-start: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); }
+.curation-target-sheet__group { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--vt-foundation-space-1) var(--vt-foundation-space-3); color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-body); font-weight: var(--vt-foundation-font-weight-regular); }
+.curation-target-sheet__group-title.vt-button { max-width: 100%; height: auto; min-height: 0; padding: 0; gap: var(--vt-foundation-space-1); border-radius: var(--vt-foundation-radius-none); color: var(--vt-semantic-color-text-primary); font-size: var(--vt-foundation-font-size-body-strong); font-weight: var(--vt-foundation-font-weight-heading); white-space: normal; text-align: start; }
+.curation-target-sheet__group-title.vt-button:hover:not(:disabled) { background: transparent; color: var(--vt-semantic-color-text-accent); }
+.curation-target-sheet__notices { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--vt-foundation-space-2); }
+.curation-target-sheet__notices:empty { display: none; }
+.curation-target-sheet__hidden.vt-button { max-width: 100%; height: auto; margin-inline-start: auto; color: var(--vt-semantic-color-text-muted); white-space: normal; }
+/* The end of the list: what this product group's research looked at, and the one destructive action. */
+.curation-target-sheet__foot { padding-block-start: var(--vt-foundation-space-4); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--vt-foundation-space-2) var(--vt-foundation-space-4); border-block-start: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); }
+/* Words, not a fixed width: at a narrow sheet with enlarged text the label wraps instead of widening the sheet. */
+.curation-target-sheet__remove.vt-button { max-width: 100%; height: auto; min-height: var(--vt-foundation-size-touch); margin-inline-start: auto; color: var(--vt-semantic-color-text-muted); white-space: normal; text-align: end; }
+.curation-target-sheet__remove.vt-button:hover:not(:disabled) { color: var(--vt-semantic-color-text-danger); }
+
+/* Two sheets deep, the one behind recedes under a thin darkening of its own — not a scrim over the page —
+   and the sheet in front casts its shade on it. */
+.curation-target-sheet::after { content: ""; position: absolute; z-index: 3; inset: 0; border-radius: inherit; background: var(--vt-semantic-color-surface-recede); opacity: 0; pointer-events: none; transition: opacity var(--vt-semantic-motion-interactive); }
+body:has(> .candidate-detail-backdrop) .curation-target-sheet::after { opacity: 1; }
+
+/* Menus, popovers and confirmations opened from the sheet or from a product's details render in the
+   body; they sit above every curation layer (sheet 95, details 100, confirmations 110). */
+.research-sort__menu, .research-criteria__popover, .curation-result__facts-popover { z-index: 120; }
+.purchase-check-confirmation__overlay[data-slot="dialog-overlay"] { z-index: 115; }
+.purchase-check-confirmation[data-slot="dialog-content"] { z-index: 116; }
+
+@media (max-width: 52rem), (max-height: 35rem) {
+  .curation-target-sheet__backdrop { justify-content: center; align-items: flex-end; }
+  /* Taller than a product's details sheet (90dvh): when that opens on top, this sheet's upper edge stays in view. */
+  .curation-target-sheet { width: 100%; height: 94dvh; border-inline-start: 0; border-radius: var(--vt-foundation-space-6) var(--vt-foundation-space-6) 0 0; animation-name: curation-target-sheet-rise; transform-origin: top center; transition: transform var(--vt-semantic-motion-interactive) var(--vt-foundation-motion-easing-enter); }
+  .curation-target-sheet__header { padding: var(--vt-foundation-space-6) var(--vt-foundation-space-4) 0; }
+  .curation-target-sheet__body { padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4) var(--vt-foundation-space-8); }
+  /* Two sheets deep: the product group steps back behind the product it opened. */
+  body:has(> .candidate-detail-backdrop) .curation-target-sheet { transform: scale(0.97) translateY(calc(var(--vt-foundation-space-2) * -1)); }
+  .curation-target-sheet { border-block-start: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); box-shadow: var(--vt-semantic-shadow-edge-top); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .curation-target-sheet, .curation-target-sheet::after { animation: none; transition: none; }
+  body:has(> .candidate-detail-backdrop) .curation-target-sheet { transform: none; }
+}

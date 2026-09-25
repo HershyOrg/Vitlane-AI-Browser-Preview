@@ -1,0 +1,47 @@
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_VITLANE_DATA_MODE": "fixture"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "development-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "development-server": {
+      "extends": "development",
+      "env": {
+        "EXPO_PUBLIC_VITLANE_DATA_MODE": "server",
+        "EXPO_PUBLIC_VITLANE_EXECUTION_MODE": "LIVE"
+      }
+    },
+    "server-apk": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_VITLANE_DATA_MODE": "server",
+        "EXPO_PUBLIC_VITLANE_EXECUTION_MODE": "LIVE"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_VITLANE_DATA_MODE": "server",
+        "EXPO_PUBLIC_VITLANE_EXECUTION_MODE": "LIVE"
+      }
+    }
+  }
+}

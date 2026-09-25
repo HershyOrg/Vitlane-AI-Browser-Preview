@@ -1,0 +1,25 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "structuredContent": {
+      "ucp": {
+        "version": "2026-04-08",
+        "status": "success",
+        "capabilities": {
+          "dev.ucp.shopping.catalog.search": [{"version": "2026-04-08"}],
+          "dev.shopify.catalog.global": [{"version": "2026-04-08"}]
+        }
+      },
+      "products": [],
+      "messages": [
+        {
+          "type": "warning",
+          "code": "filter_ignored",
+          "path": "$.filters.attributes",
+          "content": "A requested filter was ignored."
+        }
+      ]
+    }
+  }
+}

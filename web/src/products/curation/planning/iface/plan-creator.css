@@ -1,0 +1,21 @@
+.init-composer.shell-intent-composer { padding: 0; gap: var(--vt-foundation-space-2); }
+.init-request-form__title { flex: 0 0 auto; margin: 0 0 var(--vt-foundation-space-8); text-align: center; font-size: var(--vt-foundation-font-size-heading); font-weight: var(--vt-foundation-font-weight-regular); line-height: var(--vt-foundation-font-line-height-compact); }
+.init-composer__settings { display: flex; flex-wrap: wrap; gap: var(--vt-foundation-space-1); align-items: center; }
+.init-composer__settings button { font-size: var(--vt-foundation-font-size-caption); padding-inline: var(--vt-foundation-space-2); max-width: 100%; white-space: normal; height: auto; min-height: var(--vt-foundation-space-8); }
+.init-composer__input-frame { min-width: 0; border: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); border-radius: var(--vt-foundation-radius-control); background: transparent; }
+.init-composer__input-frame:focus-within { border-color: var(--vt-semantic-color-action-primary); }
+.init-composer #curation-intent { width: 100%; min-height: calc(var(--vt-foundation-space-12) * 2.5); background: transparent; border: 0; border-radius: 0; box-shadow: none; outline: none; padding: var(--vt-foundation-space-4); }
+.init-composer #curation-intent:focus-visible { box-shadow: none; outline: none; }
+.init-composer .init-composer__footer { display: flex; align-items: center; justify-content: flex-end; gap: var(--vt-foundation-space-2); padding: 0 var(--vt-foundation-space-3) var(--vt-foundation-space-3); border: 0; }
+.init-composer__model { width: auto; min-width: 0; max-width: calc(100% - var(--vt-foundation-space-12)); }
+.init-composer__model select, .init-composer__model select:hover, .init-composer__model select:focus-visible { background: transparent; border-color: transparent; box-shadow: none; outline: none; font-size: var(--vt-foundation-font-size-caption); color: var(--vt-semantic-color-text-muted); cursor: pointer; }
+.shell-home .shell-request-form.init-request-form { display: flex; flex-direction: column; justify-content: safe center; gap: var(--vt-foundation-space-2); box-sizing: border-box; overflow-y: auto; padding-block: var(--vt-foundation-space-4); width: min(100%, 56rem); margin-inline: auto; }
+.shell-home .shell-intent-composer.init-composer { display: flex; flex-direction: column; flex: 0 0 auto; min-height: 0; border: 0; background: transparent; box-shadow: none; }
+@media (max-height: 520px) { .shell-home .shell-request-form.init-request-form { justify-content: safe center; } }
+
+.init-settings[data-slot="popover-content"] { width: min(360px, calc(100vw - 24px)); }
+.init-settings__row { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--vt-foundation-space-2); min-width: 0; }
+.init-settings__row label { display: grid; align-content: start; gap: var(--vt-foundation-space-1); min-width: 0; font-size: var(--vt-foundation-font-size-caption); }
+.init-settings__row input, .init-settings__row select { min-width: 0; width: 100%; }
+.init-settings__unlimited { display: grid; justify-items: start; gap: var(--vt-foundation-space-2); }
+.init-settings__unlimited small { font-size: var(--vt-foundation-font-size-caption); }

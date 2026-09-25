@@ -1,0 +1,17 @@
+Copyright (c) 2026 HershyOrg. All rights reserved.
+
+This repository is made publicly visible for evaluation and review. No
+permission is granted to copy, modify, distribute, sublicense, or use the
+original Vitlane source code except with prior written permission from the
+copyright holder.
+
+Third-party dependencies and upstream components remain subject to their own
+licenses and notices. This notice does not replace or restrict those terms.
+
+The Solidity files under `contracts/` that declare `SPDX-License-Identifier:
+MIT` are licensed under the MIT License in `contracts/LICENSE`.
+
+`browser-fork/chromium/java/org/chromium/chrome/browser/lane/LaneAgentCoordinator.java`
+and the identical added source carried by
+`browser-fork/chromium/patches/0001-lane-agent.patch` are licensed under the
+BSD 3-Clause License in `THIRD_PARTY_NOTICES/Vitlane-Browser-BSD-LICENSE.txt`.

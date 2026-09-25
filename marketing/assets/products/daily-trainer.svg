@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" role="img" aria-labelledby="t d">
+  <title id="t">Daily Trainer sample product</title><desc id="d">Abstract navy training shoe illustration.</desc>
+  <rect width="960" height="720" fill="#eef3fa"/><ellipse cx="480" cy="575" rx="330" ry="38" fill="#cfd9e7"/>
+  <path d="M155 456c105-18 182-77 229-178 12-26 42-38 68-25l154 79c49 25 91 58 127 99l72 82c18 21 4 54-24 55H239c-66 0-105-35-84-112Z" fill="#203c67"/>
+  <path d="M207 507h578c20 0 29 25 14 38l-22 19H226c-42 0-57-36-19-57Z" fill="#ffffff"/>
+  <path d="m410 326 126 65m-156-14 126 65m-158-12 126 65" stroke="#d9e9ff" stroke-width="18" stroke-linecap="round"/>
+  <text x="64" y="90" fill="#203c67" font-family="system-ui,sans-serif" font-size="38" font-weight="700">DAILY TRAINER</text>
+</svg>

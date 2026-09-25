@@ -1,0 +1,1 @@
+DROP TABLE research_product_reactions;

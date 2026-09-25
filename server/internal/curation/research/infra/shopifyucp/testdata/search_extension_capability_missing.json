@@ -1,0 +1,16 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "structuredContent": {
+      "ucp": {
+        "version": "2026-04-08",
+        "status": "success",
+        "capabilities": {
+          "dev.ucp.shopping.catalog.search": [{"version": "2026-04-08"}]
+        }
+      },
+      "products": []
+    }
+  }
+}

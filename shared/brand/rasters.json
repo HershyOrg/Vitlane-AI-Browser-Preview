@@ -1,0 +1,14 @@
+{
+  "sourceHash": "sha256:738d58eb2e7053e8da86ea701eac7f0e6f428589fae30198460c9987a16584a5",
+  "generatedBy": "web/scripts/design-system/generate-brand-rasters.mjs",
+  "files": {
+    "web/public/favicon.ico": "sha256:60150ee3e823b737dda89a9e80226598393c3f1e331d385e9d2aea080ebf0291",
+    "marketing/assets/favicon.ico": "sha256:60150ee3e823b737dda89a9e80226598393c3f1e331d385e9d2aea080ebf0291",
+    "web/public/apple-touch-icon.png": "sha256:38ed804be864fc3f47ec0c4bf6ac4d16281b73df358d90978ef87c25ae76cfdd",
+    "marketing/assets/apple-touch-icon.png": "sha256:38ed804be864fc3f47ec0c4bf6ac4d16281b73df358d90978ef87c25ae76cfdd",
+    "web/public/icon-192.png": "sha256:6b50c9352c1f1a49b17d610791b4380a20d30f1e4750ebc4a07b1be224c11ce5",
+    "web/public/icon-512.png": "sha256:acc936cf188c98e957719ec2a97b688588904c566b02891f32ddf9386a2ebec9",
+    "web/public/icon-maskable-192.png": "sha256:dba029903d22f2e218c1b9fc00272f7aac6153a35d40e4833425ffb86863f410",
+    "web/public/icon-maskable-512.png": "sha256:eca936dd9df4d29e458a6932db8a8032718a9451fb1ccd33a9b1d391b1fb47d7"
+  }
+}

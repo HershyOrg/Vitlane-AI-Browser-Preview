@@ -1,0 +1,17 @@
+{
+  "protocolVersion": 1,
+  "results": [
+    {
+      "source": "ELEVENST",
+      "url": "https://www.11st.co.kr/products/12345",
+      "title": "무선 헤드폰",
+      "context": "무료 배송 32,900원",
+      "priceText": "32,900원"
+    }
+  ],
+  "coverage": {
+    "source": "ELEVENST",
+    "status": "SUCCEEDED",
+    "count": 1
+  }
+}

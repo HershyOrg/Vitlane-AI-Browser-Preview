@@ -1,0 +1,120 @@
+{
+  "schema": "CurationActionCommandParserFixture.v1",
+  "catalog": [
+    {
+      "type": "INTENT_NEXT_STEP",
+      "alias": "@Intent-NextStep",
+      "subjectType": "INTENT",
+      "bodySchema": "TEXT_REQUIRED"
+    },
+    {
+      "type": "PLANNING_ADD_TARGETS",
+      "alias": "@TargetList-AddTarget",
+      "subjectType": "TARGET_LIST",
+      "bodySchema": "TEXT_REQUIRED"
+    },
+    {
+      "type": "PLANNING_START_CURATING",
+      "alias": "@Planning-NextStep",
+      "subjectType": "CURATION",
+      "bodySchema": "NONE"
+    },
+    {
+      "type": "CURATION_ADD_TARGETS",
+      "alias": "@Curation-AddTarget",
+      "subjectType": "CURATION",
+      "bodySchema": "TEXT_REQUIRED"
+    },
+    {
+      "type": "TARGET_RESEARCH_AGAIN",
+      "alias": "@Target-ResearchAgain",
+      "subjectType": "TARGET",
+      "bodySchema": "TEXT_OPTIONAL"
+    },
+    {
+      "type": "TARGET_REMOVE",
+      "alias": "@Target-Remove",
+      "subjectType": "TARGET",
+      "bodySchema": "NONE"
+    },
+    {
+      "type": "SELECTION_MUTATION",
+      "alias": "@Selection-Mutation",
+      "subjectType": "SELECTION",
+      "bodySchema": "TYPED_COMMAND"
+    }
+  ],
+  "cases": [
+    {
+      "name": "text-body-preserves-inner-colon",
+      "command": "@Intent-NextStep: 휴대용 조명: 10만원 이하",
+      "valid": true,
+      "parsed": {
+        "type": "INTENT_NEXT_STEP",
+        "alias": "@Intent-NextStep",
+        "subjectType": "INTENT",
+        "body": "휴대용 조명: 10만원 이하"
+      }
+    },
+    {
+      "name": "no-body-action",
+      "command": "@Planning:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa-NextStep",
+      "valid": true,
+      "parsed": {
+        "type": "PLANNING_START_CURATING",
+        "alias": "@Planning:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa-NextStep",
+        "subjectType": "CURATION",
+        "subjectId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "body": ""
+      }
+    },
+    {
+      "name": "unknown-case-sensitive-alias",
+      "command": "@intent-NextStep: 조명",
+      "valid": false,
+      "errorCode": "CURATION_ACTION_ALIAS_UNKNOWN"
+    },
+    {
+      "name": "required-body-missing",
+      "command": "@TargetList:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa-AddTarget",
+      "valid": false,
+      "errorCode": "CURATION_ACTION_BODY_INVALID"
+    },
+    {
+      "name": "body-for-none-action",
+      "command": "@Target:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb-Remove: now",
+      "valid": false,
+      "errorCode": "CURATION_ACTION_BODY_INVALID"
+    },
+    {
+      "name": "missing-space-after-colon",
+      "command": "@Curation:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa-AddTarget:조명",
+      "valid": false,
+      "errorCode": "CURATION_ACTION_COMMAND_INVALID"
+    },
+    {
+      "name": "two-spaces-after-colon",
+      "command": "@Target:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb-ResearchAgain:  더 가벼운 것",
+      "valid": false,
+      "errorCode": "CURATION_ACTION_COMMAND_INVALID"
+    },
+    {
+      "name": "surrounding-whitespace",
+      "command": " @Planning:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa-NextStep",
+      "valid": false,
+      "errorCode": "CURATION_ACTION_COMMAND_INVALID"
+    },
+    {
+      "name": "invalid-alias-shape",
+      "command": "@Target--Remove",
+      "valid": false,
+      "errorCode": "CURATION_ACTION_COMMAND_INVALID"
+    },
+    {
+      "name": "nul-is-rejected",
+      "command": "@Intent-NextStep: 조명\u0000",
+      "valid": false,
+      "errorCode": "CURATION_ACTION_COMMAND_INVALID"
+    }
+  ]
+}

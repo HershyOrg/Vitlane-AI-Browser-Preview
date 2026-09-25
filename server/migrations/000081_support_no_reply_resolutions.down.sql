@@ -1,0 +1,1 @@
+DROP TABLE support_no_reply_resolutions;

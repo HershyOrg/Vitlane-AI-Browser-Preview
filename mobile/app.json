@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Vitlane",
+    "slug": "vitlane-mobile",
+    "scheme": "vitlane",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-dev-client",
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.vitlane.mobile"
+    },
+    "android": {
+      "package": "com.vitlane.mobile",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

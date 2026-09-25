@@ -1,0 +1,32 @@
+@import "tailwindcss";
+@import "../shared/ui/design-system/tokens.css";
+@import "../shared/ui/design-system/theme.css";
+@import "../shared/ui/design-system/components.css";
+@import "tw-animate-css";
+
+@source "../shared/ui";
+@source "./";
+
+#marketing-mobile-menu-root {
+  display: flex;
+  align-items: center;
+}
+
+.marketing-mobile-menu-trigger.vt-button {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .marketing-mobile-menu-trigger.vt-button {
+    display: inline-flex;
+    padding-inline: var(--vt-foundation-space-3);
+  }
+
+  .marketing-mobile-menu {
+    width: min(18rem, calc(100vw - var(--vt-foundation-space-8)));
+  }
+
+  .marketing-mobile-menu > [role="menuitem"] {
+    font-weight: var(--vt-foundation-font-weight-medium);
+  }
+}

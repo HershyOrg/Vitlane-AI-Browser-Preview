@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "adr": "public-preview:still-water-zen-design-system",
+  "description": "Still Water Zen 규칙의 적용 모드. report는 수치를 출력만 하고, error는 위반 파일마다 실패한다. 수치 baseline은 두지 않으며(ADR-0020) 각 PR이 migration과 함께 mode를 error로 올린다.",
+  "exemptPaths": [
+    "src/shared/ui/design-system/tokens.ts",
+    "src/shared/ui/design-system/tokens.css"
+  ],
+  "rules": {
+    "N1": {
+      "title": "foundation 색은 theme 계층에서만 참조한다",
+      "mode": "error",
+      "allowPaths": [
+        "src/shared/ui/design-system/theme.css",
+        "src/shared/ui/design-system/components.css",
+        "src/design-lab/"
+      ],
+      "errorFrom": "PR B (색 토큰) — 전환 완료 2026-09-13"
+    },
+    "N2": {
+      "title": "상대색 함수(oklch(from …) 등)는 theme.css에서만 쓴다",
+      "mode": "error",
+      "allowPaths": [
+        "src/shared/ui/design-system/theme.css",
+        "src/design-lab/"
+      ],
+      "errorFrom": "PR B (색 토큰) — 전환 완료 2026-09-13"
+    },
+    "N3": {
+      "title": "text-transform: uppercase는 .vt-eyebrow 계약에서만 쓴다",
+      "mode": "error",
+      "allowSelectors": [
+        ".vt-eyebrow"
+      ],
+      "errorFrom": "PR C (글자·모양·컴포넌트) — 전환 완료 2026-09-13"
+    },
+    "N4": {
+      "title": "font-weight는 토큰만 쓰고 토큰 값은 600을 넘지 않는다",
+      "mode": "error",
+      "maxFontWeightToken": 600,
+      "errorFrom": "PR C (글자·모양·컴포넌트) — 전환 완료 2026-09-13"
+    },
+    "N5": {
+      "title": "1px보다 두꺼운 측면 border(stripe)를 두지 않는다",
+      "mode": "error",
+      "allowSelectors": [
+        "shell-product-sidebar__list",
+        "vt-app-header__menu-content nav"
+      ],
+      "errorFrom": "PR C (글자·모양·컴포넌트) — 전환 완료 2026-09-13"
+    },
+    "N6": {
+      "title": "vt-button에 currentColor outline을 두지 않는다",
+      "mode": "error",
+      "errorFrom": "PR C (글자·모양·컴포넌트) — 전환 완료 2026-09-13"
+    },
+    "N10": {
+      "title": "화면을 덮는 막은 .vt-scrim 하나가 칠한다 — 제품 CSS의 전체 화면 fixed 층은 반투명 배경·blur를 직접 두지 않는다",
+      "mode": "error",
+      "allowSelectors": [],
+      "errorFrom": "2026-09-15 scrim 토큰 도입 — 7곳 migration 완료 · 같은 날 .vt-scrim 계약으로 9곳(공용 Dialog·Sheet·Drawer 포함) 통일"
+    },
+    "N11": {
+      "title": "배경은 흐리지 않는다 — 막(.vt-scrim)은 어둡게만 칠하고, blur는 국소 표면(배지·팝오버·버튼)의 glassBlur와 랜딩 띠 .source-band의 bandBlur만 쓴다. 흐리는 층을 글자색·흑백 고정색으로 칠하지 않는다",
+      "mode": "error",
+      "scrimSelectors": [
+        ".vt-scrim"
+      ],
+      "bandSelectors": [
+        ".source-band"
+      ],
+      "errorFrom": "2026-09-15 effect 토큰 도입 — 반투명 표면 5곳·랜딩 CTA 2곳 토큰화, 공용 primitive의 bg-black/10·backdrop-blur-xs 3곳 제거 · 2026-09-23 막의 blur 폐지(소유자: 배경은 어둡게, 경계는 그림자)"
+    },
+    "N9": {
+      "title": "radius와 2px 이상 border 강조(측면 border·inset shadow 포함)를 한 요소에 같이 두지 않는다",
+      "mode": "error",
+      "allowSelectors": [],
+      "errorFrom": "PR G (아이콘·마스코트·정렬) — 전환 완료 2026-09-14"
+    }
+  }
+}

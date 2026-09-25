@@ -1,0 +1,331 @@
+{
+  "schemaVersion": "1.4.0",
+  "name": "Vitlane Still Water",
+  "foundation": {
+    "color": {
+      "carbon": { "value": "#18191C", "description": "편안한 black app chrome" },
+      "night": { "value": "#202124", "description": "기본 text" },
+      "ink": { "value": "#30323A", "description": "기본 neutral action" },
+      "slate": { "value": "#676B73", "description": "보조 text" },
+      "cloud": { "value": "#F5F8FA", "description": "page canvas, still hue 틴트" },
+      "clear": { "value": "#FFFFFF", "description": "독립 surface" },
+      "alloy": { "value": "#DFE1E6", "description": "기본 border" },
+      "alloyStrong": { "value": "#B7BBC4", "description": "강한 border" },
+      "neutralSoft": { "value": "#F1F2F5", "description": "neutral 선택 surface" },
+      "still": { "value": "#21629C", "description": "Still Water 시드 E(208°). 현재 action, focus와 선택 signal" },
+      "stillStrong": { "value": "#1B507E", "description": "primary hover와 accent·비교 글자" },
+      "stillSoft": { "value": "#E5EEF5", "description": "선택·비교 surface" },
+      "stillBright": { "value": "#8FB2D1", "description": "dark accent. 채운 action 위 글자는 darkCanvas" },
+      "stillBrightHover": { "value": "#A6C4DD", "description": "dark primary hover" },
+      "darkCanvas": { "value": "#16171A", "description": "편안한 무채색 dark page canvas" },
+      "scrim": { "value": "rgba(32, 33, 36, 0.52)", "description": "모달·드로어 뒤를 덮는 막. 표면이 아니라 빛을 빼는 층이므로 글자색에서 파생하지 않는다" },
+      "darkScrim": { "value": "rgba(8, 9, 11, 0.68)", "description": "다크에서도 배경을 어둡게 덮는 막. 밝은 베일이 되지 않도록 canvas보다 어둡다" },
+      "recede": { "value": "rgba(24, 43, 72, 0.06)", "description": "다른 시트 뒤로 물러난 시트를 살짝 어둡게 하는 층(2026-09-23). 막이 아니라 그 시트에만 덮인다" },
+      "darkRecede": { "value": "rgba(0, 0, 0, 0.22)", "description": "다크에서 뒤로 물러난 시트를 어둡게 하는 층" },
+      "darkSurface": { "value": "#1D1F22", "description": "무채색 dark base surface" },
+      "darkSurfaceRaised": { "value": "#25272A", "description": "무채색 dark overlay surface" },
+      "darkText": { "value": "#F3F4F6", "description": "dark primary text" },
+      "darkMuted": { "value": "#A7AAB1", "description": "dark secondary text" },
+      "darkBorder": { "value": "#303235", "description": "무채색 dark border" },
+      "darkBorderStrong": { "value": "#4A4C4F", "description": "무채색 dark strong border" },
+      "darkNeutralSoft": { "value": "#25272A", "description": "무채색 dark selected surface" },
+      "darkStillSoft": { "value": "#1A2D3D", "description": "dark still 선택·비교 surface" },
+      "moss": { "value": "#3C6D29", "description": "Moss 팔레트 시드(테마 팔레트 ADR, OKLCH 138°). still과 같은 밝기·채도" },
+      "mossStrong": { "value": "#325921", "description": "Moss hover와 accent·비교 글자" },
+      "mossSoft": { "value": "#EAEFE5", "description": "Moss 선택·비교 surface" },
+      "mossBright": { "value": "#9EB690", "description": "Moss dark accent. 채운 action 위 글자는 darkCanvas" },
+      "mossBrightHover": { "value": "#B4C7A7", "description": "Moss dark primary hover" },
+      "darkMossSoft": { "value": "#232F1B", "description": "dark Moss 선택·비교 surface" },
+      "maple": { "value": "#934529", "description": "Maple 팔레트 시드(테마 팔레트 ADR, OKLCH 40°). danger와 TEST amber 사이" },
+      "mapleStrong": { "value": "#773823", "description": "Maple hover와 accent·비교 글자" },
+      "mapleSoft": { "value": "#F6EAE7", "description": "Maple 선택·비교 surface" },
+      "mapleBright": { "value": "#D0A194", "description": "Maple dark accent. 채운 action 위 글자는 darkCanvas" },
+      "mapleBrightHover": { "value": "#DDB5AC", "description": "Maple dark primary hover" },
+      "darkMapleSoft": { "value": "#3C241E", "description": "dark Maple 선택·비교 surface" },
+      "iris": { "value": "#714B90", "description": "Iris 팔레트 시드(테마 팔레트 ADR, OKLCH 308°)" },
+      "irisStrong": { "value": "#5B3E75", "description": "Iris hover와 accent·비교 글자" },
+      "irisSoft": { "value": "#EEEBF5", "description": "Iris 선택·비교 surface" },
+      "irisBright": { "value": "#B5A5CC", "description": "Iris dark accent. 채운 action 위 글자는 darkCanvas" },
+      "irisBrightHover": { "value": "#C5B9DA", "description": "Iris dark primary hover" },
+      "darkIrisSoft": { "value": "#2F263B", "description": "dark Iris 선택·비교 surface" },
+      "darkTestSoft": { "value": "#352715", "description": "dark TEST surface" },
+      "darkWarningSoft": { "value": "#312B13", "description": "dark warning surface" },
+      "darkDangerSoft": { "value": "#3A1D25", "description": "dark danger surface" },
+      "testAmber": { "value": "#A15400", "description": "TEST 의미와 AA 대비" },
+      "testAmberSoft": { "value": "#FFF0D7", "description": "TEST surface" },
+      "warning": { "value": "#745400", "description": "복구 가능한 주의 text" },
+      "warningSoft": { "value": "#FFF9D9", "description": "주의 surface" },
+      "danger": { "value": "#A52E3A", "description": "danger text와 action" },
+      "dangerStrong": { "value": "#7F1D2A", "description": "danger hover" },
+      "dangerSoft": { "value": "#FFF0F1", "description": "danger surface" },
+      "affirmGreen": { "value": "#1E7A46", "description": "긍정 반응 text와 badge" },
+      "affirmGreenSoft": { "value": "#E5F3EA", "description": "긍정 반응 surface" },
+      "darkAffirmSoft": { "value": "#1E3328", "description": "dark 긍정 반응 surface" }
+    },
+    "font": {
+      "family": {
+        "sans": {
+          "value": "\"Pretendard Variable\", Pretendard, \"Noto Sans KR\", \"Apple SD Gothic Neo\", \"Segoe UI\", sans-serif"
+        },
+        "mono": {
+          "value": "\"IBM Plex Mono\", \"Pretendard Variable\", Pretendard, \"SFMono-Regular\", \"Cascadia Mono\", Consolas, monospace"
+        }
+      },
+      "size": {
+        "caption": { "value": "0.75rem" },
+        "body": { "value": "0.875rem" },
+        "bodyStrong": { "value": "1rem" },
+        "headingSmall": { "value": "1.25rem" },
+        "readingSmall": { "value": "0.825rem", "description": "큐레이션 대화 안의 작은 글(전체 후보 보기·조합 담기). caption보다 10% 크다(2026-09-23)" },
+        "readingMeta": { "value": "0.9625rem", "description": "큐레이션 대화 안의 보조 글(캡션·조사 사실 줄·처리 내역·예산 차이)과 상품 상세의 보조 글. body보다 10% 크다(2026-09-23)" },
+        "reading": { "value": "1.1rem", "description": "큐레이션 대화의 본문 글(응답·말풍선·상품 이름·가격)과 상품 상세의 본문. bodyStrong보다 10% 크다(2026-09-23)" },
+        "readingHeading": { "value": "1.375rem", "description": "큐레이션 대화의 대표 카드 제목과 상품 상세의 상품 이름. headingSmall보다 10% 크다(2026-09-23)" },
+        "heading": { "value": "2rem" },
+        "display": { "value": "3.5rem" },
+        "hero": { "value": "4.5rem", "description": "랜딩 첫 화면 H1 한 곳의 최대 크기. 조건절이 돌고 결과절이 고정되는 표어(2026-09-18)" }
+      },
+      "weight": {
+        "regular": { "value": "400" },
+        "medium": { "value": "500" },
+        "control": { "value": "500" },
+        "heading": { "value": "600" }
+      },
+      "lineHeight": {
+        "compact": { "value": "1.2" },
+        "body": { "value": "1.6" },
+        "display": { "value": "1.15" }
+      },
+      "letterSpacing": {
+        "tight": { "value": "-0.015em" },
+        "utility": { "value": "0.06em" },
+        "eyebrow": { "value": "0.08em" }
+      }
+    },
+    "space": {
+      "0": { "value": "0" },
+      "1": { "value": "0.25rem" },
+      "2": { "value": "0.5rem" },
+      "3": { "value": "0.75rem" },
+      "4": { "value": "1rem" },
+      "5": { "value": "1.25rem" },
+      "6": { "value": "1.5rem" },
+      "8": { "value": "2rem" },
+      "12": { "value": "3rem" },
+      "18": { "value": "4.5rem" }
+    },
+    "radius": {
+      "none": { "value": "0" },
+      "control": { "value": "0.375rem" },
+      "product": { "value": "0.5rem" },
+      "overlay": { "value": "0.75rem" },
+      "pill": { "value": "999px" }
+    },
+    "border": {
+      "thin": { "value": "1px" },
+      "focus": { "value": "3px" }
+    },
+    "opacity": {
+      "disabled": { "value": "0.48" }
+    },
+    "shadow": {
+      "overlay": { "value": "0 1rem 2.125rem rgba(24, 43, 72, 0.09)" },
+      "edgeStart": { "value": "-1rem 0 2rem -1rem rgba(24, 43, 72, 0.18)", "description": "오른쪽에서 들어온 시트·서랍의 왼쪽 가장자리 그림자. 배경을 흐리지 않고 경계를 만든다(2026-09-23)" },
+      "edgeEnd": { "value": "1rem 0 2rem -1rem rgba(24, 43, 72, 0.18)", "description": "왼쪽에서 들어온 사이드바의 오른쪽 가장자리 그림자" },
+      "edgeTop": { "value": "0 -1rem 2rem -1rem rgba(24, 43, 72, 0.24)", "description": "바텀 시트의 위쪽 가장자리 그림자. 두 겹이면 위 시트가 아래 시트에 드리운다" },
+      "edgeAbove": { "value": "0 -0.75rem 1.25rem -0.75rem rgba(24, 43, 72, 0.12)", "description": "입력창 구분선 위로 번지는 옅은 그림자" },
+      "darkEdgeStart": { "value": "-1rem 0 2rem -1rem rgba(0, 0, 0, 0.55)", "description": "다크의 edgeStart. 어두운 바탕에서도 보이도록 더 짙다" },
+      "darkEdgeEnd": { "value": "1rem 0 2rem -1rem rgba(0, 0, 0, 0.55)", "description": "다크의 edgeEnd" },
+      "darkEdgeTop": { "value": "0 -1rem 2rem -1rem rgba(0, 0, 0, 0.6)", "description": "다크의 edgeTop" },
+      "darkEdgeAbove": { "value": "0 -0.75rem 1.25rem -0.75rem rgba(0, 0, 0, 0.45)", "description": "다크의 edgeAbove" },
+      "none": { "value": "none" }
+    },
+    "blur": {
+      "glass": { "value": "blur(0.75rem)", "description": "떠 있는 반투명 표면 뒤를 흐리는 세기" },
+      "band": { "value": "blur(0.375rem)", "description": "유리 배경 위에 걸린 띠(랜딩 Searching 밴드) 뒤를 흐리는 약한 세기. 골의 결이 옅게 남는다" }
+    },
+    "motion": {
+      "duration": {
+        "instant": { "value": "0ms" },
+        "interactive": { "value": "160ms" },
+        "heroSlot": { "value": "180ms" }
+      },
+      "easing": {
+        "standard": { "value": "ease" },
+        "enter": { "value": "ease-out" }
+      },
+      "distance": {
+        "hover": { "value": "-2px" },
+        "slot": { "value": "0.32em" }
+      }
+    },
+    "size": {
+      "control": { "value": "2.5rem" },
+      "touch": { "value": "2.75rem" },
+      "icon": { "value": "1.5rem" },
+      "header": { "value": "4rem" },
+      "content": { "value": "75rem" },
+      "narrowContent": { "value": "48rem" },
+      "textMeasure": { "value": "42rem" },
+      "conversation": { "value": "57.6rem", "description": "큐레이션 대화 읽기 열(글·결과 줄·입력창 공통). narrowContent 48rem에서 20% 넓혔다(2026-09-23)" },
+      "conversationMeasure": { "value": "50.4rem", "description": "큐레이션 대화 글의 줄 길이. textMeasure 42rem을 열과 같은 비율로 넓혔다(2026-09-23)" },
+      "candidateMedia": { "value": "10rem" }
+    }
+  },
+  "semantic": {
+    "color": {
+      "text": {
+        "primary": { "value": "{foundation.color.night}" },
+        "muted": { "value": "{foundation.color.slate}" },
+        "accent": { "value": "{foundation.color.stillStrong}" },
+        "comparison": { "value": "{foundation.color.stillStrong}" },
+        "onAction": { "value": "{foundation.color.clear}" },
+        "onTone": { "value": "{foundation.color.clear}" },
+        "danger": { "value": "{foundation.color.danger}" },
+        "warning": { "value": "{foundation.color.warning}" },
+        "test": { "value": "{foundation.color.testAmber}" },
+        "positive": { "value": "{foundation.color.affirmGreen}" }
+      },
+      "surface": {
+        "canvas": { "value": "{foundation.color.cloud}" },
+        "base": { "value": "{foundation.color.clear}" },
+        "selected": { "value": "{foundation.color.stillSoft}" },
+        "comparison": { "value": "{foundation.color.stillSoft}" },
+        "subtle": { "value": "{foundation.color.neutralSoft}" },
+        "scrim": { "value": "{foundation.color.scrim}" },
+        "recede": { "value": "{foundation.color.recede}" },
+        "danger": { "value": "{foundation.color.dangerSoft}" },
+        "warning": { "value": "{foundation.color.warningSoft}" },
+        "test": { "value": "{foundation.color.testAmberSoft}" },
+        "positive": { "value": "{foundation.color.affirmGreenSoft}" }
+      },
+      "border": {
+        "default": { "value": "{foundation.color.alloy}" },
+        "strong": { "value": "{foundation.color.alloyStrong}" },
+        "focus": { "value": "{foundation.color.still}" },
+        "danger": { "value": "{foundation.color.danger}" },
+        "warning": { "value": "{foundation.color.warning}" },
+        "test": { "value": "{foundation.color.testAmber}" },
+        "positive": { "value": "{foundation.color.affirmGreen}" }
+      },
+      "action": {
+        "primary": { "value": "{foundation.color.still}" },
+        "primaryHover": { "value": "{foundation.color.stillStrong}" },
+        "brand": { "value": "{foundation.color.still}" },
+        "quiet": { "value": "{foundation.color.clear}" },
+        "danger": { "value": "{foundation.color.danger}" },
+        "dangerHover": { "value": "{foundation.color.dangerStrong}" }
+      }
+    },
+    "font": {
+      "body": { "value": "{foundation.font.family.sans}" },
+      "data": { "value": "{foundation.font.family.mono}" }
+    },
+    "space": {
+      "controlInline": { "value": "{foundation.space.4}" },
+      "controlBlock": { "value": "{foundation.space.2}" },
+      "panel": { "value": "{foundation.space.6}" },
+      "section": { "value": "{foundation.space.12}" },
+      "pageInline": { "value": "{foundation.space.6}" }
+    },
+    "radius": {
+      "control": { "value": "{foundation.radius.control}" },
+      "product": { "value": "{foundation.radius.product}" },
+      "overlay": { "value": "{foundation.radius.overlay}" }
+    },
+    "shadow": {
+      "overlay": { "value": "{foundation.shadow.overlay}" },
+      "edgeStart": { "value": "{foundation.shadow.edgeStart}" },
+      "edgeEnd": { "value": "{foundation.shadow.edgeEnd}" },
+      "edgeTop": { "value": "{foundation.shadow.edgeTop}" },
+      "edgeAbove": { "value": "{foundation.shadow.edgeAbove}" }
+    },
+    "effect": {
+      "glassBlur": { "value": "{foundation.blur.glass}" },
+      "bandBlur": { "value": "{foundation.blur.band}" }
+    },
+    "motion": {
+      "interactive": { "value": "{foundation.motion.duration.interactive}" },
+      "heroSlot": { "value": "{foundation.motion.duration.heroSlot}" }
+    }
+  },
+  "component": {
+    "button": {
+      "height": { "value": "{foundation.size.control}" },
+      "touchHeight": { "value": "{foundation.size.touch}" },
+      "paddingInline": { "value": "{semantic.space.controlInline}" },
+      "radius": { "value": "{semantic.radius.control}" },
+      "borderWidth": { "value": "{foundation.border.thin}" },
+      "fontSize": { "value": "{foundation.font.size.body}" },
+      "fontWeight": { "value": "{foundation.font.weight.control}" },
+      "primaryBackground": { "value": "{semantic.color.action.primary}" },
+      "primaryHover": { "value": "{semantic.color.action.primaryHover}" },
+      "primaryText": { "value": "{semantic.color.text.onAction}" },
+      "secondaryBackground": { "value": "{semantic.color.surface.subtle}" },
+      "secondaryText": { "value": "{semantic.color.text.primary}" },
+      "dangerBackground": { "value": "{semantic.color.action.danger}" },
+      "dangerHover": { "value": "{semantic.color.action.dangerHover}" },
+      "quietHover": { "value": "{semantic.color.surface.subtle}" }
+    },
+    "field": {
+      "height": { "value": "{foundation.size.touch}" },
+      "paddingInline": { "value": "{semantic.space.controlInline}" },
+      "radius": { "value": "{semantic.radius.control}" },
+      "border": { "value": "{semantic.color.border.default}" },
+      "borderFocus": { "value": "{semantic.color.border.focus}" },
+      "borderError": { "value": "{semantic.color.border.danger}" },
+      "labelGap": { "value": "{foundation.space.2}" }
+    },
+    "candidateCard": {
+      "radius": { "value": "{semantic.radius.product}" },
+      "border": { "value": "{semantic.color.border.default}" },
+      "mediaHeight": { "value": "{foundation.size.candidateMedia}" },
+      "contentGap": { "value": "{foundation.space.2}" },
+      "padding": { "value": "{foundation.space.3}" }
+    },
+    "decisionLane": {
+      "gap": { "value": "{foundation.space.4}" },
+      "active": { "value": "{semantic.color.action.primary}" },
+      "line": { "value": "{semantic.color.border.default}" },
+      "padding": { "value": "{foundation.space.4}" }
+    },
+    "brandMark": {
+      "size": { "value": "{foundation.size.icon}" }
+    },
+    "appHeader": {
+      "height": { "value": "{foundation.size.header}" },
+      "paddingInline": { "value": "{semantic.space.pageInline}" },
+      "border": { "value": "{semantic.color.border.default}" }
+    },
+    "notice": {
+      "padding": { "value": "{foundation.space.3}" },
+      "paddingInline": { "value": "{foundation.space.4}" },
+      "gap": { "value": "{foundation.space.2}" },
+      "radius": { "value": "{semantic.radius.product}" }
+    },
+    "pageHeader": {
+      "gap": { "value": "{foundation.space.3}" },
+      "measure": { "value": "{foundation.size.textMeasure}" }
+    },
+    "purchaseSummary": {
+      "rowGap": { "value": "{foundation.space.3}" },
+      "sectionGap": { "value": "{foundation.space.6}" }
+    }
+  },
+  "state": {
+    "focus": {
+      "color": { "value": "{semantic.color.border.focus}" },
+      "width": { "value": "{foundation.border.focus}" },
+      "offset": { "value": "{foundation.space.1}" }
+    },
+    "disabled": {
+      "opacity": { "value": "{foundation.opacity.disabled}" }
+    },
+    "hover": {
+      "lift": { "value": "{foundation.motion.distance.hover}" }
+    },
+    "selected": {
+      "surface": { "value": "{semantic.color.surface.selected}" },
+      "border": { "value": "{semantic.color.border.focus}" }
+    }
+  }
+}

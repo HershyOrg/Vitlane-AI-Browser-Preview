@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "tokenSourceHash": "sha256:8bc9792d03df333129e281b17c786eb6291520b7c863e7b0d54f2c4f92821ba6",
+  "components": [
+    "AppHeader",
+    "BrandMark",
+    "Button",
+    "ButtonLink",
+    "CandidateCard",
+    "Chip",
+    "DecisionLane",
+    "FeedbackState",
+    "Field",
+    "Notice",
+    "OrderSummary",
+    "PageHeader",
+    "ProductMedia",
+    "ReededGlass",
+    "Selection"
+  ],
+  "evidenceManifests": [
+    "docs/design/evidence/public-preview/manifest.json"
+  ],
+  "reviewRule": "tokens.source.json이 바뀌면 공개 preview evidence의 tokenSourceHash가 실패한다. 공개 자산을 다시 생성하고 contrast를 검토한 뒤 manifest를 갱신한다."
+}

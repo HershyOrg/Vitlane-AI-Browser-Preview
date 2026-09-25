@@ -1,0 +1,14 @@
+.research-round-summary { min-width: 0; margin-top: var(--vt-foundation-space-8); }
+.research-round-summary > h2 { font-size: var(--vt-foundation-font-size-heading-small); margin: 0 0 var(--vt-foundation-space-2); }
+.research-round-summary > p { margin: 0 0 var(--vt-foundation-space-6); color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-body); }
+.research-round-summary__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: var(--vt-foundation-space-6); }
+.research-round-summary__panel { min-width: 0; border-top: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); padding-top: var(--vt-foundation-space-4); }
+.research-round-summary__panel h3 { font-size: var(--vt-foundation-font-size-body); font-weight: var(--vt-foundation-font-weight-control); margin: 0 0 var(--vt-foundation-space-3); }
+.research-round-summary__panel table { width: 100%; border-collapse: collapse; font-size: var(--vt-foundation-font-size-body); font-variant-numeric: tabular-nums; }
+.research-round-summary__panel th { text-align: left; font-weight: var(--vt-foundation-font-weight-control); color: var(--vt-semantic-color-text-muted); padding: var(--vt-foundation-space-1) var(--vt-foundation-space-2) var(--vt-foundation-space-1) 0; border-bottom: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); }
+.research-round-summary__panel td { padding: var(--vt-foundation-space-1) var(--vt-foundation-space-2) var(--vt-foundation-space-1) 0; vertical-align: top; overflow-wrap: anywhere; }
+.research-round-summary__panel td:last-child, .research-round-summary__panel th:last-child { text-align: right; padding-right: 0; white-space: nowrap; }
+.research-round-summary__code { font-family: var(--vt-semantic-font-data); font-size: var(--vt-foundation-font-size-caption); }
+.research-round-summary__empty { margin: 0; color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-body); }
+.research-round-summary [role="alert"] { color: var(--vt-semantic-color-action-danger); }
+.research-round-summary__actions { display: flex; gap: var(--vt-foundation-space-3); align-items: center; margin-top: var(--vt-foundation-space-4); }

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0.0",
+  "provider": "PUBLIC_PREVIEW_FIXTURE",
+  "capturedAt": "2026-09-25",
+  "query": "running shoes for daily training under 150 dollars",
+  "context": {
+    "addressCountry": "US",
+    "currency": "USD",
+    "maximumMinor": 15000
+  },
+  "notice": "Synthetic public preview fixture. Revalidate price, stock, options and shipping before an actual purchase.",
+  "products": [
+    {
+      "name": "Daily Trainer",
+      "seller": "Northline",
+      "priceMinor": 9000,
+      "currency": "USD",
+      "productUrl": "https://example.com/products/daily-trainer",
+      "localAsset": "daily-trainer.svg"
+    },
+    {
+      "name": "Knit Runner",
+      "seller": "Openstep",
+      "priceMinor": 13500,
+      "currency": "USD",
+      "productUrl": "https://example.com/products/knit-runner",
+      "localAsset": "knit-runner.svg"
+    },
+    {
+      "name": "Cross Trainer",
+      "seller": "Fieldwork",
+      "priceMinor": 13900,
+      "currency": "USD",
+      "productUrl": "https://example.com/products/cross-trainer",
+      "localAsset": "cross-trainer.svg"
+    },
+    {
+      "name": "All-day Walker",
+      "seller": "Waypoint",
+      "priceMinor": 12000,
+      "currency": "USD",
+      "productUrl": "https://example.com/products/allday-walker",
+      "localAsset": "allday-walker.svg"
+    },
+    {
+      "name": "Road Runner",
+      "seller": "Paceworks",
+      "priceMinor": 10000,
+      "currency": "USD",
+      "productUrl": "https://example.com/products/road-runner",
+      "localAsset": "road-runner.svg"
+    },
+    {
+      "name": "Cushioned Runner",
+      "seller": "Softstride",
+      "priceMinor": 13100,
+      "currency": "USD",
+      "productUrl": "https://example.com/products/cushioned-runner",
+      "localAsset": "cushioned-runner.svg"
+    }
+  ]
+}

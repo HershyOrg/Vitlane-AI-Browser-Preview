@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "vitlane.amazon-local-stub.v1",
+  "capturedAt": "2026-09-14T00:00:00Z",
+  "recoveryNotes": [
+    "SYNTHETIC_TEST_DATA"
+  ],
+  "products": [
+    {
+      "asin": "B012345678",
+      "title": "Synthetic fountain pen with smooth nib",
+      "priceMinor": 2500,
+      "snapshotAt": "2026-09-14T00:00:00Z",
+      "provenance": "SYNTHETIC_TEST_DATA",
+      "variants": [],
+      "relationStatus": "NO_VARIANTS"
+    },
+    {
+      "asin": "B012345679",
+      "title": "Synthetic quiet keyboard for home office",
+      "priceMinor": 5000,
+      "snapshotAt": "2026-09-14T00:00:00Z",
+      "provenance": "SYNTHETIC_TEST_DATA",
+      "variants": [],
+      "relationStatus": "NO_VARIANTS"
+    },
+    {
+      "asin": "B012345680",
+      "title": "Synthetic headphones for home office",
+      "priceMinor": 7000,
+      "snapshotAt": "2026-09-14T00:00:00Z",
+      "provenance": "SYNTHETIC_TEST_DATA",
+      "variants": [],
+      "relationStatus": "NO_VARIANTS"
+    }
+  ]
+}

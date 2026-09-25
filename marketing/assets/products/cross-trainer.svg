@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" role="img" aria-labelledby="t d">
+  <title id="t">Cross Trainer sample product</title><desc id="d">Abstract charcoal cross-training shoe illustration.</desc>
+  <rect width="960" height="720" fill="#eff0f2"/><ellipse cx="480" cy="575" rx="330" ry="38" fill="#ced1d6"/>
+  <path d="M150 456c106-19 181-71 233-174 14-29 48-40 75-23l151 94c46 29 84 63 116 105l70 90c13 17 1 42-21 42H230c-67 0-104-47-80-134Z" fill="#343941"/>
+  <path d="M198 521h595c19 0 25 25 9 35l-31 20H224c-38 0-52-35-26-55Z" fill="#d9a85c"/>
+  <path d="M371 318 536 438M342 380l165 120" stroke="#f1f3f5" stroke-width="15" stroke-linecap="round"/>
+  <text x="64" y="90" fill="#343941" font-family="system-ui,sans-serif" font-size="38" font-weight="700">CROSS TRAINER</text>
+</svg>

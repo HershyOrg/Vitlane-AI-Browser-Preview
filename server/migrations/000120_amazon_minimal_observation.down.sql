@@ -1,0 +1,2 @@
+ALTER TABLE phase8_research_candidates DROP CONSTRAINT phase8_amazon_observation_check;
+ALTER TABLE phase8_research_candidates DROP COLUMN amazon_observation;

@@ -1,0 +1,37 @@
+.env
+.env.*
+!.env.example
+
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+web/vite.config.js
+web/vite.config.d.ts
+
+server/vitlane
+server/tmp/
+.local/
+/.claude/
+/node_modules/
+
+# Foundry build and local broadcast outputs. Broadcast/cache files are never evidence.
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+*.log
+.DS_Store
+marketing/assets/generated/
+
+# Local signing material and private keys never belong in source control.
+*.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.keystore
+*.mobileprovision
+
+# Task worktrees are local checkouts, never repository content.
+/.worktrees/
+/.codex/worktrees/

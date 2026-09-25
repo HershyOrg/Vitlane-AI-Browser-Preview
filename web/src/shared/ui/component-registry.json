@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "components": [
+    {
+      "name": "AppHeader",
+      "fixture": "app-header",
+      "states": [
+        "desktop",
+        "mobile",
+        "current-navigation",
+        "actions"
+      ]
+    },
+    {
+      "name": "BrandMark",
+      "fixture": "brand-mark",
+      "states": [
+        "default",
+        "compact",
+        "inverted"
+      ]
+    },
+    {
+      "name": "Button",
+      "fixture": "button",
+      "states": [
+        "primary",
+        "secondary",
+        "quiet",
+        "danger",
+        "busy",
+        "disabled",
+        "focus-visible"
+      ]
+    },
+    {
+      "name": "ButtonLink",
+      "fixture": "button-link",
+      "states": [
+        "primary",
+        "secondary",
+        "quiet",
+        "focus-visible"
+      ]
+    },
+    {
+      "name": "CandidateCard",
+      "fixture": "candidate-card",
+      "states": [
+        "default",
+        "in-cart",
+        "configuring",
+        "configuration-required",
+        "pinned",
+        "loading",
+        "disclosure-open"
+      ]
+    },
+    {
+      "name": "Chip",
+      "fixture": "chip",
+      "states": [
+        "label",
+        "status-progress",
+        "status-done",
+        "status-waiting",
+        "status-failed",
+        "mode-test",
+        "mode-live",
+        "attention"
+      ]
+    },
+    {
+      "name": "DecisionLane",
+      "fixture": "decision-lane",
+      "states": [
+        "prepared",
+        "current",
+        "next",
+        "reduced-motion"
+      ]
+    },
+    {
+      "name": "FeedbackState",
+      "fixture": "feedback-state",
+      "states": [
+        "loading",
+        "empty",
+        "partial",
+        "error",
+        "expired",
+        "reconnect",
+        "success"
+      ]
+    },
+    {
+      "name": "Field",
+      "fixture": "field",
+      "states": [
+        "default",
+        "required",
+        "hint",
+        "error",
+        "disabled"
+      ]
+    },
+    {
+      "name": "Notice",
+      "fixture": "notice",
+      "states": [
+        "neutral",
+        "test",
+        "warning",
+        "danger"
+      ]
+    },
+    {
+      "name": "OrderSummary",
+      "fixture": "order-summary",
+      "states": [
+        "rows",
+        "details",
+        "boundary",
+        "monospaced-data"
+      ]
+    },
+    {
+      "name": "PageHeader",
+      "fixture": "page-header",
+      "states": [
+        "description",
+        "summary",
+        "primary-action",
+        "secondary-actions"
+      ]
+    },
+    {
+      "name": "ProductMedia",
+      "fixture": "product-media",
+      "states": [
+        "loaded",
+        "missing",
+        "error",
+        "loading"
+      ]
+    },
+    {
+      "name": "ReededGlass",
+      "fixture": "reeded-glass",
+      "states": [
+        "still",
+        "swell",
+        "dark-scope",
+        "reduced-motion"
+      ]
+    },
+    {
+      "name": "Selection",
+      "fixture": "selection",
+      "states": [
+        "single",
+        "selected",
+        "disabled",
+        "focus-visible"
+      ]
+    }
+  ]
+}

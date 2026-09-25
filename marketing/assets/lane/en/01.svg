@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Describe what you need</title>
+  <desc id="desc">Vitlane shopping workspace with a natural language request composer.</desc>
+  <style>
+    text{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;fill:#182034}.muted{fill:#6d7485}.tiny{font-size:13px}.small{font-size:15px}.body{font-size:17px}.label{font-size:14px;font-weight:700}.title{font-size:34px;font-weight:750;letter-spacing:-1px}.nav{font-size:16px;font-weight:650}.chip{font-size:14px;font-weight:650}.white{fill:#fff!important}
+  </style>
+  <rect width="1200" height="760" rx="28" fill="#f5f6fa"/>
+  <rect x="24" y="24" width="1152" height="712" rx="24" fill="#fff" stroke="#e5e8f0"/>
+  <rect x="24" y="24" width="220" height="712" rx="24" fill="#20263a"/>
+  <circle cx="64" cy="68" r="17" fill="#7568ff"/><path d="M56 68h16M64 60v16" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="92" y="75" class="nav white">Vitlane</text>
+  <rect x="44" y="122" width="180" height="46" rx="13" fill="#343b55"/><circle cx="65" cy="145" r="6" fill="#8e84ff"/><text x="82" y="151" class="small white">New request</text>
+  <text x="52" y="213" class="tiny" fill="#8f96aa">WORKSPACE</text>
+  <text x="52" y="249" class="small" fill="#c9cede">Today</text><text x="52" y="285" class="small" fill="#8f96aa">Saved items</text><text x="52" y="321" class="small" fill="#8f96aa">Activity</text>
+  <rect x="44" y="659" width="180" height="52" rx="15" fill="#292f45"/><circle cx="68" cy="685" r="14" fill="#e7e4ff"/><text x="63" y="690" class="tiny" fill="#5649db">A</text><text x="92" y="681" class="tiny" fill="#fff">Your workspace</text><text x="92" y="698" class="tiny" fill="#9da4b9">Private session</text>
+  <text x="294" y="75" class="tiny muted">SHOPPING ASSISTANT</text><circle cx="1119" cy="65" r="18" fill="#f0efff"/><circle cx="1119" cy="62" r="5" fill="#6254e8"/><path d="M1110 72c2-7 16-7 18 0" fill="none" stroke="#6254e8" stroke-width="2"/>
+  <text x="294" y="164" class="title">What would you like to find?</text>
+  <text x="294" y="198" class="body muted">Tell us the outcome. Vitlane will organize the details as it searches.</text>
+  <rect x="294" y="236" width="592" height="188" rx="22" fill="#fbfbfd" stroke="#d9dce7" stroke-width="2"/>
+  <text x="322" y="278" class="body">Find comfortable everyday running shoes under $140.</text>
+  <text x="322" y="308" class="body">Neutral colors, size 9, delivered this week.</text>
+  <rect x="322" y="362" width="132" height="36" rx="18" fill="#eeecff"/><text x="346" y="385" class="chip" fill="#5547d4">Budget · $140</text>
+  <rect x="465" y="362" width="124" height="36" rx="18" fill="#eef8f6"/><text x="489" y="385" class="chip" fill="#257a69">Size · 9</text>
+  <rect x="752" y="352" width="108" height="48" rx="15" fill="#6658ef"/><text x="781" y="382" class="label white">Start</text><path d="M827 376h12m-5-5 5 5-5 5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="294" y="476" class="label">Try a starting point</text>
+  <rect x="294" y="497" width="179" height="42" rx="21" fill="#fff" stroke="#e2e4ec"/><text x="317" y="523" class="chip">Compare products</text>
+  <rect x="484" y="497" width="174" height="42" rx="21" fill="#fff" stroke="#e2e4ec"/><text x="507" y="523" class="chip">Plan a purchase</text>
+  <rect x="669" y="497" width="160" height="42" rx="21" fill="#fff" stroke="#e2e4ec"/><text x="692" y="523" class="chip">Track a price</text>
+  <rect x="925" y="129" width="207" height="425" rx="22" fill="#fafafe" stroke="#e7e9f1"/>
+  <text x="950" y="169" class="label">How it works</text>
+  <circle cx="966" cy="215" r="16" fill="#6b5cf3"/><text x="961" y="220" class="tiny white">1</text><text x="993" y="211" class="small">Set the goal</text><text x="993" y="231" class="tiny muted">Use your own words</text>
+  <path d="M966 235v38" stroke="#d9d6ff" stroke-width="2"/>
+  <circle cx="966" cy="291" r="16" fill="#e7e4ff"/><text x="961" y="296" class="tiny" fill="#5a4cda">2</text><text x="993" y="287" class="small">Review matches</text><text x="993" y="307" class="tiny muted">Compare clear evidence</text>
+  <path d="M966 311v38" stroke="#e4e5eb" stroke-width="2"/>
+  <circle cx="966" cy="367" r="16" fill="#f0f1f5"/><text x="961" y="372" class="tiny muted">3</text><text x="993" y="363" class="small">Stay in control</text><text x="993" y="383" class="tiny muted">Approve every action</text>
+  <rect x="950" y="432" width="157" height="86" rx="16" fill="#eef8f6"/><circle cx="974" cy="456" r="10" fill="#4aa48f"/><path d="m969 456 4 4 7-9" fill="none" stroke="#fff" stroke-width="2"/><text x="993" y="460" class="tiny" fill="#257a69">Private by design</text><text x="969" y="487" class="tiny muted">Your session stays</text><text x="969" y="505" class="tiny muted">inside your workspace.</text>
+  <rect x="294" y="621" width="592" height="66" rx="18" fill="#f6f4ff"/><circle cx="329" cy="654" r="18" fill="#dcd7ff"/><path d="M321 654h16M329 646v16" stroke="#6455e8" stroke-width="2"/><text x="359" y="650" class="small">Use details only when they matter.</text><text x="359" y="671" class="tiny muted">You can adjust the request at any time.</text>
+</svg>

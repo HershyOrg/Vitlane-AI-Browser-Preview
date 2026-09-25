@@ -1,0 +1,213 @@
+{
+  "OWN_PRODUCT": [
+    {
+      "detailApiProvider": "",
+      "observedAt": "2026-09-10T21:25:51.281517115Z",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 174870,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "COUPANG",
+        "productId": "8825648110",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.coupang.com/vp/products/8825648110",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "삼성전자 갤럭시 버즈3 프로 노이즈 리덕션 무선 블루투스이어폰"
+    }
+  ],
+  "NAVER_WEBKR": [
+    {
+      "detailApiProvider": "11st",
+      "observedAt": "2026-09-10T21:26:20.761883704Z",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 23400,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "ELEVENST",
+        "productId": "1431820390",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.11st.co.kr/products/1431820390",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "[11번가] [정품] 라미 사파리 만년필"
+    },
+    {
+      "detailApiProvider": "11st",
+      "observedAt": "2026-09-10T21:26:21.652236885Z",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 23400,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "ELEVENST",
+        "productId": "5337333981",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.11st.co.kr/products/5337333981",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "[11번가] 라미 사파리 만년필"
+    }
+  ],
+  "OWN_WEB": [
+    {
+      "detailApiProvider": "11st",
+      "observedAt": "2026-09-10T21:26:46.993444452Z",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 23400,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "ELEVENST",
+        "productId": "5337333981",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.11st.co.kr/products/5337333981",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "[11번가] 라미 사파리 만년필"
+    },
+    {
+      "detailApiProvider": "11st",
+      "observedAt": "2026-09-10T21:26:47.614797868Z",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 11900,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "ELEVENST",
+        "productId": "6108777119",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.11st.co.kr/products/6108777119",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "[11번가] LAMY 라미 사파리 만년필 캡 뚜껑 cap"
+    }
+  ],
+  "SERP_GOOGLE": [
+    {
+      "detailApiProvider": "11st",
+      "observedAt": "2026-09-10T21:26:48.378185973Z",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 23400,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "ELEVENST",
+        "productId": "5337333981",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.11st.co.kr/products/5337333981",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "[11번가] 라미 사파리 만년필"
+    },
+    {
+      "detailApiProvider": "",
+      "observedAt": "2026-09-10T21:26:48.730750583Z",
+      "price": {
+        "kind": "UNKNOWN",
+        "reasonCode": "PRICE_NOT_REPORTED"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "ELEVENST",
+        "productId": "1788167390",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.11st.co.kr/products/1788167390",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "라미 사파리 만년필 Spare Parts 부속품(프런트 섹션)"
+    }
+  ],
+  "KURLY_JSON": [
+    {
+      "detailApiProvider": "Kurly",
+      "observedAt": "2026-09-14T15:49:07Z",
+      "price": {
+        "kind": "UNKNOWN"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "KURLY",
+        "productId": "5063110",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.kurly.com/goods/5063110",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "[연세우유 x 마켓컬리] 전용목장우유 900mL"
+    }
+  ],
+  "ZIGZAG_HTML": [
+    {
+      "detailApiProvider": "Zigzag",
+      "observedAt": "2026-09-14T15:43:42Z",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 51750,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "ZIGZAG",
+        "productId": "108087931",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://zigzag.kr/catalog/products/108087931",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "로씨로씨 RCC Velour Banding Pants [BLACK]"
+    }
+  ],
+  "DAISOMALL_HTML": [
+    {
+      "detailApiProvider": "Daiso Mall",
+      "observedAt": "2026-09-14T15:43:53Z",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 3000,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "productRef": {
+        "source": "DAISOMALL",
+        "productId": "1058641",
+        "marketplace": "KR"
+      },
+      "productUrl": "https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=1058641",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "title": "솔루엠 C타입 to 8핀 케이블 1.8 m 블랙"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+DROP INDEX IF EXISTS idx_logistics_shipments_tracking_lookup;
+DROP INDEX IF EXISTS idx_merchant_orders_external_ref_lookup;
+DROP INDEX IF EXISTS idx_payment_paypal_attempts_capture;
+DROP TABLE IF EXISTS ordering_operator_order_lookup_audits;

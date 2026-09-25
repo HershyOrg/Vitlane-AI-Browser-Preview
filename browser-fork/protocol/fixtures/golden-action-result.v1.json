@@ -1,0 +1,6 @@
+{
+  "commandId": "cmd_golden_001",
+  "status": "applied",
+  "code": "VIEWPORT_SCROLLED",
+  "nextObservationId": "obs_002"
+}

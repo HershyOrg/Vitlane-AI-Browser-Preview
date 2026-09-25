@@ -1,0 +1,57 @@
+{
+  "protocolVersion": 1,
+  "goal": "가벼운 운동화를 찾아줘",
+  "observation": {
+    "observationId": "obs_001",
+    "nativeMetadata": {
+      "tabId": "tab_001",
+      "frameId": "frame_main",
+      "documentEpoch": 7,
+      "topOrigin": "https://shop.example.com",
+      "frameOrigin": "https://shop.example.com",
+      "pathname": "/products",
+      "queryOrFragmentPresent": false,
+      "foreground": true
+    },
+    "untrustedPageData": {
+      "pageTypeHint": "search",
+      "title": "Shop",
+      "visibleText": "운동화 검색",
+      "candidates": [
+        {
+          "candidateRef": "candidate_1",
+          "nodeRef": "node_1",
+          "kind": "safe_link",
+          "role": "link",
+          "name": "상품 보기",
+          "href": "https://shop.example.com/products/shoe"
+        },
+        {
+          "candidateRef": "candidate_2",
+          "nodeRef": "node_2",
+          "kind": "public_search",
+          "role": "searchbox",
+          "name": "검색"
+        }
+      ]
+    },
+    "privacy": {
+      "inputValuesOmitted": true,
+      "secretsOmitted": true,
+      "screenshotIncluded": false,
+      "urlQueryAndFragmentOmitted": true,
+      "collectionStatus": "sanitized",
+      "handoffReasonCodes": [],
+      "excludedBoundaryCodes": ["UNSUPPORTED_INTERACTION"]
+    }
+  },
+  "history": [],
+  "commandContext": {
+    "runId": "run_001",
+    "deviceId": "device_001",
+    "profileRef": "profile_001",
+    "sequence": 1,
+    "leaseEpoch": 1,
+    "controlGeneration": 0
+  }
+}

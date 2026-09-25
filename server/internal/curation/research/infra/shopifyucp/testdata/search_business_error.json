@@ -1,0 +1,23 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "structuredContent": {
+      "ucp": {
+        "version": "2026-04-08",
+        "status": "error",
+        "capabilities": {
+          "dev.ucp.shopping.catalog.search": [{"version": "2026-04-08"}]
+        }
+      },
+      "messages": [
+        {
+          "type": "error",
+          "code": "request_not_supported",
+          "content": "The requested catalog search is not supported.",
+          "severity": "unrecoverable"
+        }
+      ]
+    }
+  }
+}

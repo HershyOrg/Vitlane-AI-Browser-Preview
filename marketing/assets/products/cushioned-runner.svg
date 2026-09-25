@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" role="img" aria-labelledby="t d">
+  <title id="t">Cushioned Runner sample product</title><desc id="d">Abstract blue cushioned running shoe illustration.</desc>
+  <rect width="960" height="720" fill="#eef2f9"/><ellipse cx="480" cy="575" rx="330" ry="38" fill="#ccd5e5"/>
+  <path d="M151 456c112-20 192-75 243-181 13-26 45-36 70-20l147 93c47 30 87 66 119 111l66 91c14 19 0 46-23 46H231c-69 0-106-48-80-140Z" fill="#5377b7"/>
+  <path d="M200 523h594c20 0 27 26 10 36l-36 22H225c-39 0-53-37-25-58Z" fill="#ffffff" stroke="#9eb6df" stroke-width="7"/>
+  <path d="m389 320 148 86m-177-28 148 86m-177-25 148 86" stroke="#cbdcff" stroke-width="15" stroke-linecap="round"/>
+  <text x="64" y="90" fill="#3d5b91" font-family="system-ui,sans-serif" font-size="38" font-weight="700">CUSHIONED RUNNER</text>
+</svg>

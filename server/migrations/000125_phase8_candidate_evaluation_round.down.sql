@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS phase8_research_candidates_evaluation_round_idx;
+ALTER TABLE phase8_research_candidates DROP COLUMN evaluation_round_id;

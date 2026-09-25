@@ -1,0 +1,24 @@
+{
+  "sources": {
+    "shared/brand/vitlane-lane-mark.svg": "sha256:d3c7ced838472dbd886b28e5c63ed946e548a40a95c6a7c3a7fa82eef5bbdd89",
+    "web/src/shared/ui/design-system/tokens.source.json": "sha256:8bc9792d03df333129e281b17c786eb6291520b7c863e7b0d54f2c4f92821ba6",
+    "marketing/assets/fonts/pretendard-semibold.woff2": "sha256:4247dc5e260b92640c2cbd0e75091154647b71e1d5884116655e2903468c54cc",
+    "marketing/assets/fonts/pretendard-regular.woff2": "sha256:01dd73155fdfab7ce9b25224523e85a96927e21aef97f21957d41f1bfa7e3878",
+    "web/scripts/marketing/generate-seo-assets.mjs": "sha256:310b8b0152326a474038ef02176a3cddb9bb14c0972a3e82d6eefce05d978cb5",
+    "marketing/assets/products/daily-trainer.svg": "sha256:a0e1f7e2168dfc05a01f97677845ce2332f9ce649a96bbe72b01d44c9aa86121",
+    "marketing/assets/products/knit-runner.svg": "sha256:5e396f06c82c6885b58269c7dad9a03f90271dba6d73618f6b0278c3b011630d",
+    "marketing/assets/products/cross-trainer.svg": "sha256:cc20b17cc614df1587ab81a37ca1715795235a4c649ad1e2763e597c9a70b18a",
+    "marketing/assets/products/allday-walker.svg": "sha256:9b3579afd7a71940e240e77b4d53814424b7fe874e657063e925692da557b6d9",
+    "marketing/assets/products/road-runner.svg": "sha256:0f3b325efbea928db3c6441e5b2d47eaed9eab04985ba7287a8062290cd7aee9",
+    "marketing/assets/products/cushioned-runner.svg": "sha256:043f0c697073bf88eb575de7275a8f2268e5b3ed0e40f00e5b17734bc63df3be"
+  },
+  "files": {
+    "marketing/assets/products/optimized/daily-trainer.webp": "sha256:f56c8b210447ca969bf7eba545905229ade542c7319b9c5e6d4fd6279833d04a",
+    "marketing/assets/products/optimized/knit-runner.webp": "sha256:cebcb40d56c26f0b83b9297423f251db92030ae4af38c7d85aafbcdfc4ce80f6",
+    "marketing/assets/products/optimized/cross-trainer.webp": "sha256:1bffca306e2804a09e7ae9ad8229ca95308c2290927c52d77c2f28f74fc2a45e",
+    "marketing/assets/products/optimized/allday-walker.webp": "sha256:8d41d1789050bb75c401659457dcaba49413bbf487b82aafcd123dbac2dbdc3f",
+    "marketing/assets/products/optimized/road-runner.webp": "sha256:6c99fddd272e920477e30364a5a09fda93adb2fd30b4ad56170dfa941b4d4f04",
+    "marketing/assets/products/optimized/cushioned-runner.webp": "sha256:0ea61d455c91405b6ef9a3dc9a5a404fdc37838c5747fe4fc4db825fe429502c",
+    "marketing/assets/og/vitlane.png": "sha256:15dd37819c044e136141dbdd7b97016e0a285fdf72460a8b20ec9b8dcbfbab06"
+  }
+}

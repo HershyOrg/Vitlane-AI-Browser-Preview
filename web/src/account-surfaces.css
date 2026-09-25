@@ -1,0 +1,1024 @@
+/*
+ * UI/UX consolidation — shared shells, readable product identity and TEST tools.
+ * The animated perimeter is reserved for a Candidate whose options are being
+ * confirmed, extending Vitlane's Decision Lane signature.
+ */
+
+:where(button, input, select, textarea, summary, a):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--vt-state-focus-width)
+      color-mix(in srgb, var(--vt-state-focus-color) 28%, transparent),
+    0 0 var(--vt-foundation-space-3)
+      color-mix(in srgb, var(--vt-state-focus-color) 22%, transparent);
+}
+
+.vt-field__control > :where(input, select, textarea):focus-visible {
+  border-color: var(--vt-component-field-border);
+  outline: none;
+}
+
+.account-ui-section-tabs {
+  min-height: var(--vt-foundation-size-touch);
+  padding-inline: max(
+    var(--vt-semantic-space-page-inline),
+    calc((100% - var(--vt-foundation-size-content)) / 2)
+  );
+  display: flex;
+  align-items: end;
+  gap: var(--vt-foundation-space-1);
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.account-ui-section-tabs a {
+  flex: 0 0 auto;
+  min-height: var(--vt-foundation-size-touch);
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  display: inline-flex;
+  align-items: center;
+  border-bottom: var(--vt-foundation-border-focus) solid transparent;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.account-ui-section-tabs a[aria-current="page"] {
+  border-bottom-color: var(--vt-semantic-color-action-primary);
+  color: var(--vt-semantic-color-text-primary);
+}
+
+/* 예외 처리 nav 뱃지(ADR-0057 2차 P2) — 남은 예외 수는 어느 운영 화면에서도
+   보인다. process 개입이 있으면 경고색이다. */
+.account-ui-nav-count {
+  margin-inline-start: var(--vt-foundation-space-2);
+  padding: 0 var(--vt-foundation-space-2);
+  border-radius: var(--vt-foundation-radius-pill);
+  background: var(--vt-semantic-color-surface-selected);
+  color: var(--vt-semantic-color-text-accent);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.account-ui-section-tabs a.is-alert .account-ui-nav-count {
+  background: var(--vt-semantic-color-surface-danger);
+  color: var(--vt-semantic-color-text-danger);
+}
+
+.account-ui-nav-count.is-live-paypal {
+  background: var(--vt-semantic-color-surface-danger);
+  color: var(--vt-semantic-color-text-danger);
+  font-weight: var(--vt-foundation-font-weight-control);
+}
+
+.shell-user-cluster {
+  display: flex;
+  align-items: center;
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-semantic-radius-control);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.shell-user-profile-link {
+  min-height: var(--vt-foundation-size-touch);
+  padding: var(--vt-foundation-space-1) var(--vt-foundation-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-primary);
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-control);
+  text-decoration: none;
+}
+
+.shell-user-cluster .shell-user-menu > summary {
+  min-height: var(--vt-foundation-size-touch);
+  padding-inline: var(--vt-foundation-space-2);
+  border: 0;
+  border-inline-start: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: 0;
+}
+
+.shell-user-cluster .shell-user-menu > summary::after {
+  content: none;
+}
+
+.account-ui-test-assets {
+  position: relative;
+}
+
+.account-ui-test-assets > summary {
+  min-height: var(--vt-foundation-size-touch);
+  padding-inline: var(--vt-foundation-space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-test);
+  border-radius: var(--vt-semantic-radius-control);
+  color: var(--vt-semantic-color-text-test);
+  background: var(--vt-semantic-color-surface-test);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-control);
+  list-style: none;
+  cursor: pointer;
+}
+
+.account-ui-test-assets > summary::-webkit-details-marker {
+  display: none;
+}
+
+.account-ui-test-assets__trigger.vt-button {
+  color: var(--vt-semantic-color-text-test);
+  background: var(--vt-semantic-color-surface-test);
+}
+
+.account-ui-test-assets__content {
+  display: grid;
+  gap: var(--vt-foundation-space-4);
+}
+
+.account-ui-test-assets__panel {
+  width: min(
+    calc(var(--vt-foundation-size-candidate-media) * 2),
+    calc(100vw - (var(--vt-semantic-space-page-inline) * 2))
+  );
+  padding: var(--vt-foundation-space-4);
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + var(--vt-foundation-space-2));
+  inset-inline-end: 0;
+  display: grid;
+  gap: var(--vt-foundation-space-4);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-top: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-test);
+  border-radius: var(--vt-semantic-radius-overlay);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+  box-shadow: var(--vt-semantic-shadow-overlay);
+}
+
+.account-ui-test-assets__panel header {
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+}
+
+.account-ui-test-assets__panel header > span {
+  color: var(--vt-semantic-color-text-test);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.account-ui-test-assets__panel h2,
+.account-ui-test-assets__panel p,
+.account-ui-test-assets__content p {
+  margin: 0;
+}
+
+.account-ui-test-assets__panel p,
+.account-ui-test-assets__content p {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+}
+
+.account-ui-test-assets__panel dl,
+.account-ui-test-assets__content dl {
+  margin: 0;
+  border-top: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.account-ui-test-assets__panel dl > div,
+.account-ui-test-assets__content dl > div {
+  padding-block: var(--vt-foundation-space-2);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-3);
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.account-ui-test-assets__panel dt,
+.account-ui-test-assets__content dt {
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.account-ui-test-assets__panel dd,
+.account-ui-test-assets__content dd {
+  margin: 0;
+  font-family: var(--vt-semantic-font-data);
+  text-align: end;
+}
+
+.account-ui-test-assets__panel footer,
+.account-ui-test-assets__content footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--vt-foundation-space-2);
+  flex-wrap: wrap;
+}
+
+.account-ui-account-actions.is-compact {
+  padding-block: 0;
+  gap: 0;
+  border-block-start: 0;
+}
+
+.account-ui-account-actions__list {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  list-style: none;
+}
+
+.account-ui-account-action {
+  min-width: 0;
+  padding-block: var(--vt-foundation-space-5);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--vt-foundation-space-6);
+  border-block-end: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.account-ui-account-action:first-child {
+  padding-block-start: 0;
+}
+
+.account-ui-account-action:last-child {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+
+.account-ui-account-action p {
+  min-width: 0;
+  margin: 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.account-ui-account-action .vt-button {
+  justify-self: end;
+}
+
+.account-ui-profile-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--vt-foundation-size-candidate-media)), 1fr)
+  );
+  gap: var(--vt-foundation-space-1);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.account-ui-shipping-address {
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+  color: var(--vt-semantic-color-text-primary);
+  font-style: normal;
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.account-ui-wallet-row {
+  min-width: 0;
+  align-items: start;
+}
+
+.account-ui-wallet-kyc {
+  min-width: 0;
+  margin-block-start: var(--vt-foundation-space-3);
+  padding: var(--vt-foundation-space-3);
+  display: grid;
+  grid-template-columns: var(--vt-foundation-size-icon) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--vt-foundation-space-3);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.account-ui-wallet-kyc.is-verified {
+  border-inline-start-color: var(--vt-semantic-color-text-primary);
+}
+
+.account-ui-wallet-kyc.is-pending {
+  border-inline-start-color: var(--vt-semantic-color-action-primary);
+}
+
+.account-ui-wallet-kyc.is-required {
+  border-inline-start-color: var(--vt-semantic-color-border-warning);
+}
+
+.account-ui-wallet-kyc__icon {
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+  display: grid;
+  place-items: center;
+  border: var(--vt-foundation-border-thin) solid currentColor;
+  border-radius: 50%;
+  color: var(--vt-semantic-color-text-primary);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-heading);
+}
+
+.account-ui-wallet-kyc.is-pending .account-ui-wallet-kyc__icon {
+  color: var(--vt-semantic-color-text-accent);
+}
+
+.account-ui-wallet-kyc.is-required .account-ui-wallet-kyc__icon {
+  color: var(--vt-semantic-color-text-warning);
+}
+
+.account-ui-wallet-kyc > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+}
+
+.account-ui-wallet-kyc strong {
+  color: var(--vt-semantic-color-text-primary);
+  font-size: var(--vt-foundation-font-size-body-strong);
+}
+
+.account-ui-wallet-kyc span,
+.account-ui-wallet-kyc small {
+  overflow-wrap: anywhere;
+}
+
+.account-ui-wallet-kyc > div > span {
+  color: var(--vt-semantic-color-text-primary);
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-control);
+}
+
+.account-ui-wallet-kyc small,
+.account-ui-wallet-permission {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.account-ui-wallet-permission {
+  margin: var(--vt-foundation-space-2) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.account-ui-wallet-attesters {
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+  margin-top: var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+  overflow-wrap: anywhere;
+}
+
+.account-ui-profile-grid > div {
+  min-width: 0;
+  padding: var(--vt-foundation-space-4);
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.account-ui-profile-grid dt {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.account-ui-profile-grid dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-ui-order-summary__columns {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--vt-foundation-size-candidate-media)), 1fr)
+  );
+  gap: var(--vt-foundation-space-4);
+}
+
+.account-ui-order-summary__columns > section {
+  padding: var(--vt-foundation-space-4);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-top: var(--vt-foundation-border-focus) solid
+    var(--vt-semantic-color-action-primary);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.account-ui-order-summary h3,
+.account-ui-order-summary p {
+  margin: 0;
+}
+
+.account-ui-order-summary ul {
+  margin: var(--vt-foundation-space-3) 0 0;
+  padding: 0;
+  display: grid;
+  list-style: none;
+}
+
+.account-ui-order-summary li {
+  padding-block: var(--vt-foundation-space-3);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--vt-foundation-space-1) var(--vt-foundation-space-3);
+  border-top: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.account-ui-order-summary li a {
+  overflow: hidden;
+  color: var(--vt-semantic-color-text-primary);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-ui-order-summary li small {
+  grid-column: 1 / -1;
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.account-ui-product-url,
+.vt-candidate-card__url {
+  display: block;
+  overflow: hidden;
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+  text-decoration: underline;
+  text-overflow: ellipsis;
+  text-underline-offset: var(--vt-foundation-space-1);
+  white-space: nowrap;
+}
+
+.vt-candidate-card {
+  position: relative;
+}
+
+.vt-candidate-card__hit-area {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border: 0;
+  border-radius: var(--vt-component-candidate-card-radius);
+  background: transparent;
+}
+
+.vt-candidate-card__hit-area:hover:not(:disabled) {
+  background: transparent;
+}
+
+.vt-candidate-card > :not(.vt-candidate-card__hit-area) {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.vt-candidate-card :where(a, button, summary, details) {
+  pointer-events: auto;
+}
+
+/* The media link is a direct card child, so the generic
+   `> :not(.vt-candidate-card__hit-area)` rule above would disable its
+   pointer events; element+class out-specifies it so the image stays a
+   product-page link while the rest of the card keeps the modal hit-area. */
+.vt-candidate-card > a.vt-candidate-card__media-link {
+  pointer-events: auto;
+}
+
+.vt-candidate-card.is-configuring {
+  border-color: transparent;
+  overflow: visible;
+}
+
+.vt-candidate-card.is-configuring::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: calc(var(--vt-foundation-border-focus) * -1);
+  border-radius: var(--vt-component-candidate-card-radius);
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, var(--vt-semantic-color-action-primary) 50%, transparent 50%)
+      top left / var(--vt-foundation-space-4) var(--vt-foundation-border-focus) repeat-x,
+    linear-gradient(90deg, var(--vt-semantic-color-action-primary) 50%, transparent 50%)
+      bottom right / var(--vt-foundation-space-4) var(--vt-foundation-border-focus) repeat-x,
+    linear-gradient(0deg, var(--vt-semantic-color-action-primary) 50%, transparent 50%)
+      bottom left / var(--vt-foundation-border-focus) var(--vt-foundation-space-4) repeat-y,
+    linear-gradient(0deg, var(--vt-semantic-color-action-primary) 50%, transparent 50%)
+      top right / var(--vt-foundation-border-focus) var(--vt-foundation-space-4) repeat-y;
+  animation: account-ui-decision-lane
+    calc(var(--vt-semantic-motion-interactive) * 4) linear infinite;
+}
+
+@keyframes account-ui-decision-lane {
+  to {
+    background-position:
+      var(--vt-foundation-space-4) 0,
+      calc(var(--vt-foundation-space-4) * -1) 100%,
+      0 var(--vt-foundation-space-4),
+      100% calc(var(--vt-foundation-space-4) * -1);
+  }
+}
+
+.shell-candidate-grid {
+  gap: var(--vt-foundation-space-3);
+}
+
+.account-ui-tracking-product__identity {
+  min-width: 0;
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+}
+
+.account-ui-tracking-shipping {
+  display: grid;
+  justify-items: start;
+  gap: var(--vt-foundation-space-2);
+  padding-block: var(--vt-foundation-space-2);
+}
+
+.account-ui-tracking-shipping address {
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+  color: var(--vt-semantic-color-text-primary);
+  font-style: normal;
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.account-ui-operator-result dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--vt-foundation-space-3);
+  margin: 0;
+}
+
+.account-ui-operator-result dl div {
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+  padding: var(--vt-foundation-space-3);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.account-ui-operator-result dt {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.account-ui-operator-result dd {
+  margin: 0;
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.account-ui-tracking-product__identity h2,
+.account-ui-tracking-product__identity p {
+  margin: 0;
+}
+
+.account-ui-tracking-product__identity h2 a {
+  color: inherit;
+}
+
+.account-ui-tracking-product__identity > strong {
+  color: var(--vt-semantic-color-text-accent);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.account-ui-checkout-asset-action {
+  display: grid;
+  gap: var(--vt-foundation-space-3);
+}
+
+.order-ui-operator-console.settlement-ui-console {
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.order-ui-operator-console .settlement-ui-console-main {
+  padding-block: var(--vt-foundation-space-12)
+    var(--vt-foundation-space-18);
+}
+
+.order-ui-operator-console .vt-page-header h1,
+.order-ui-operator-console .settlement-ui-order-heading h2,
+.order-ui-operator-console .settlement-ui-order-heading > strong,
+.order-ui-operator-console .settlement-ui-quote div,
+.order-ui-operator-console .settlement-ui-chain-window-title strong,
+.order-ui-operator-console .settlement-ui-audit-ledger h2 {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.order-ui-operator-console .vt-page-header__description,
+.order-ui-operator-console .settlement-ui-order-heading p,
+.order-ui-operator-console .settlement-ui-order-heading > strong small,
+.order-ui-operator-console .settlement-ui-quote dt,
+.order-ui-operator-console .settlement-ui-evidence-rail small,
+.order-ui-operator-console .settlement-ui-chain-window-title span,
+.order-ui-operator-console .settlement-ui-order-foot,
+.order-ui-operator-console .settlement-ui-audit-ledger li,
+.order-ui-operator-console .settlement-ui-audit-ledger > p,
+.order-ui-operator-console .settlement-ui-custody-actions label,
+.order-ui-operator-console .settlement-ui-field-rule,
+.order-ui-operator-console .settlement-ui-action-prerequisite {
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.order-ui-operator-console .settlement-ui-order-card,
+.order-ui-operator-console .settlement-ui-quote div,
+.order-ui-operator-console .settlement-ui-evidence-rail li > span,
+.order-ui-operator-console .settlement-ui-audit-ledger {
+  border-color: var(--vt-semantic-color-border-default);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.order-ui-operator-console .settlement-ui-order-card {
+  border-top-color: var(--vt-semantic-color-action-primary);
+}
+
+.order-ui-operator-console .settlement-ui-order-heading,
+.order-ui-operator-console .settlement-ui-order-body,
+.order-ui-operator-console .settlement-ui-chain-window,
+.order-ui-operator-console .settlement-ui-chain-window-title,
+.order-ui-operator-console .settlement-ui-order-foot,
+.order-ui-operator-console .settlement-ui-audit-ledger > header,
+.order-ui-operator-console .settlement-ui-audit-ledger li {
+  border-color: var(--vt-semantic-color-border-default);
+}
+
+.order-ui-operator-console .settlement-ui-order-foot {
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.order-ui-operator-console .settlement-ui-quote {
+  border-color: var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-border-default);
+}
+
+.order-ui-operator-console .settlement-ui-stats dt {
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.order-ui-operator-console .settlement-ui-stats dd {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.order-ui-operator-console .settlement-ui-quote dd.is-negative {
+  color: var(--vt-semantic-color-text-test);
+}
+
+.order-ui-operator-console
+  .order-ui-operator-current-action
+  > div
+  > span,
+.order-ui-operator-console .settlement-ui-order-foot code,
+.order-ui-operator-console .settlement-ui-audit-ledger li code {
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.order-ui-operator-console .settlement-ui-pending-settlement {
+  border-color: var(--vt-semantic-color-border-default);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.order-ui-operator-console .settlement-ui-pending-settlement > header h2 {
+  color: var(--vt-semantic-color-text-warning);
+}
+
+.order-ui-operator-console .settlement-ui-pending-settlement > header p,
+.order-ui-operator-console .settlement-ui-server-times > li {
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.order-ui-operator-console .settlement-ui-pending-settlement > ul > li {
+  border-color: var(--vt-semantic-color-border-default);
+}
+
+.order-ui-operator-console .settlement-ui-pending-settlement__head b {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.order-ui-operator-console .settlement-ui-custody-actions {
+  border-color: var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.order-ui-operator-console .settlement-ui-custody-actions textarea,
+.order-ui-operator-console .settlement-ui-order-actions select {
+  border-color: var(--vt-semantic-color-border-default);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.order-ui-operator-console .settlement-ui-custody-actions .vt-button--primary {
+  border-color: var(--vt-semantic-color-action-primary);
+  color: var(--vt-semantic-color-text-on-action);
+  background: var(--vt-semantic-color-action-primary);
+}
+
+.order-ui-operator-console .settlement-ui-custody-actions .vt-button--quiet {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.order-ui-settings-section > header.account-ui-section-header-with-action {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.account-ui-section-header-with-action > .vt-button {
+  white-space: nowrap;
+}
+
+.product-ui-liked-products__grid {
+  /* Was aligned to the removed section-number column. */
+  margin-inline-start: 0;
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 18rem), 1fr)
+  );
+  gap: var(--vt-foundation-space-4);
+}
+
+.product-ui-liked-products__grid > article {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: var(--vt-foundation-space-4);
+  overflow: hidden;
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-semantic-radius-product);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.product-ui-liked-products__grid .vt-product-media {
+  width: 7rem;
+  height: 100%;
+  min-height: 8rem;
+}
+
+.product-ui-liked-products__grid article > div {
+  min-width: 0;
+  padding: var(--vt-foundation-space-4) var(--vt-foundation-space-4)
+    var(--vt-foundation-space-4) 0;
+  display: grid;
+  align-content: start;
+  gap: var(--vt-foundation-space-1);
+}
+
+.product-ui-liked-products__grid :is(h3, p) {
+  margin: 0;
+}
+
+.product-ui-liked-products__grid h3 {
+  overflow-wrap: anywhere;
+  font-size: var(--vt-foundation-font-size-body-strong);
+}
+
+.product-ui-liked-products__grid article > div > span,
+.product-ui-liked-products__grid small {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.product-ui-liked-products__grid article > div > a,
+.product-ui-purchase-checks__actions > a {
+  min-height: var(--vt-foundation-size-touch);
+  display: inline-flex;
+  align-items: center;
+  color: var(--vt-semantic-color-text-accent);
+  font-weight: var(--vt-foundation-font-weight-control);
+}
+
+/* Purchase-check rows carry an undo action next to the curation link (ADR-0075). */
+.product-ui-purchase-checks__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--vt-foundation-space-2) var(--vt-foundation-space-4);
+}
+
+.plan-checkout-page {
+  display: grid;
+  gap: var(--vt-semantic-space-section);
+}
+
+.plan-checkout-list {
+  display: grid;
+  gap: var(--vt-foundation-space-4);
+}
+
+.plan-checkout-item {
+  display: grid;
+  grid-template-columns: auto minmax(7rem, 9rem) minmax(0, 1fr);
+  gap: var(--vt-foundation-space-4);
+  padding: var(--vt-semantic-space-panel);
+  border: 1px solid var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-semantic-radius-product);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.plan-checkout-item > .vt-product-media {
+  width: 100%;
+  height: 7.5rem;
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-semantic-radius-control);
+}
+
+.plan-checkout-item-index {
+  display: grid;
+  place-items: center;
+  width: var(--vt-foundation-space-8);
+  height: var(--vt-foundation-space-8);
+  border-radius: var(--vt-foundation-radius-pill);
+  color: var(--vt-semantic-color-text-accent);
+  background: var(--vt-semantic-color-surface-selected);
+  font-weight: var(--vt-foundation-font-weight-heading);
+}
+
+.plan-checkout-item-content,
+.plan-checkout-item-content > header > div {
+  min-width: 0;
+}
+
+.plan-checkout-item-content > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-4);
+}
+
+.plan-checkout-item-content > header p {
+  margin: 0 0 var(--vt-foundation-space-1);
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.plan-checkout-item-content > header h2 {
+  margin: 0;
+  font-size: var(--vt-foundation-font-size-heading-small);
+}
+
+.plan-checkout-item-content > header > strong {
+  flex: 0 0 auto;
+  padding: var(--vt-foundation-space-1) var(--vt-foundation-space-2);
+  border-radius: var(--vt-foundation-radius-pill);
+  color: var(--vt-semantic-color-text-muted);
+  background: var(--vt-semantic-color-surface-canvas);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.plan-checkout-item-content dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--vt-foundation-space-4);
+  margin: var(--vt-foundation-space-4) 0;
+}
+
+.plan-checkout-item-content dl div {
+  min-width: 0;
+}
+
+.plan-checkout-item-content dt {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.plan-checkout-item-content dd {
+  margin: var(--vt-foundation-space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.plan-checkout-completion-rule {
+  margin: 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.plan-checkout-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-4);
+  padding-block-start: var(--vt-foundation-space-4);
+  border-block-start: 1px solid var(--vt-semantic-color-border-default);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vt-candidate-card.is-configuring::after {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(button, input, select, textarea, summary, a):focus-visible {
+    outline: var(--vt-state-focus-width) solid CanvasText;
+    outline-offset: var(--vt-state-focus-offset);
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .account-ui-account-action {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: var(--vt-foundation-space-3);
+  }
+
+  .account-ui-account-action .vt-button {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .order-ui-settings-section > header.account-ui-section-header-with-action {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .product-ui-liked-products__grid {
+    margin-inline-start: 0;
+  }
+
+  .account-ui-section-header-with-action > .vt-button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .account-ui-section-tabs {
+    padding-inline: var(--vt-semantic-space-page-inline);
+    overflow-x: auto;
+  }
+
+  .account-ui-section-tabs.is-admin {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: grid;
+    flex: 0 0 auto;
+    align-items: stretch;
+    overflow-x: visible;
+  }
+
+  .account-ui-section-tabs.is-admin a {
+    min-width: 0;
+    padding-inline: var(--vt-foundation-space-2);
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .account-ui-test-assets__panel {
+    position: fixed;
+    inset-block-start: auto;
+    inset-block-end: var(--vt-semantic-space-page-inline);
+    inset-inline: var(--vt-semantic-space-page-inline);
+    width: auto;
+    max-height: calc(100vh - (var(--vt-semantic-space-page-inline) * 2));
+    overflow-y: auto;
+  }
+
+  .shell-user-profile-link > span:last-child {
+    display: none;
+  }
+
+  .plan-checkout-item {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-checkout-item-content > header,
+  .plan-checkout-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .plan-checkout-item-content dl {
+    grid-template-columns: 1fr;
+  }
+}
+.plan-checkout-item-excluded {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-control);
+}

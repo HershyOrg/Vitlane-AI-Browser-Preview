@@ -1,0 +1,47 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "structuredContent": {
+      "ucp": {
+        "version": "2026-04-08",
+        "capabilities": {
+          "dev.ucp.shopping.catalog.search": [{"version": "2026-04-08"}],
+          "dev.shopify.catalog.global": [{"version": "2026-04-08"}]
+        }
+      },
+      "products": [
+        {
+          "id": "gid://shopify/p/url-only",
+          "handle": "url-only-runner",
+          "title": "URL Only Runner",
+          "description": {"plain": "A product resolved by its canonical URL."},
+          "url": "https://merchant.example/products/url-only-runner",
+          "price_range": {
+            "min": {"amount": 0, "currency": "USD"},
+            "max": {"amount": 12000, "currency": "USD"}
+          },
+          "media": [],
+          "variants": []
+        }
+      ],
+      "messages": [
+        {
+          "type": "warning",
+          "code": "regulated_product_notice",
+          "path": "$.products[0]",
+          "content_type": "markdown",
+          "content": "Review the product disclosure.",
+          "presentation": "disclosure",
+          "image_url": "https://cdn.example/disclosure.png",
+          "url": "https://merchant.example/disclosure"
+        }
+      ],
+      "pagination": {
+        "cursor": "next-page",
+        "has_next_page": true,
+        "total_count": 2
+      }
+    }
+  }
+}

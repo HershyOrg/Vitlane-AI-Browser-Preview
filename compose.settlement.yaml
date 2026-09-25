@@ -1,0 +1,4 @@
+services:
+  vitlane:
+    volumes:
+      - ${PHASE5_CONFIG_DIR:?Set PHASE5_CONFIG_DIR to the reviewed manifest and signer-key directory}:/run/vitlane/phase5:ro

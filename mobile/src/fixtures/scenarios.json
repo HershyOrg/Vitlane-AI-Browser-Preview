@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "mode": "fixture",
+  "observedAt": "2026-09-24T10:00:00+09:00",
+  "notice": {
+    "ko-KR": "데모 · 실제 주문되지 않아요",
+    "en-US": "Demo · No real order will be placed"
+  },
+  "sourceLabel": {
+    "ko-KR": "Vitlane UI 검수용 가상 데이터",
+    "en-US": "Synthetic data for Vitlane UI review"
+  },
+  "workspace": {
+    "id": "demo-party",
+    "title": {
+      "ko-KR": "친구들과 하는 홈 파티",
+      "en-US": "At-home party with friends"
+    },
+    "intent": {
+      "ko-KR": "10월 3일에 친구 6명이랑 집에서 파티할 거야. 15만 원 안으로 준비해줘. 컵이랑 스피커는 있어.",
+      "en-US": "I am hosting six friends at home on October 3. Keep it under KRW 150,000. I already have cups and a speaker."
+    },
+    "conditions": [
+      {
+        "id": "date",
+        "label": { "ko-KR": "날짜", "en-US": "Date" },
+        "value": { "ko-KR": "10월 3일", "en-US": "October 3" },
+        "confirmed": true
+      },
+      {
+        "id": "party-size",
+        "label": { "ko-KR": "인원", "en-US": "Guests" },
+        "value": { "ko-KR": "6명", "en-US": "6 people" },
+        "confirmed": true
+      },
+      {
+        "id": "budget",
+        "label": { "ko-KR": "예산", "en-US": "Budget" },
+        "value": { "ko-KR": "15만 원", "en-US": "KRW 150,000" },
+        "confirmed": true
+      },
+      {
+        "id": "already-owned",
+        "label": { "ko-KR": "이미 있음", "en-US": "Already have" },
+        "value": { "ko-KR": "컵 · 스피커", "en-US": "Cups · speaker" },
+        "confirmed": true
+      },
+      {
+        "id": "region",
+        "label": { "ko-KR": "지역", "en-US": "Area" },
+        "value": { "ko-KR": "서울 마포구", "en-US": "Mapo-gu, Seoul" },
+        "confirmed": false,
+        "reason": {
+          "ko-KR": "지역 정보가 없어 데모 픽업 장소를 기준으로 했어요.",
+          "en-US": "No area was provided, so the demo pickup location is used."
+        },
+        "refinementQuestionId": "q-region"
+      },
+      {
+        "id": "service",
+        "label": { "ko-KR": "케이크", "en-US": "Cake" },
+        "value": { "ko-KR": "픽업 포함", "en-US": "Pickup included" },
+        "confirmed": false,
+        "reason": {
+          "ko-KR": "기본 준비안에 샘플 케이크 픽업을 포함했어요.",
+          "en-US": "The initial setup includes the sample cake pickup."
+        },
+        "refinementQuestionId": "q-service"
+      },
+      {
+        "id": "pickup-time",
+        "label": { "ko-KR": "픽업", "en-US": "Pickup" },
+        "value": { "ko-KR": "오후 4시", "en-US": "4 PM" },
+        "confirmed": false,
+        "reason": {
+          "ko-KR": "검수용 기본 시간으로 먼저 잡았어요.",
+          "en-US": "This uses the review-only default time."
+        },
+        "refinementQuestionId": "q-slot"
+      }
+    ],
+    "basePlan": {
+      "id": "party-plan",
+      "revision": 1,
+      "budget": 150000,
+      "items": [
+        {
+          "id": "snacks",
+          "kind": "product",
+          "title": { "ko-KR": "샘플 간식 세트", "en-US": "Sample snack set" },
+          "merchantId": "demo-a",
+          "merchantLabel": { "ko-KR": "데모 마켓", "en-US": "Demo Market" },
+          "quantity": 2,
+          "unitPrice": 18000,
+          "necessity": "required",
+          "state": "selected"
+        },
+        {
+          "id": "drinks",
+          "kind": "product",
+          "title": { "ko-KR": "샘플 무알코올 음료 묶음", "en-US": "Sample non-alcoholic drinks" },
+          "merchantId": "demo-a",
+          "merchantLabel": { "ko-KR": "데모 마켓", "en-US": "Demo Market" },
+          "quantity": 2,
+          "unitPrice": 12000,
+          "necessity": "required",
+          "state": "selected"
+        },
+        {
+          "id": "decor",
+          "kind": "product",
+          "title": { "ko-KR": "샘플 파티 장식", "en-US": "Sample party decorations" },
+          "merchantId": "demo-b",
+          "merchantLabel": { "ko-KR": "데모 파티숍", "en-US": "Demo Party Shop" },
+          "quantity": 1,
+          "unitPrice": 14000,
+          "necessity": "optional",
+          "state": "selected"
+        },
+        {
+          "id": "cake",
+          "kind": "service",
+          "title": { "ko-KR": "샘플 케이크 픽업", "en-US": "Sample cake pickup" },
+          "merchantId": "demo-c",
+          "merchantLabel": { "ko-KR": "데모 베이커리", "en-US": "Demo Bakery" },
+          "quantity": 1,
+          "unitPrice": 42000,
+          "necessity": "required",
+          "state": "selected",
+          "slot": {
+            "id": "demo-c-slot-1600",
+            "start": "2026-10-03T16:00:00+09:00",
+            "end": "2026-10-03T16:30:00+09:00",
+            "timeZone": "Asia/Seoul",
+            "state": "known"
+          },
+          "partySize": 6,
+          "locationLabel": {
+            "ko-KR": "데모 픽업 장소 · 서울 마포구",
+            "en-US": "Demo pickup location · Mapo-gu, Seoul"
+          },
+          "cancellationSummary": {
+            "ko-KR": "샘플 정책: 10월 2일 오후 4시 전 취소 시 전액 환불",
+            "en-US": "Sample policy: full refund for cancellation before 4 PM on October 2"
+          }
+        },
+        {
+          "id": "cups",
+          "kind": "product",
+          "title": { "ko-KR": "이미 보유한 컵", "en-US": "Cups already owned" },
+          "merchantId": null,
+          "merchantLabel": null,
+          "quantity": 6,
+          "unitPrice": 0,
+          "necessity": "required",
+          "state": "already_owned"
+        },
+        {
+          "id": "speaker",
+          "kind": "product",
+          "title": { "ko-KR": "이미 보유한 스피커", "en-US": "Speaker already owned" },
+          "merchantId": null,
+          "merchantLabel": null,
+          "quantity": 1,
+          "unitPrice": 0,
+          "necessity": "optional",
+          "state": "already_owned"
+        }
+      ],
+      "shippingByMerchant": {
+        "demo-a": 5000,
+        "demo-b": 3000,
+        "demo-c": 0
+      }
+    },
+    "budgetPlan": {
+      "budget": 80000,
+      "items": [
+        { "id": "snacks", "unitPrice": 12000, "state": "selected" },
+        { "id": "drinks", "unitPrice": 9000, "state": "selected" },
+        { "id": "decor", "unitPrice": 14000, "state": "removed" },
+        { "id": "cake", "unitPrice": 28000, "state": "selected" },
+        { "id": "cups", "unitPrice": 0, "state": "already_owned" },
+        { "id": "speaker", "unitPrice": 0, "state": "already_owned" }
+      ]
+    }
+  },
+  "questions": [
+    {
+      "id": "q-region",
+      "title": { "ko-KR": "어느 지역으로 준비할까요?", "en-US": "Which area should we prepare for?" },
+      "reason": {
+        "ko-KR": "배송 가능 여부와 픽업 거리를 확인할 때 필요해요.",
+        "en-US": "This helps check delivery availability and pickup distance."
+      },
+      "selection": "single",
+      "optional": false,
+      "allowCustom": true,
+      "assumedOptionIds": ["mapo"],
+      "options": [
+        {
+          "id": "mapo",
+          "title": { "ko-KR": "서울 마포구", "en-US": "Mapo-gu, Seoul" },
+          "description": { "ko-KR": "데모 지역 선택", "en-US": "Demo region selection" }
+        }
+      ]
+    },
+    {
+      "id": "q-service",
+      "title": { "ko-KR": "케이크 픽업도 함께 준비할까요?", "en-US": "Should cake pickup be included?" },
+      "reason": {
+        "ko-KR": "상품 배송 외에 시간에 맞춰 픽업할 준비가 필요한지 확인해요.",
+        "en-US": "This checks whether a timed pickup is needed in addition to delivery."
+      },
+      "selection": "single",
+      "optional": true,
+      "allowCustom": false,
+      "assumedOptionIds": ["include"],
+      "options": [
+        {
+          "id": "include",
+          "title": { "ko-KR": "픽업도 포함", "en-US": "Include pickup" },
+          "description": { "ko-KR": "케이크 후보와 픽업 시간을 함께 확인", "en-US": "Review cake choices and pickup time" }
+        },
+        {
+          "id": "goods-only",
+          "title": { "ko-KR": "상품만 준비", "en-US": "Goods only" },
+          "description": { "ko-KR": "추가 예약 없이 필요한 물건만 정리", "en-US": "Prepare items without an additional reservation" }
+        }
+      ]
+    },
+    {
+      "id": "q-slot",
+      "title": { "ko-KR": "언제 픽업할까요?", "en-US": "When should pickup happen?" },
+      "reason": {
+        "ko-KR": "아래는 검수용 시간대이며 실제 예약 가능한 슬롯이 아니에요.",
+        "en-US": "These review-only times are not real bookable slots."
+      },
+      "selection": "single",
+      "optional": false,
+      "allowCustom": false,
+      "assumedOptionIds": ["1600"],
+      "options": [
+        {
+          "id": "1600",
+          "title": { "ko-KR": "10월 3일 오후 4시", "en-US": "October 3 at 4 PM" },
+          "description": { "ko-KR": "Asia/Seoul · 데모 슬롯", "en-US": "Asia/Seoul · demo slot" }
+        },
+        {
+          "id": "1700",
+          "title": { "ko-KR": "10월 3일 오후 5시", "en-US": "October 3 at 5 PM" },
+          "description": { "ko-KR": "Asia/Seoul · 데모 슬롯", "en-US": "Asia/Seoul · demo slot" }
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "party-balanced",
+      "title": { "ko-KR": "균형 있게 모두 준비", "en-US": "Balanced full setup" },
+      "description": { "ko-KR": "간식·음료·장식·케이크 픽업을 모두 포함해요.", "en-US": "Includes snacks, drinks, decorations, and cake pickup." },
+      "badge": { "ko-KR": "추천", "en-US": "Recommended" },
+      "total": 124000,
+      "itemIds": ["snacks", "drinks", "decor", "cake"],
+      "tone": "sage",
+      "fitReasons": [
+        { "ko-KR": "6명이 넉넉히 나눌 수 있어요", "en-US": "Enough to share comfortably among six people" },
+        { "ko-KR": "예산에서 2만 6천 원이 남아요", "en-US": "Leaves KRW 26,000 in the budget" }
+      ]
+    },
+    {
+      "id": "party-goods-only",
+      "title": { "ko-KR": "배송 상품만 준비", "en-US": "Delivered goods only" },
+      "description": { "ko-KR": "시간 예약 없이 간식·음료·장식만 준비해요.", "en-US": "Prepares snacks, drinks, and decorations without a timed pickup." },
+      "badge": { "ko-KR": "간단한 준비", "en-US": "Simpler setup" },
+      "total": 82000,
+      "itemIds": ["snacks", "drinks", "decor"],
+      "tone": "sand",
+      "fitReasons": [
+        { "ko-KR": "픽업 일정이 필요 없어요", "en-US": "No pickup schedule is required" },
+        { "ko-KR": "배송비를 포함해 8만 2천 원이에요", "en-US": "Totals KRW 82,000 including delivery" }
+      ]
+    },
+    {
+      "id": "party-goods-only-budget",
+      "title": { "ko-KR": "상품만 8만 원 안으로 준비", "en-US": "Goods-only setup under KRW 80,000" },
+      "description": { "ko-KR": "케이크와 장식을 빼고 간식·음료 구성을 조정해요.", "en-US": "Removes cake and decorations, then adjusts snacks and drinks." },
+      "badge": { "ko-KR": "예산 안", "en-US": "Within budget" },
+      "total": 47000,
+      "itemIds": ["snacks", "drinks"],
+      "tone": "mint",
+      "fitReasons": [
+        { "ko-KR": "배송비를 포함해 3만 3천 원이 남아요", "en-US": "Leaves KRW 33,000 after delivery" },
+        { "ko-KR": "픽업 일정 없이 필수 상품만 유지해요", "en-US": "Keeps only the required goods without a pickup schedule" }
+      ]
+    },
+    {
+      "id": "party-goods-only-light",
+      "title": { "ko-KR": "장식 없이 상품만 준비", "en-US": "Goods only without decorations" },
+      "description": { "ko-KR": "간식과 음료만 배송받아 간단히 준비해요.", "en-US": "Keeps the setup simple with delivered snacks and drinks only." },
+      "badge": { "ko-KR": "후속 수정", "en-US": "Follow-up edit" },
+      "total": 65000,
+      "itemIds": ["snacks", "drinks"],
+      "tone": "lavender",
+      "fitReasons": [
+        { "ko-KR": "케이크 픽업과 장식이 모두 빠져요", "en-US": "Removes both cake pickup and decorations" },
+        { "ko-KR": "배송비를 포함해 6만 5천 원이에요", "en-US": "Totals KRW 65,000 including delivery" }
+      ]
+    },
+    {
+      "id": "party-budget",
+      "title": { "ko-KR": "8만 원 예산에 맞춘 준비", "en-US": "Setup adjusted to KRW 80,000" },
+      "description": { "ko-KR": "장식을 빼고 간식·음료·케이크 구성을 조정해요.", "en-US": "Removes decorations and adjusts snacks, drinks, and cake." },
+      "badge": { "ko-KR": "예산 안", "en-US": "Within budget" },
+      "total": 75000,
+      "itemIds": ["snacks", "drinks", "cake"],
+      "tone": "mint",
+      "fitReasons": [
+        { "ko-KR": "배송비를 포함해 5천 원이 남아요", "en-US": "Leaves KRW 5,000 after delivery" },
+        { "ko-KR": "필수 항목은 유지해요", "en-US": "Keeps the required items" }
+      ]
+    },
+    {
+      "id": "party-light",
+      "title": { "ko-KR": "장식을 뺀 가벼운 준비", "en-US": "Lighter setup without decorations" },
+      "description": { "ko-KR": "간식·음료와 케이크 픽업에 집중해요.", "en-US": "Focuses on snacks, drinks, and cake pickup." },
+      "badge": { "ko-KR": "후속 수정", "en-US": "Follow-up edit" },
+      "total": 107000,
+      "itemIds": ["snacks", "drinks", "cake"],
+      "tone": "lavender",
+      "fitReasons": [
+        { "ko-KR": "장식 상품과 배송비 1만 7천 원을 줄여요", "en-US": "Saves KRW 17,000 in decorations and delivery" },
+        { "ko-KR": "케이크 픽업은 그대로 유지해요", "en-US": "Keeps the cake pickup" }
+      ]
+    }
+  ],
+  "followUps": [
+    {
+      "id": "slot-1700",
+      "action": "change_slot_1700",
+      "phrases": ["오후 5시", "17:00", "5 pm", "5pm"],
+      "summary": { "ko-KR": "케이크 픽업을 오후 5시로 변경", "en-US": "Cake pickup changed to 5 PM" }
+    },
+    {
+      "id": "remove-decor",
+      "action": "remove_decor",
+      "phrases": ["장식은 빼", "장식 빼", "장식 제외", "remove decorations", "without decorations"],
+      "summary": { "ko-KR": "파티 장식을 준비안에서 제외", "en-US": "Party decorations removed from the plan" }
+    }
+  ]
+}

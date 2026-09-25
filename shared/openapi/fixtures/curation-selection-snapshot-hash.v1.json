@@ -1,0 +1,19 @@
+{
+  "schema": "CurationSelectionSnapshotHashFixture.v1",
+  "value": {
+    "schema": "CurationSelectionSnapshotHash.v1",
+    "snapshot": {
+      "candidateConfigurationHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "candidateConfigurationId": "66666666-6666-4666-8666-666666666666",
+      "candidateId": "99999999-9999-4999-8999-999999999999",
+      "curationId": "22222222-2222-4222-8222-222222222222",
+      "quantity": 2,
+      "selectionId": "44444444-4444-4444-8444-444444444444",
+      "shoppingSessionId": "88888888-8888-4888-8888-888888888888",
+      "targetId": "77777777-7777-4777-8777-777777777777",
+      "version": 3
+    }
+  },
+  "canonicalPreimage": "{\"schema\":\"CurationSelectionSnapshotHash.v1\",\"snapshot\":{\"candidateConfigurationHash\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"candidateConfigurationId\":\"66666666-6666-4666-8666-666666666666\",\"candidateId\":\"99999999-9999-4999-8999-999999999999\",\"curationId\":\"22222222-2222-4222-8222-222222222222\",\"quantity\":2,\"selectionId\":\"44444444-4444-4444-8444-444444444444\",\"shoppingSessionId\":\"88888888-8888-4888-8888-888888888888\",\"targetId\":\"77777777-7777-4777-8777-777777777777\",\"version\":3}}",
+  "snapshotHash": "sha256:e2654daccb61c0e3379167dd8104bce4b2ff6134be8e2e3a675b21c98d0fea2b"
+}

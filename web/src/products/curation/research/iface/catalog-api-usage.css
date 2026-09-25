@@ -1,0 +1,39 @@
+.catalog-api-usage { min-width: 0; }
+.catalog-api-usage > h2 { font-size: var(--vt-foundation-font-size-heading-small); margin: 0 0 var(--vt-foundation-space-6); }
+.catalog-api-usage__head, .catalog-api-group { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(0, 5fr); gap: var(--vt-foundation-space-6); }
+.catalog-api-usage__head { color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-body); padding-bottom: var(--vt-foundation-space-4); }
+.catalog-api-usage__head > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(12rem, 1fr) 6rem; gap: var(--vt-foundation-space-4); }
+.catalog-api-group { border-top: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); }
+.catalog-api-group > h3 { font-size: var(--vt-foundation-font-size-body); font-weight: var(--vt-foundation-font-weight-control); margin: var(--vt-foundation-space-6) 0; overflow-wrap: anywhere; }
+.catalog-api-group__rows { min-width: 0; }
+.catalog-api-row + .catalog-api-row { border-top: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default); }
+.catalog-api-row__summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(12rem, 1fr) 6rem; align-items: center; gap: var(--vt-foundation-space-4); padding-block: var(--vt-foundation-space-4); }
+.catalog-api-row__name { font-size: var(--vt-foundation-font-size-body); overflow-wrap: anywhere; }
+.catalog-api-row__usage { display: flex; flex-wrap: wrap; gap: var(--vt-foundation-space-1) var(--vt-foundation-space-3); color: var(--vt-semantic-color-text-muted); font-size: var(--vt-foundation-font-size-body); font-variant-numeric: tabular-nums; }
+.catalog-api-row__controls { display: flex; align-items: center; justify-content: space-between; gap: var(--vt-foundation-space-3); }
+.catalog-api-row__controls [data-slot="switch"] { width: 2.25rem; height: 1.25rem; }
+.catalog-api-row__controls [data-slot="switch"][data-state="checked"] { background: var(--vt-semantic-color-action-primary); }
+.catalog-api-row__controls [data-slot="switch"][data-state="unchecked"] { background: var(--vt-semantic-color-border-strong); }
+.catalog-api-row__controls [data-slot="switch-thumb"] { width: 1rem; height: 1rem; translate: none; transform: none; background: var(--vt-semantic-color-surface-base); }
+.catalog-api-row__controls [data-slot="switch-thumb"][data-state="checked"] { transform: translateX(1rem); }
+.catalog-api-row__controls [aria-expanded="true"] svg { transform: rotate(180deg); }
+.catalog-api-row__details { padding: var(--vt-foundation-space-4); margin-bottom: var(--vt-foundation-space-4); border-radius: var(--vt-foundation-radius-control); background: var(--vt-semantic-color-surface-base); font-size: var(--vt-foundation-font-size-body); color: var(--vt-semantic-color-text-muted); overflow-wrap: anywhere; }
+.catalog-api-row__details[hidden] { display: none; }
+.catalog-api-row__details dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--vt-foundation-space-2) var(--vt-foundation-space-4); margin: var(--vt-foundation-space-3) 0; }
+.catalog-api-row__details dd { margin: 0; color: var(--vt-semantic-color-text-primary); font-variant-numeric: tabular-nums; }
+.catalog-api-row__details p { margin: var(--vt-foundation-space-2) 0; }
+.catalog-api-row__notices { font-size: var(--vt-foundation-font-size-body); color: var(--vt-semantic-color-text-muted); }
+.catalog-api-row__notices p { margin: 0 0 var(--vt-foundation-space-3); }
+.catalog-api-row [role="alert"] { color: var(--vt-semantic-color-action-danger); }
+@media (max-width: 55rem) {
+  .catalog-api-usage__head { display: none; }
+  .catalog-api-group { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .catalog-api-group > h3 { margin-bottom: 0; }
+  .catalog-api-row__summary { grid-template-columns: minmax(0, 1fr) 6rem; gap: var(--vt-foundation-space-2) var(--vt-foundation-space-4); }
+  .catalog-api-row__usage { grid-column: 1; grid-row: 2; }
+  .catalog-api-row__controls { grid-column: 2; grid-row: 1 / span 2; }
+  .catalog-api-row__details dl { grid-template-columns: minmax(0, 1fr); }
+  .catalog-api-row__details dd { margin-bottom: var(--vt-foundation-space-2); }
+}
+
+.catalog-api-row__details dt { margin-bottom: var(--vt-foundation-space-1); }

@@ -1,0 +1,2128 @@
+@import "./fonts.css";
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: min(20rem, 100%);
+  scroll-behavior: smooth;
+  overflow-x: clip;
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+body {
+  margin: 0;
+  min-width: min(20rem, 100%);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-canvas);
+  font-family: var(--vt-semantic-font-body);
+  font-size: var(--vt-foundation-font-size-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--vt-state-focus-width)
+      color-mix(in srgb, var(--vt-state-focus-color) 30%, transparent),
+    0 0 var(--vt-foundation-space-3)
+      color-mix(in srgb, var(--vt-state-focus-color) 24%, transparent);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: var(--vt-foundation-border-thin);
+  height: var(--vt-foundation-border-thin);
+  padding: 0;
+  margin: calc(var(--vt-foundation-border-thin) * -1);
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.marketing-home {
+  /* Still Water (ADR-0073): every marketing color is a semantic token so the
+     page follows the app palette without its own values. */
+  --vt-marketing-canvas: var(--vt-semantic-color-surface-canvas);
+  --vt-marketing-surface: var(--vt-semantic-color-surface-base);
+  --vt-marketing-raised: var(--vt-semantic-color-surface-subtle);
+  --vt-marketing-text: var(--vt-semantic-color-text-primary);
+  --vt-marketing-muted: var(--vt-semantic-color-text-muted);
+  --vt-marketing-border: var(--vt-semantic-color-border-default);
+  --vt-marketing-route: var(--vt-semantic-color-action-primary);
+  --vt-marketing-route-strong: var(--vt-semantic-color-action-primary-hover);
+  --vt-marketing-selected: var(--vt-semantic-color-surface-selected);
+  --vt-marketing-frame-veil-base: var(--vt-semantic-color-text-primary);
+  /* The hero action is a plain plate on the glass: the theme's own background,
+     as far from the Still light as the theme goes, with the brand color in the
+     words (owner 2026-09-16). Light pages are brighter than the light, dark
+     pages are darker, so each picks the side that keeps the plate legible. */
+  --vt-marketing-action-plate: var(--vt-marketing-surface);
+  --vt-marketing-action-plate-hover: var(--vt-marketing-raised);
+  overflow-x: visible;
+}
+
+:root.dark .marketing-home {
+  --vt-marketing-frame-veil-base: var(--vt-semantic-color-surface-canvas);
+  --vt-marketing-action-plate: var(--vt-marketing-canvas);
+  --vt-marketing-action-plate-hover: var(--vt-marketing-surface);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-primary);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  font-weight: var(--vt-foundation-font-weight-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  text-decoration: none;
+}
+
+/* The lane mark is a mask so its color is the Still Water route token in
+   both themes (footer, header, receipt) instead of a fixed-color image. */
+.brand-mark__symbol {
+  width: var(--vt-component-brand-mark-size);
+  height: var(--vt-component-brand-mark-size);
+  flex: 0 0 auto;
+  background: var(--vt-marketing-route);
+  mask: url("/assets/vitlane-lane-mark.svg") center / contain no-repeat;
+}
+
+.utility-label {
+  margin: 0;
+  color: var(--vt-marketing-muted);
+  font-family: var(--vt-semantic-font-body);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+.utility-label--inverse {
+  color: var(--vt-marketing-muted);
+}
+
+.button-link,
+.gallery-cta,
+.receipt-cta {
+  min-height: var(--vt-component-button-touch-height);
+  padding: var(--vt-semantic-space-control-block)
+    var(--vt-component-button-padding-inline);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vt-foundation-space-2);
+  border: var(--vt-component-button-border-width) solid transparent;
+  border-radius: var(--vt-component-button-radius);
+  font-size: var(--vt-component-button-font-size);
+  font-weight: var(--vt-component-button-font-weight);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  text-decoration: none;
+  transition:
+    transform var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-enter),
+    background var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-standard);
+}
+
+.button-link:hover,
+.gallery-cta:hover,
+.receipt-cta:hover {
+  transform: translateY(var(--vt-state-hover-lift));
+}
+
+.button-link-primary {
+  border-color: var(--vt-component-button-primary-background);
+  color: var(--vt-component-button-primary-text);
+  background: var(--vt-component-button-primary-background);
+}
+
+.button-link-primary:hover {
+  border-color: var(--vt-component-button-primary-hover);
+  background: var(--vt-component-button-primary-hover);
+}
+
+.button-link-secondary {
+  border-color: transparent;
+  color: var(--vt-component-button-secondary-text);
+  background: var(--vt-component-button-secondary-background);
+}
+
+.hero-stage {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--vt-marketing-text);
+  background: var(--vt-marketing-canvas);
+  isolation: isolate;
+}
+
+/* First-viewport background layer: ReededGlass (ADR-0078) fills it and paints
+   its base from the marketing canvas below. */
+.living-lane-layer,
+.living-lane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.living-lane-layer {
+  z-index: -2;
+}
+
+.living-lane {
+  overflow: hidden;
+  background: var(--vt-marketing-canvas);
+}
+
+.living-lane .vt-reeded-glass {
+  background: var(--vt-marketing-canvas);
+}
+
+.site-header {
+  width: 100%;
+  min-height: var(--vt-component-app-header-height);
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.site-header__inner {
+  width: 100%;
+  min-height: var(--vt-component-app-header-height);
+  padding-inline: clamp(
+    var(--vt-foundation-space-4),
+    1.667vw,
+    var(--vt-foundation-space-8)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-6);
+}
+
+.site-header--hero {
+  position: relative;
+  z-index: 4;
+  border-color: color-mix(in srgb, var(--vt-marketing-text) 16%, transparent);
+}
+
+.site-header--hero .brand-mark,
+.site-header--hero nav > a:not(.button-link) {
+  color: var(--vt-marketing-text);
+}
+
+.site-header nav {
+  display: flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-4);
+}
+
+.site-header nav > a:not(.button-link) {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  text-decoration: none;
+}
+
+.header-theme-toggle {
+  width: var(--vt-foundation-size-touch);
+  height: var(--vt-foundation-size-touch);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--vt-semantic-radius-control);
+  color: var(--vt-marketing-text);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--vt-semantic-motion-interactive)
+    var(--vt-foundation-motion-easing-standard);
+}
+
+.header-theme-toggle:hover {
+  background: var(--vt-marketing-raised);
+}
+
+.header-theme-toggle svg {
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+}
+
+.header-theme-toggle .is-sun,
+:root.dark .header-theme-toggle .is-moon {
+  display: none;
+}
+
+:root.dark .header-theme-toggle .is-sun {
+  display: block;
+}
+
+.site-header nav > a:not(.button-link):hover {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.site-header--hero nav > a:not(.button-link):hover {
+  color: color-mix(in srgb, var(--vt-marketing-text) 70%, var(--vt-marketing-route));
+}
+
+.hero {
+  width: min(
+    calc(100% - (var(--vt-semantic-space-page-inline) * 2)),
+    var(--vt-foundation-size-content)
+  );
+  flex: 1 0 auto;
+  margin-inline: auto;
+  padding-block: var(--vt-foundation-space-12) var(--vt-foundation-space-18);
+  display: flex;
+  align-items: center;
+}
+
+/* The first viewport is a column: header, the hero growing into the space,
+   and the Searching band on the bottom edge, all inside the reeded glass. */
+.hero-main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-copy {
+  width: 100%;
+  min-width: 0;
+}
+
+.hero-thesis-block {
+  width: 100%;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) auto
+    minmax(var(--vt-foundation-space-8), 0.16fr);
+  align-items: center;
+  column-gap: clamp(
+    var(--vt-foundation-space-6),
+    3vw,
+    var(--vt-foundation-space-12)
+  );
+}
+
+.hero-thesis-copy {
+  min-width: 0;
+}
+
+.hero h1 {
+  margin: 0;
+  color: var(--vt-marketing-text);
+  font-size: clamp(
+    var(--vt-foundation-font-size-heading),
+    5vw,
+    var(--vt-foundation-font-size-hero)
+  );
+  font-weight: var(--vt-foundation-font-weight-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-display);
+  word-break: keep-all;
+}
+
+/* One condition at a time over a fixed result clause (2026-09-18). The
+   conditions share one grid cell; the invisible copies size it to the longest
+   one, so the result clause and everything below never move. */
+.hero-title-visual {
+  display: grid;
+  justify-items: start;
+}
+
+.hero-title-condition {
+  max-width: 100%;
+  display: grid;
+  justify-items: start;
+}
+
+.hero-title-condition > * {
+  grid-area: 1 / 1;
+}
+
+.hero-title-ghost {
+  visibility: hidden;
+}
+
+.hero-title-key {
+  color: var(--vt-marketing-route);
+}
+
+.hero-thesis {
+  max-width: 34rem;
+  margin: var(--vt-foundation-space-5) 0 0;
+  color: var(--vt-marketing-text);
+  font-size: clamp(
+    var(--vt-foundation-font-size-body-strong),
+    1.25vw,
+    var(--vt-foundation-font-size-heading-small)
+  );
+  font-weight: var(--vt-foundation-font-weight-regular);
+  letter-spacing: normal;
+  line-height: var(--vt-foundation-font-line-height-body);
+  word-break: keep-all;
+}
+
+/* Searching band (2026-09-18): a soft frosted strip on the glass — the band
+   blur over a translucent canvas and no rule lines, so the reeds still read
+   through while the drifting store names stay legible. On a phone the hero
+   keeps its height and the band waits on the bottom edge. */
+.source-band {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  background: color-mix(in srgb, var(--vt-marketing-canvas) 55%, transparent);
+  -webkit-backdrop-filter: var(--vt-semantic-effect-band-blur);
+  backdrop-filter: var(--vt-semantic-effect-band-blur);
+}
+
+/* The band is full-bleed like the header: no visible label, just the names
+   drifting across the whole strip from the header's left line. */
+.source-band-inner {
+  padding-inline: clamp(
+    var(--vt-foundation-space-4),
+    1.667vw,
+    var(--vt-foundation-space-8)
+  );
+  padding-block: var(--vt-foundation-space-5);
+}
+
+.source-band-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--vt-marketing-canvas) var(--vt-foundation-space-12),
+    var(--vt-marketing-canvas) calc(100% - var(--vt-foundation-space-12)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--vt-marketing-canvas) var(--vt-foundation-space-12),
+    var(--vt-marketing-canvas) calc(100% - var(--vt-foundation-space-12)),
+    transparent
+  );
+}
+
+.source-band-track {
+  width: max-content;
+  display: flex;
+  animation: source-band-drift 60s linear infinite;
+}
+
+.source-band-list {
+  margin: 0;
+  padding: 0 var(--vt-foundation-space-12) 0 0;
+  display: flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-12);
+  list-style: none;
+}
+
+.source-band-store {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+  color: var(--vt-marketing-muted);
+  font-size: var(--vt-foundation-font-size-heading-small);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  white-space: nowrap;
+}
+
+.source-band-store svg {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+
+@keyframes source-band-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 48rem) {
+  .source-band-list {
+    padding-right: var(--vt-foundation-space-8);
+    gap: var(--vt-foundation-space-8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .source-band-track {
+    width: auto;
+    animation: none;
+  }
+
+  .source-band-viewport {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .source-band-list {
+    padding-right: 0;
+    flex-wrap: wrap;
+    row-gap: var(--vt-foundation-space-3);
+    column-gap: var(--vt-foundation-space-8);
+  }
+}
+
+.hero-actions {
+  grid-column: 2;
+  display: grid;
+  gap: var(--vt-foundation-space-6);
+}
+
+.hero-product-link {
+  width: 100%;
+  min-width: calc(var(--vt-foundation-size-touch) * 3.5);
+  min-height: calc(var(--vt-foundation-size-touch) * 1.2);
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vt-foundation-space-3);
+  border: none;
+  border-radius: var(--vt-semantic-radius-product);
+  /* The glass behind already carries the Still light, so the action is the one
+     calm surface on it and the brand color is in the words (owner 2026-09-16). */
+  color: var(--vt-marketing-route);
+  background: var(--vt-marketing-action-plate);
+  box-shadow: none;
+  font-size: var(--vt-foundation-font-size-heading-small);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  text-decoration: none;
+  transition:
+    transform var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-enter),
+    color var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-standard),
+    background var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-standard);
+}
+
+.hero-product-link:hover {
+  color: var(--vt-marketing-route-strong);
+  background: var(--vt-marketing-action-plate-hover);
+  transform: translateY(var(--vt-state-hover-lift));
+}
+
+.hero-product-link:hover span:last-child {
+  transform: translateX(var(--vt-foundation-space-1));
+}
+
+.hero-secondary-actions {
+  justify-self: start;
+  margin-left: var(--vt-foundation-space-3);
+  display: flex;
+  align-items: center;
+  column-gap: var(--vt-foundation-space-5);
+  flex-wrap: wrap;
+}
+
+.hero-social-link {
+  min-height: var(--vt-foundation-size-touch);
+  padding: var(--vt-foundation-space-2) 0;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  color: var(--vt-marketing-text);
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--vt-foundation-font-size-body-strong);
+  font-weight: var(--vt-foundation-font-weight-regular);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  text-align: left;
+  text-decoration-line: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: calc(var(--vt-foundation-border-thin) * 2);
+  text-underline-offset: var(--vt-foundation-space-1);
+  transition:
+    color var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-standard),
+    text-decoration-color var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-standard);
+}
+
+.hero-social-link:hover {
+  color: var(--vt-marketing-route);
+  text-decoration-color: currentColor;
+}
+
+.button-link svg,
+.gallery-cta svg,
+.receipt-cta svg {
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+}
+
+.assistant-avatar {
+  width: var(--vt-foundation-size-control);
+  height: var(--vt-foundation-size-control);
+  display: grid;
+  place-items: center;
+  border-radius: var(--vt-foundation-radius-pill);
+  border: var(--vt-foundation-border-thin) solid transparent;
+  color: var(--vt-semantic-color-text-on-action);
+  background: var(--vt-marketing-route);
+  -webkit-backdrop-filter: var(--vt-semantic-effect-glass-blur);
+  backdrop-filter: var(--vt-semantic-effect-glass-blur);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  font-weight: var(--vt-foundation-font-weight-heading);
+}
+
+.typing-caret {
+  width: var(--vt-foundation-border-thin);
+  height: 1em;
+  margin-inline-start: var(--vt-foundation-space-1);
+  display: inline-block;
+  vertical-align: -0.08em;
+  background: currentColor;
+  animation: caret-blink 780ms steps(1) infinite;
+}
+
+/* ---- One Lane (ADR-0074): 왜 Vitlane인가 — six moments on the real screens ---- */
+.lane-section {
+  position: relative;
+  height: 450svh;
+  color: var(--vt-marketing-text);
+  background: var(--vt-marketing-canvas);
+}
+
+#marketing-lane-root {
+  height: 100%;
+}
+
+.lane-sticky {
+  /* Set by LaneExperience: the active moment, used by the phone layout. */
+  --lane-stage: 0;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  padding: var(--vt-foundation-space-8)
+    max(
+      var(--vt-semantic-space-page-inline),
+      calc((100% - var(--vt-foundation-size-content)) / 2)
+    );
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--vt-foundation-space-6);
+  overflow: hidden;
+}
+
+.lane-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-8);
+}
+
+.lane-heading h2 {
+  margin: var(--vt-foundation-space-3) 0 0;
+  color: var(--vt-marketing-text);
+  font-size: var(--vt-foundation-font-size-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+.lane-progress {
+  min-width: 18rem;
+  display: grid;
+  grid-template-columns: auto minmax(10rem, 1fr) auto;
+  align-items: center;
+  gap: var(--vt-foundation-space-3);
+  color: var(--vt-marketing-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.lane-progress > div {
+  height: var(--vt-foundation-border-thin);
+  background: var(--vt-marketing-border);
+}
+
+.lane-progress i {
+  height: 100%;
+  display: block;
+  background: var(--vt-marketing-route);
+  transition: width var(--vt-semantic-motion-interactive)
+    var(--vt-foundation-motion-easing-standard);
+}
+
+.lane-progress-fill--0 { width: 16.667%; }
+.lane-progress-fill--1 { width: 33.333%; }
+.lane-progress-fill--2 { width: 50%; }
+.lane-progress-fill--3 { width: 66.667%; }
+.lane-progress-fill--4 { width: 83.333%; }
+.lane-progress-fill--5 { width: 100%; }
+
+.lane-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: clamp(var(--vt-foundation-space-8), 4vw, var(--vt-foundation-space-18));
+}
+
+.lane-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+}
+
+.lane-item.vt-button {
+  width: 100%;
+  height: auto;
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  justify-items: start;
+  gap: var(--vt-foundation-space-1);
+  border: none;
+  border-radius: var(--vt-semantic-radius-product);
+  color: var(--vt-marketing-muted);
+  background: transparent;
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-regular);
+  line-height: var(--vt-foundation-font-line-height-body);
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  transition:
+    background var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-standard),
+    color var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-standard);
+}
+
+.lane-item.vt-button:hover:not(:disabled) {
+  color: var(--vt-marketing-text);
+  background: var(--vt-marketing-raised);
+}
+
+.lane-item.vt-button.is-active {
+  color: var(--vt-marketing-text);
+  background: var(--vt-marketing-selected);
+}
+
+.lane-item small {
+  color: var(--vt-marketing-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+.lane-item strong {
+  font-size: var(--vt-foundation-font-size-body-strong);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+.lane-item.is-active strong,
+.lane-item.is-active small {
+  color: var(--vt-semantic-color-text-accent);
+}
+
+.lane-item span {
+  font-size: var(--vt-foundation-font-size-body);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+/* The frame keeps its 1200:760 shape; on short viewports it shrinks so the
+   talk strip beneath it stays inside the sticky scene. */
+.lane-stage {
+  width: min(100%, calc((100svh - 20rem) * 1200 / 760));
+  min-height: 0;
+  justify-self: center;
+  display: grid;
+  gap: var(--vt-foundation-space-3);
+}
+
+.lane-frame {
+  /* Set by LaneExperience for phones: camera on the evidence and receipt scale. */
+  --lane-camera-x: 0%;
+  --lane-camera-y: 0%;
+  --lane-camera-zoom: 1;
+  --lane-frame-scale: 1;
+  position: relative;
+  aspect-ratio: 1200 / 760;
+  touch-action: pan-y;
+  cursor: ew-resize;
+  user-select: none;
+  border: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+  border-radius: var(--vt-semantic-radius-overlay);
+  background: var(--vt-marketing-surface);
+  overflow: hidden;
+}
+
+.lane-frame > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--vt-semantic-motion-hero-slot)
+    var(--vt-foundation-motion-easing-standard);
+}
+
+.lane-frame > img.is-active {
+  opacity: 1;
+}
+
+/* One emphasis per screen: the evidence region is lit. The surrounding veil
+   stays dark in both themes: primary text in light, dark canvas in dark. */
+.lane-spot {
+  position: absolute;
+  border: var(--vt-foundation-border-thin) solid var(--vt-marketing-route);
+  border-radius: var(--vt-semantic-radius-product);
+  box-shadow: 0 0 0 200vmax
+    color-mix(in srgb, var(--vt-marketing-frame-veil-base) 45%, transparent);
+  pointer-events: none;
+  transition:
+    left var(--vt-semantic-motion-hero-slot) var(--vt-foundation-motion-easing-standard),
+    top var(--vt-semantic-motion-hero-slot) var(--vt-foundation-motion-easing-standard),
+    width var(--vt-semantic-motion-hero-slot) var(--vt-foundation-motion-easing-standard),
+    height var(--vt-semantic-motion-hero-slot) var(--vt-foundation-motion-easing-standard),
+    opacity var(--vt-semantic-motion-interactive) var(--vt-foundation-motion-easing-standard);
+}
+
+.lane-spot.is-hidden {
+  opacity: 0;
+}
+
+.lane-frame .receipt-machine {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+  animation: receipt-print 520ms var(--vt-foundation-motion-easing-enter) both;
+}
+
+/* Inside the frame the ticket is two columns (product | amounts) so the
+   disclosure and the CTA stay inside the 1200:760 shape without scrolling. */
+.lane-frame .receipt-ticket {
+  width: min(38rem, calc(100% - (var(--vt-foundation-space-8) * 2)));
+  max-height: none;
+  margin: auto;
+  padding: var(--vt-foundation-space-4) var(--vt-foundation-space-5)
+    var(--vt-foundation-space-5);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  column-gap: var(--vt-foundation-space-6);
+  align-items: start;
+  overflow: hidden;
+}
+
+.lane-frame .receipt-ticket header {
+  grid-column: 1;
+  padding-bottom: var(--vt-foundation-space-2);
+}
+
+.lane-frame .receipt-product {
+  grid-column: 1;
+  padding-block: var(--vt-foundation-space-2);
+  grid-template-columns: var(--vt-foundation-size-touch) minmax(0, 1fr);
+  border-bottom: 0;
+}
+
+.lane-frame .receipt-ticket dl {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
+}
+
+.lane-frame .receipt-ticket dl > div {
+  padding-block: var(--vt-foundation-space-1);
+}
+
+.lane-frame .receipt-ticket .receipt-total {
+  padding-block: var(--vt-foundation-space-2);
+}
+
+.lane-frame .receipt-ticket > p {
+  grid-column: 1 / -1;
+  margin: var(--vt-foundation-space-2) 0;
+  text-align: left;
+}
+
+.lane-frame .receipt-cta {
+  grid-column: 1 / -1;
+}
+
+.lane-talk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--vt-foundation-space-3);
+}
+
+.lane-request {
+  margin: 0;
+  justify-self: start;
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  border-radius: var(--vt-semantic-radius-overlay) var(--vt-semantic-radius-overlay)
+    var(--vt-semantic-radius-overlay) 0;
+  color: var(--vt-marketing-canvas);
+  background: var(--vt-marketing-text);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.lane-agent {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--vt-foundation-space-3);
+  opacity: 0;
+  transform: translateY(var(--vt-foundation-motion-distance-slot));
+  transition:
+    opacity var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-enter),
+    transform var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-enter);
+}
+
+.lane-agent.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.lane-agent > span:last-child {
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  border-radius: 0 var(--vt-semantic-radius-overlay) var(--vt-semantic-radius-overlay)
+    var(--vt-semantic-radius-overlay);
+  color: var(--vt-marketing-text);
+  background: var(--vt-marketing-raised);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.lane-stack {
+  display: none;
+}
+
+/* Reduced motion and viewports too short for a scene (landscape phones): the
+   same six moments as a vertical list (the React side renders only this
+   variant there). */
+@media (prefers-reduced-motion: reduce), (max-height: 30rem) {
+  .lane-section {
+    height: auto;
+  }
+  .lane-stack {
+    width: min(
+      calc(100% - (var(--vt-semantic-space-page-inline) * 2)),
+      var(--vt-foundation-size-content)
+    );
+    margin-inline: auto;
+    padding-block: var(--vt-foundation-space-12);
+    display: grid;
+    gap: var(--vt-foundation-space-8);
+  }
+  .lane-stack-heading h2 {
+    margin: 0;
+    font-size: var(--vt-foundation-font-size-heading-small);
+    font-weight: var(--vt-foundation-font-weight-heading);
+  }
+  .lane-stack figure {
+    margin: 0;
+    display: grid;
+    gap: var(--vt-foundation-space-3);
+  }
+  .lane-stack img {
+    width: 100%;
+    border: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+    border-radius: var(--vt-semantic-radius-product);
+  }
+  .lane-stack-receipt {
+    position: relative;
+    min-height: 30rem;
+    border: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+    border-radius: var(--vt-semantic-radius-product);
+    background: var(--vt-marketing-surface);
+    overflow: hidden;
+  }
+  .lane-stack-receipt .receipt-machine {
+    position: absolute;
+    inset: 0;
+  }
+  .lane-stack-receipt .receipt-ticket {
+    width: calc(100% - (var(--vt-foundation-space-4) * 2));
+    max-height: none;
+    margin: auto;
+  }
+  .lane-stack figcaption {
+    display: grid;
+    gap: var(--vt-foundation-space-1);
+  }
+  .lane-stack figcaption small {
+    color: var(--vt-marketing-muted);
+    font-family: var(--vt-semantic-font-data);
+    font-size: var(--vt-foundation-font-size-caption);
+  }
+  .lane-stack figcaption strong {
+    font-weight: var(--vt-foundation-font-weight-medium);
+  }
+  .lane-stack figcaption span {
+    color: var(--vt-marketing-muted);
+    font-size: var(--vt-foundation-font-size-body);
+  }
+  .lane-stack figcaption em {
+    color: var(--vt-semantic-color-text-accent);
+    font-size: var(--vt-foundation-font-size-body);
+    font-style: normal;
+  }
+}
+
+.gallery-card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.receipt-machine {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--vt-marketing-surface);
+}
+
+.receipt-machine-head {
+  width: 100%;
+  min-height: var(--vt-foundation-size-touch);
+  padding-inline: var(--vt-foundation-space-4);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--vt-foundation-space-3);
+  border-bottom: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+  color: var(--vt-marketing-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.receipt-machine-head svg {
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+}
+
+.receipt-machine-head span:last-child {
+  color: var(--vt-marketing-text);
+}
+
+.receipt-ticket {
+  width: min(28rem, calc(100% - (var(--vt-foundation-space-8) * 2)));
+  max-height: calc(100% - var(--vt-foundation-space-8));
+  padding: var(--vt-foundation-space-6) var(--vt-foundation-space-6)
+    var(--vt-foundation-space-8);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+  overflow: auto;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--vt-foundation-space-2)),
+    96% 100%,
+    92% calc(100% - var(--vt-foundation-space-2)),
+    88% 100%,
+    84% calc(100% - var(--vt-foundation-space-2)),
+    80% 100%,
+    76% calc(100% - var(--vt-foundation-space-2)),
+    72% 100%,
+    68% calc(100% - var(--vt-foundation-space-2)),
+    64% 100%,
+    60% calc(100% - var(--vt-foundation-space-2)),
+    56% 100%,
+    52% calc(100% - var(--vt-foundation-space-2)),
+    48% 100%,
+    44% calc(100% - var(--vt-foundation-space-2)),
+    40% 100%,
+    36% calc(100% - var(--vt-foundation-space-2)),
+    32% 100%,
+    28% calc(100% - var(--vt-foundation-space-2)),
+    24% 100%,
+    20% calc(100% - var(--vt-foundation-space-2)),
+    16% 100%,
+    12% calc(100% - var(--vt-foundation-space-2)),
+    8% 100%,
+    4% calc(100% - var(--vt-foundation-space-2)),
+    0 100%
+  );
+  animation: receipt-print 520ms var(--vt-foundation-motion-easing-enter) both;
+}
+
+.receipt-ticket header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--vt-foundation-space-2);
+  border-bottom: var(--vt-foundation-border-focus) solid var(--vt-semantic-color-border-strong);
+  padding-bottom: var(--vt-foundation-space-4);
+}
+
+
+.receipt-ticket header span {
+  grid-column: 1 / -1;
+  margin-top: var(--vt-foundation-space-3);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.receipt-product {
+  padding-block: var(--vt-foundation-space-4);
+  display: grid;
+  grid-template-columns: var(--vt-foundation-size-candidate-media) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--vt-foundation-space-4);
+  border-bottom: var(--vt-foundation-border-thin) dashed var(--vt-semantic-color-border-default);
+}
+
+.receipt-product > img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.receipt-product > div {
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+}
+
+.receipt-product span {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.receipt-ticket dl {
+  margin: var(--vt-foundation-space-4) 0 0;
+}
+
+.receipt-ticket dl > div {
+  padding-block: var(--vt-foundation-space-2);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-4);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.receipt-ticket dd {
+  margin: 0;
+  text-align: end;
+}
+
+.receipt-ticket .receipt-total {
+  margin-top: var(--vt-foundation-space-2);
+  padding-block: var(--vt-foundation-space-4);
+  border-top: var(--vt-foundation-border-focus) solid var(--vt-semantic-color-border-strong);
+  border-bottom: var(--vt-foundation-border-focus) solid var(--vt-semantic-color-border-strong);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  font-weight: var(--vt-foundation-font-weight-heading);
+}
+
+.receipt-ticket > p {
+  margin: var(--vt-foundation-space-4) 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+  line-height: var(--vt-foundation-font-line-height-body);
+  text-align: center;
+}
+
+.receipt-cta {
+  width: 100%;
+  color: var(--vt-semantic-color-text-on-action);
+  background: var(--vt-semantic-color-action-primary);
+}
+
+.gallery-section {
+  position: relative;
+  min-height: 180svh;
+  color: var(--vt-marketing-text);
+  background: var(--vt-marketing-canvas);
+  overflow: visible;
+}
+
+#marketing-gallery-root {
+  min-height: 180svh;
+}
+
+.product-gallery {
+  --gallery-spread: 1;
+  --gallery-tilt: 0deg;
+  --gallery-mobile-tilt: 0deg;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 100svh;
+  padding: var(--vt-foundation-space-18)
+    max(
+      var(--vt-semantic-space-page-inline),
+      calc((100% - var(--vt-foundation-size-content)) / 2)
+    )
+    var(--vt-foundation-space-8);
+  overflow: visible;
+}
+
+.product-gallery--step-1 {
+  --gallery-spread: 0.9;
+  --gallery-tilt: 6deg;
+  --gallery-mobile-tilt: 1.8deg;
+}
+
+.product-gallery--step-2 {
+  --gallery-spread: 0.8;
+  --gallery-tilt: 12deg;
+  --gallery-mobile-tilt: 3.6deg;
+}
+
+.product-gallery--step-3 {
+  --gallery-spread: 0.7;
+  --gallery-tilt: 18deg;
+  --gallery-mobile-tilt: 5.4deg;
+}
+
+.product-gallery--step-4 {
+  --gallery-spread: 0.6;
+  --gallery-tilt: 25deg;
+  --gallery-mobile-tilt: 7.2deg;
+}
+
+.product-gallery--step-5 {
+  --gallery-spread: 0.5;
+  --gallery-tilt: 32deg;
+  --gallery-mobile-tilt: 9deg;
+}
+
+.product-gallery--step-6 {
+  --gallery-spread: 0.4;
+  --gallery-tilt: 38deg;
+  --gallery-mobile-tilt: 10.8deg;
+}
+
+.product-gallery--step-7 {
+  --gallery-spread: 0.3;
+  --gallery-tilt: 44deg;
+  --gallery-mobile-tilt: 12.6deg;
+}
+
+.product-gallery--step-8 {
+  --gallery-spread: 0.2;
+  --gallery-tilt: 49deg;
+  --gallery-mobile-tilt: 14.4deg;
+}
+
+.product-gallery--step-9 {
+  --gallery-spread: 0.1;
+  --gallery-tilt: 53deg;
+  --gallery-mobile-tilt: 16.2deg;
+}
+
+.product-gallery--step-10 {
+  --gallery-spread: 0;
+  --gallery-tilt: 56deg;
+  --gallery-mobile-tilt: 18deg;
+}
+
+.gallery-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 46rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.gallery-copy h2 {
+  margin: var(--vt-foundation-space-4) 0 0;
+  font-size: clamp(
+    var(--vt-foundation-font-size-heading),
+    5vw,
+    var(--vt-foundation-font-size-display)
+  );
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-display);
+}
+
+.gallery-copy > p:not(.utility-label) {
+  margin: var(--vt-foundation-space-4) auto 0;
+  max-width: 38rem;
+  color: var(--vt-marketing-muted);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.gallery-cta {
+  margin-top: var(--vt-foundation-space-6);
+  color: var(--vt-marketing-canvas);
+  background: var(--vt-marketing-text);
+}
+
+.gallery-perspective {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(68rem, 100%);
+  height: 36rem;
+  margin: 0;
+  perspective: 55rem;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%);
+}
+
+.gallery-card {
+  --card-x: 0rem;
+  --card-x-tablet: 0rem;
+  --card-x-mobile: 0rem;
+  --card-y: 0rem;
+  --card-z: 0rem;
+  --card-rotation: 0deg;
+  position: absolute;
+  width: 19rem;
+  height: 24rem;
+  border: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+  border-radius: var(--vt-semantic-radius-product);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+  box-shadow: var(--vt-semantic-shadow-overlay);
+  overflow: hidden;
+  transform:
+    translate3d(
+      calc(-50% + (var(--card-x) * var(--gallery-spread))),
+      calc(-50% + (var(--card-y) * var(--gallery-spread))),
+      calc(var(--card-z) * var(--gallery-spread))
+    )
+    rotateX(var(--gallery-tilt))
+    rotateZ(calc(var(--card-rotation) * var(--gallery-spread)));
+  transform-origin: center;
+  transition: transform 80ms linear;
+}
+
+.gallery-card--0 {
+  --card-x: -26.25rem;
+  --card-x-tablet: -21.25rem;
+  --card-x-mobile: calc(var(--vt-foundation-size-candidate-media) * -0.75);
+  --card-rotation: -3.125deg;
+}
+
+.gallery-card--1 {
+  --card-x: -15.75rem;
+  --card-x-tablet: -12.75rem;
+  --card-x-mobile: calc(var(--vt-foundation-size-candidate-media) * -0.45);
+  --card-y: 5rem;
+  --card-z: -4rem;
+  --card-rotation: -1.875deg;
+}
+
+.gallery-card--2 {
+  --card-x: -5.25rem;
+  --card-x-tablet: -4.25rem;
+  --card-x-mobile: calc(var(--vt-foundation-size-candidate-media) * -0.15);
+  --card-rotation: -0.625deg;
+}
+
+.gallery-card--3 {
+  --card-x: 5.25rem;
+  --card-x-tablet: 4.25rem;
+  --card-x-mobile: calc(var(--vt-foundation-size-candidate-media) * 0.15);
+  --card-y: 5rem;
+  --card-z: -4rem;
+  --card-rotation: 0.625deg;
+}
+
+.gallery-card--4 {
+  --card-x: 15.75rem;
+  --card-x-tablet: 12.75rem;
+  --card-x-mobile: calc(var(--vt-foundation-size-candidate-media) * 0.45);
+  --card-rotation: 1.875deg;
+}
+
+.gallery-card--5 {
+  --card-x: 26.25rem;
+  --card-x-tablet: 21.25rem;
+  --card-x-mobile: calc(var(--vt-foundation-size-candidate-media) * 0.75);
+  --card-y: 5rem;
+  --card-z: -4rem;
+  --card-rotation: 3.125deg;
+}
+
+.gallery-card:nth-child(1),
+.gallery-card:nth-child(2),
+.gallery-card:nth-child(3),
+.gallery-card:nth-child(4),
+.gallery-card:nth-child(5),
+.gallery-card:nth-child(6) {
+  left: 50%;
+  top: 50%;
+}
+
+.gallery-card img {
+  height: 18rem;
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.gallery-card > div {
+  padding: var(--vt-foundation-space-3) var(--vt-foundation-space-4);
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+}
+
+.gallery-card span,
+.gallery-card small,
+.catalog-source {
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.gallery-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog-source {
+  position: absolute;
+  z-index: 3;
+  right: var(--vt-semantic-space-page-inline);
+  bottom: var(--vt-foundation-space-8);
+  left: var(--vt-semantic-space-page-inline);
+  margin: 0 auto;
+  color: var(--vt-marketing-muted);
+  text-align: center;
+}
+
+.test-section {
+  width: min(
+    calc(100% - (var(--vt-semantic-space-page-inline) * 2)),
+    var(--vt-foundation-size-content)
+  );
+  margin-inline: auto;
+  padding-block: var(--vt-foundation-space-18);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.62fr);
+  align-items: start;
+  gap: var(--vt-foundation-space-8);
+}
+
+.test-section h2 {
+  margin: var(--vt-foundation-space-4) 0 0;
+  font-size: var(--vt-foundation-font-size-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+/* The current-scope title: "Pay with" and the payment names in turn, the way
+   the retired From/To line rotated; the subtitle under it keeps the testing
+   boundary next to the names (2026-09-18). */
+.pay-with {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--vt-foundation-space-3);
+}
+
+.pay-with-lead {
+  color: var(--vt-marketing-route);
+}
+
+.pay-with-slot {
+  display: inline-grid;
+  justify-items: start;
+}
+
+.pay-with-slot > * {
+  grid-area: 1 / 1;
+}
+
+.pay-with-ghost {
+  visibility: hidden;
+}
+
+.pay-method {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+  color: var(--vt-marketing-text);
+  white-space: nowrap;
+}
+
+.pay-method svg {
+  width: 0.88em;
+  height: 0.88em;
+  flex: none;
+}
+
+.pay-method--paypal svg {
+  color: var(--vt-marketing-brand-paypal);
+}
+
+.test-subtitle {
+  margin: var(--vt-foundation-space-3) 0 0;
+  color: var(--vt-marketing-text);
+  font-size: var(--vt-foundation-font-size-heading-small);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  word-break: keep-all;
+}
+
+.test-section > div > p:last-child {
+  margin: var(--vt-foundation-space-4) 0 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.test-section ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+}
+
+.test-section li {
+  padding-block: var(--vt-foundation-space-3);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-4);
+  border-bottom: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+}
+
+.test-section li span {
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.test-section li strong {
+  color: var(--vt-marketing-route);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.site-footer {
+  min-height: calc(var(--vt-component-app-header-height) * 2);
+  padding: var(--vt-foundation-space-8)
+    max(
+      var(--vt-semantic-space-page-inline),
+      calc((100% - var(--vt-foundation-size-content)) / 2)
+    );
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--vt-foundation-space-8);
+  border-top: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.site-footer nav {
+  display: flex;
+  justify-content: center;
+  gap: var(--vt-foundation-space-6);
+  flex-wrap: wrap;
+}
+
+.site-footer nav a,
+.site-footer > span {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.policy-page {
+  min-height: 100vh;
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.policy-header {
+  width: min(
+    calc(100% - (var(--vt-semantic-space-page-inline) * 2)),
+    var(--vt-foundation-size-narrow-content)
+  );
+  min-height: var(--vt-component-app-header-height);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-6);
+  border-bottom: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+}
+
+.policy-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-3);
+}
+
+.policy-header__actions > a {
+  color: var(--vt-semantic-color-text-muted);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  text-decoration: none;
+}
+
+.policy-document {
+  width: min(
+    calc(100% - (var(--vt-semantic-space-page-inline) * 2)),
+    var(--vt-foundation-size-narrow-content)
+  );
+  margin-inline: auto;
+  padding-block: var(--vt-foundation-space-18);
+}
+
+.policy-document h1 {
+  margin: var(--vt-foundation-space-4) 0;
+  font-size: var(--vt-foundation-font-size-display);
+  font-weight: var(--vt-foundation-font-weight-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-display);
+}
+
+.policy-lead {
+  margin: var(--vt-foundation-space-8) 0 var(--vt-foundation-space-12);
+  padding: var(--vt-foundation-space-6);
+  border-inline-start: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-action-primary);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.policy-document section {
+  padding-block: var(--vt-foundation-space-6);
+  border-top: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-border-default);
+}
+
+.policy-document h2 {
+  margin: 0 0 var(--vt-foundation-space-3);
+  font-size: var(--vt-foundation-font-size-body-strong);
+}
+
+.policy-document section p,
+.policy-document section li {
+  color: var(--vt-semantic-color-text-muted);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.policy-document section p {
+  margin: 0;
+}
+
+.policy-document section ul {
+  margin: var(--vt-foundation-space-3) 0 0;
+  padding-inline-start: var(--vt-foundation-space-6);
+}
+
+.policy-date {
+  margin-top: var(--vt-foundation-space-8);
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+
+@keyframes receipt-print {
+  from { opacity: 0; transform: translateY(calc(var(--vt-foundation-space-8) * -1)); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 64rem) {
+  .hero h1 {
+    font-size: clamp(
+      var(--vt-foundation-font-size-heading),
+      6.4vw,
+      calc(var(--vt-foundation-font-size-display) * 1.24)
+    );
+  }
+
+  .lane-grid {
+    grid-template-columns: minmax(14rem, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .gallery-card {
+    width: 17rem;
+    transform:
+      translate3d(
+        calc(-50% + (var(--card-x-tablet) * var(--gallery-spread))),
+        calc(-50% + (var(--card-y) * var(--gallery-spread))),
+        calc(var(--card-z) * var(--gallery-spread))
+      )
+      rotateX(var(--gallery-tilt))
+      rotateZ(calc(var(--card-rotation) * var(--gallery-spread)));
+  }
+}
+
+/* Phones run the same scene in one column (ADR-0076): heading and progress on
+   top, one moment at a time sliding in with the scroll, the captured screen
+   with the camera moved in on its evidence, and one line of talk. It follows
+   the 64rem rules so the one-column grid wins on phones. */
+@media (max-width: 48rem) {
+  .lane-sticky {
+    padding: var(--vt-foundation-space-6) var(--vt-foundation-space-4)
+      var(--vt-foundation-space-4);
+    gap: var(--vt-foundation-space-4);
+  }
+
+  .lane-heading {
+    display: grid;
+    align-items: stretch;
+    gap: var(--vt-foundation-space-3);
+  }
+
+  .lane-heading h2 {
+    margin-top: var(--vt-foundation-space-1);
+    font-size: var(--vt-foundation-font-size-heading-small);
+  }
+
+  .lane-progress {
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  /* The moment, the frame and the talk sit together in the middle of the
+     scene below the heading, whatever the phone's height. */
+  .lane-grid {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: var(--vt-foundation-space-4);
+  }
+
+  .lane-list {
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .lane-list > li {
+    display: grid;
+    transform: translateX(calc(var(--lane-stage) * -100%));
+    transition: transform calc(var(--vt-semantic-motion-hero-slot) * 2)
+      var(--vt-foundation-motion-easing-standard);
+  }
+
+  .lane-item.vt-button,
+  .lane-item.vt-button.is-active,
+  .lane-item.vt-button:hover:not(:disabled) {
+    height: 100%;
+    padding-inline: 0;
+    align-content: start;
+    background: transparent;
+  }
+
+  /* The frame keeps 1200:760 and gives up width before the talk leaves the scene. */
+  .lane-stage {
+    width: min(100%, calc((100svh - 24rem) * 1200 / 760));
+  }
+
+  .lane-frame > img {
+    transform-origin: 0 0;
+    transform: translate(var(--lane-camera-x), var(--lane-camera-y))
+      scale(var(--lane-camera-zoom));
+    transition:
+      opacity var(--vt-semantic-motion-hero-slot) var(--vt-foundation-motion-easing-standard),
+      transform calc(var(--vt-semantic-motion-hero-slot) * 2)
+        var(--vt-foundation-motion-easing-standard);
+  }
+
+  .lane-spot {
+    transition:
+      left calc(var(--vt-semantic-motion-hero-slot) * 2) var(--vt-foundation-motion-easing-standard),
+      top calc(var(--vt-semantic-motion-hero-slot) * 2) var(--vt-foundation-motion-easing-standard),
+      width calc(var(--vt-semantic-motion-hero-slot) * 2) var(--vt-foundation-motion-easing-standard),
+      height calc(var(--vt-semantic-motion-hero-slot) * 2) var(--vt-foundation-motion-easing-standard),
+      opacity var(--vt-semantic-motion-interactive) var(--vt-foundation-motion-easing-standard);
+  }
+
+  /* 41rem × 1200:760 is the frame the ticket was designed in (LaneExperience
+     keeps the same width and sets the scale from the real frame). */
+  .lane-frame .receipt-machine {
+    inset: 0 auto auto 0;
+    width: 41rem;
+    height: calc(41rem * 760 / 1200);
+    scale: var(--lane-frame-scale);
+    transform-origin: 0 0;
+  }
+
+  .lane-talk {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lane-talk > * {
+    grid-area: 1 / 1;
+  }
+
+  /* One line of talk at a time: the request while it is typed, then Vitlane. */
+  .lane-request {
+    font-size: var(--vt-foundation-font-size-body);
+    transition: opacity var(--vt-semantic-motion-interactive)
+      var(--vt-foundation-motion-easing-standard);
+  }
+
+  .lane-sticky:not([data-stage="0"]) .lane-request {
+    opacity: 0;
+  }
+
+  .lane-agent > span:last-child {
+    font-size: var(--vt-foundation-font-size-body);
+  }
+}
+
+/* 320px: the compact header keeps mark, locale, theme toggle and menu on one
+   line by showing the mark alone (brand rule: mark-only is allowed in compact
+   navigation) and tightening the nav gap. */
+@media (max-width: 22.5rem) {
+  .site-header .brand-mark > span:not(.brand-mark__symbol) {
+    display: none;
+  }
+
+  .site-header nav {
+    gap: var(--vt-foundation-space-2);
+  }
+}
+
+@media (max-width: 48rem) {
+  .hero,
+  .test-section,
+  .policy-header,
+  .policy-document {
+    width: calc(100% - (var(--vt-foundation-space-4) * 2));
+  }
+
+  .site-header nav > a:not(.button-link) {
+    display: none;
+  }
+
+  .site-header nav > a.header-locale-link {
+    display: inline-flex;
+  }
+
+  .hero {
+    flex: none;
+    min-height: auto;
+    padding-block: var(--vt-foundation-space-12) var(--vt-foundation-space-18);
+  }
+
+  /* On a phone the action sits a little lower under the copy (owner 2026-09-18). */
+  .hero-thesis-block {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--vt-foundation-space-18);
+  }
+
+  .hero-actions {
+    grid-column: auto;
+    justify-self: start;
+    max-width: 100%;
+  }
+
+  .hero-product-link {
+    min-width: min(100%, calc(var(--vt-foundation-size-touch) * 4));
+  }
+
+  .hero h1 {
+    font-size: clamp(
+      var(--vt-foundation-font-size-heading),
+      11.4vw,
+      calc(var(--vt-foundation-font-size-display) * 1.08)
+    );
+  }
+
+  .gallery-section,
+  #marketing-gallery-root {
+    min-height: 180svh;
+  }
+
+  .product-gallery {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    min-height: 100svh;
+    padding: var(--vt-foundation-space-8) var(--vt-foundation-space-4)
+      var(--vt-foundation-space-4);
+    overflow: hidden;
+  }
+
+  .gallery-perspective {
+    position: absolute;
+    left: 50%;
+    top: 62%;
+    width: 100%;
+    height: min(48vh, 25rem);
+    margin: 0;
+    display: block;
+    perspective: 55rem;
+    transform: translate(-50%, -50%);
+  }
+
+  .gallery-card,
+  .gallery-card:nth-child(n) {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    /* 3:4 cards give up height on short phones so the copy above stays clear. */
+    width: auto;
+    height: min(
+      calc(var(--vt-foundation-size-candidate-media) * 2),
+      calc(50svh - var(--vt-foundation-space-8))
+    );
+    aspect-ratio: 3 / 4;
+    transform:
+      translate3d(
+        calc(-50% + (var(--card-x-mobile) * var(--gallery-spread))),
+        calc(-50% + (var(--card-y) * var(--gallery-spread))),
+        calc(var(--card-z) * var(--gallery-spread))
+      )
+      rotateX(var(--gallery-tilt))
+      rotateZ(calc(var(--card-rotation) * var(--gallery-spread)));
+  }
+
+  /* The text block keeps room for maker, name and price at every card size. */
+  .gallery-card img {
+    height: calc(100% - var(--vt-foundation-space-18) - var(--vt-foundation-space-4));
+  }
+
+  .catalog-source {
+    position: absolute;
+    inset: auto var(--vt-foundation-space-4) var(--vt-foundation-space-4);
+    margin: 0;
+  }
+
+  .test-section {
+    padding-block: var(--vt-foundation-space-12);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .site-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer nav {
+    justify-content: flex-start;
+  }
+
+  .policy-document h1 {
+    font-size: var(--vt-foundation-font-size-heading);
+  }
+}
+
+@media (max-width: 32rem) {
+  .gallery-perspective {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: var(--vt-foundation-motion-duration-instant) !important;
+    animation-duration: var(--vt-foundation-motion-duration-instant) !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (forced-colors: active) {
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: var(--vt-state-focus-width) solid CanvasText;
+    outline-offset: var(--vt-state-focus-offset);
+    box-shadow: none;
+  }
+}
+
+/* ---- Still Water (ADR-0073): 먼저 써 본 사람들 — quotes without cards ---- */
+.voices-section:has(#marketing-voices-root:empty) {
+  display: none;
+}
+
+.voices {
+  width: min(
+    calc(100% - (var(--vt-semantic-space-page-inline) * 2)),
+    var(--vt-foundation-size-content)
+  );
+  margin-inline: auto;
+  margin-top: var(--vt-foundation-space-12);
+  padding-block: calc(var(--vt-foundation-space-18) + var(--vt-foundation-space-12));
+  border-top: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+  border-bottom: var(--vt-foundation-border-thin) solid var(--vt-marketing-border);
+}
+
+.voices h2 {
+  margin: 0 0 var(--vt-foundation-space-12);
+  color: var(--vt-marketing-text);
+  font-size: var(--vt-foundation-font-size-heading);
+  font-weight: var(--vt-foundation-font-weight-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+.voices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--vt-foundation-space-12) var(--vt-foundation-space-18);
+}
+
+/* Five quotes drift horizontally as one slow loop (two copies, the second
+   aria-hidden). Nothing scrolls on the x axis and the loop never pauses on
+   hover (2026-09-14 owner decision). Reduced motion shows the five quotes as
+   a static grid instead. */
+.voices-viewport {
+  overflow: hidden;
+  mask: linear-gradient(
+    to right,
+    transparent,
+    var(--vt-marketing-text) var(--vt-foundation-space-12),
+    var(--vt-marketing-text) calc(100% - var(--vt-foundation-space-12)),
+    transparent
+  );
+}
+
+.voices-track {
+  display: flex;
+  width: max-content;
+  animation: voices-drift 84s linear infinite;
+}
+
+.voices-track .voice {
+  flex: 0 0 min(26rem, 78vw);
+  margin-inline-end: var(--vt-foundation-space-18);
+}
+
+@keyframes voices-drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voices-viewport {
+    mask: none;
+  }
+
+  .voices-track {
+    width: auto;
+    flex-wrap: wrap;
+    gap: var(--vt-foundation-space-12) 0;
+    animation: none;
+  }
+
+  .voices-track .voice[data-clone] {
+    display: none;
+  }
+}
+
+.voice {
+  margin: 0;
+  display: grid;
+  gap: var(--vt-foundation-space-5);
+  align-content: start;
+}
+
+.voice p {
+  margin: 0;
+  color: var(--vt-marketing-text);
+  font-size: var(--vt-foundation-font-size-heading-small);
+  line-height: var(--vt-foundation-font-line-height-body);
+  word-break: keep-all;
+  text-wrap: pretty;
+}
+
+.voice footer {
+  color: var(--vt-marketing-muted);
+  font-size: var(--vt-foundation-font-size-body);
+}
+
+/* Useful content remains when the interactive module cannot load. */
+.lane-section:has(.marketing-static-copy) {
+  height: auto;
+  min-height: 0;
+}
+.marketing-static-copy {
+  max-width: var(--vt-foundation-size-content);
+  margin-inline: auto;
+  padding: var(--vt-foundation-space-12) var(--vt-foundation-space-6);
+}
+.marketing-static-copy ol {
+  padding-inline-start: var(--vt-foundation-space-6);
+}
+.source-band:has(#marketing-source-band-root:empty),
+.gallery-section:has(#marketing-gallery-root:empty) {
+  display: none;
+}
+
+/* Keep the decorative card spread inside its section at enlarged text sizes. */
+.gallery-section {
+  overflow-x: clip;
+}
+
+/* Text zoom must reflow the header and primary action rather than widen the page. */
+.site-header__inner,
+.site-header nav {
+  flex-wrap: wrap;
+}
+.site-header nav {
+  max-width: 100%;
+}
+.hero-title-condition,
+.hero-title-result,
+.hero-product-link span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.hero-product-link {
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* Keep long scope labels inside the column at 200% text size. */
+.test-section > *,
+.test-section li > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

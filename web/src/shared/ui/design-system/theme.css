@@ -1,0 +1,411 @@
+@theme inline {
+  --font-heading: var(--vt-semantic-font-body);
+  --font-sans: var(--vt-semantic-font-body);
+  --font-mono: var(--vt-semantic-font-data);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * Still Water (ADR-0073). This file is the only theme layer: it maps generated
+ * semantic tokens and the shadcn variables onto foundation colors per
+ * appearance. Product CSS references semantic and component tokens only.
+ *
+ * Default accent is still (`data-accent="blue"` stays the stored identifier for
+ * compatibility). `data-accent="neutral"` is Ink, the black alternative with
+ * no hue anywhere (comparison, brand fill and glass included). The
+ * palettes of ADR-0082 (`moss`, `maple`, `iris`) rotate one hue and keep every
+ * other role: each block below overrides the same signal variables and the
+ * `--vt-accent-seed`/`--vt-accent-strong` aliases that
+ * components.css mixes for the reeded glass. `.vt-dark-scope` gives a region
+ * that is always dark (login shell, operator console) the same mapping as the
+ * dark appearance, per accent.
+ */
+
+:root {
+  color-scheme: light;
+  --background: var(--vt-semantic-color-surface-canvas);
+  --foreground: var(--vt-semantic-color-text-primary);
+  --card: var(--vt-semantic-color-surface-base);
+  --card-foreground: var(--vt-semantic-color-text-primary);
+  --popover: var(--vt-semantic-color-surface-base);
+  --popover-foreground: var(--vt-semantic-color-text-primary);
+  --primary: var(--vt-foundation-color-still);
+  --primary-foreground: var(--vt-foundation-color-clear);
+  --secondary: var(--vt-foundation-color-neutral-soft);
+  --secondary-foreground: var(--vt-foundation-color-night);
+  --muted: var(--vt-foundation-color-cloud);
+  --muted-foreground: var(--vt-foundation-color-slate);
+  --accent: var(--vt-foundation-color-neutral-soft);
+  --accent-foreground: var(--vt-foundation-color-night);
+  --destructive: var(--vt-foundation-color-danger);
+  --border: var(--vt-foundation-color-alloy);
+  --input: var(--vt-foundation-color-alloy);
+  --ring: var(--vt-foundation-color-still);
+  --chart-1: var(--vt-foundation-color-ink);
+  --chart-2: var(--vt-foundation-color-slate);
+  --chart-3: var(--vt-foundation-color-still);
+  --chart-4: var(--vt-foundation-color-test-amber);
+  --chart-5: var(--vt-foundation-color-danger);
+  --radius: var(--vt-semantic-radius-overlay);
+  --sidebar: var(--vt-foundation-color-clear);
+  --sidebar-foreground: var(--vt-foundation-color-night);
+  --sidebar-primary: var(--vt-foundation-color-still);
+  --sidebar-primary-foreground: var(--vt-foundation-color-clear);
+  --sidebar-accent: var(--vt-foundation-color-still-soft);
+  --sidebar-accent-foreground: var(--vt-foundation-color-night);
+  --sidebar-border: var(--vt-foundation-color-alloy);
+  --sidebar-ring: var(--vt-foundation-color-still);
+  --vt-shell-sidebar-background: var(--vt-foundation-color-clear);
+  --vt-shell-sidebar-border: var(--vt-foundation-color-alloy);
+  --vt-shell-sidebar-text: var(--vt-foundation-color-night);
+  --vt-shell-sidebar-muted: var(--vt-foundation-color-slate);
+  --vt-shell-sidebar-danger: var(--vt-foundation-color-danger);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-still-strong);
+  --vt-shell-sidebar-signal-soft: var(--vt-foundation-color-slate);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-still);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-still-soft);
+  --vt-accent-seed: var(--vt-foundation-color-still);
+  --vt-accent-strong: var(--vt-foundation-color-still-strong);
+}
+
+/* Ink (black): every signal loses its hue, including comparison, the brand
+   fill and the reeded glass (owner 2026-09-17: the black theme is black; this
+   replaces the 2026-09-12 exception that kept comparison on still). */
+:root[data-accent="neutral"] {
+  --primary: var(--vt-foundation-color-ink);
+  --ring: var(--vt-foundation-color-ink);
+  --chart-3: var(--vt-foundation-color-ink);
+  --sidebar-primary: var(--vt-foundation-color-ink);
+  --sidebar-accent: var(--vt-foundation-color-neutral-soft);
+  --sidebar-ring: var(--vt-foundation-color-ink);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-ink);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-alloy-strong);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-neutral-soft);
+
+  --vt-accent-seed: var(--vt-foundation-color-ink);
+  --vt-accent-strong: var(--vt-foundation-color-night);
+
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-ink);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-night);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-ink);
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-ink);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-ink);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-ink);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-neutral-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-neutral-soft);
+}
+
+/* Moss (ADR-0082): the still signal roles with one hue rotated. Comparison
+   and brand follow the palette so a screen keeps a single hue. The canvas and
+   every surface stay exactly as in Still Water (owner 2026-09-17: a palette
+   changes signals, never the background). */
+:root[data-accent="moss"] {
+  --primary: var(--vt-foundation-color-moss);
+  --ring: var(--vt-foundation-color-moss);
+  --chart-3: var(--vt-foundation-color-moss);
+  --sidebar-primary: var(--vt-foundation-color-moss);
+  --sidebar-accent: var(--vt-foundation-color-moss-soft);
+  --sidebar-ring: var(--vt-foundation-color-moss);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-moss-strong);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-moss);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-moss-soft);
+  --vt-accent-seed: var(--vt-foundation-color-moss);
+  --vt-accent-strong: var(--vt-foundation-color-moss-strong);
+
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-moss);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-moss-strong);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-moss);
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-moss-strong);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-moss-strong);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-moss);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-moss-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-moss-soft);
+}
+
+/* Maple (ADR-0082): the still signal roles with one hue rotated. Comparison
+   and brand follow the palette so a screen keeps a single hue. */
+:root[data-accent="maple"] {
+  --primary: var(--vt-foundation-color-maple);
+  --ring: var(--vt-foundation-color-maple);
+  --chart-3: var(--vt-foundation-color-maple);
+  --sidebar-primary: var(--vt-foundation-color-maple);
+  --sidebar-accent: var(--vt-foundation-color-maple-soft);
+  --sidebar-ring: var(--vt-foundation-color-maple);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-maple-strong);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-maple);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-maple-soft);
+  --vt-accent-seed: var(--vt-foundation-color-maple);
+  --vt-accent-strong: var(--vt-foundation-color-maple-strong);
+
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-maple);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-maple-strong);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-maple);
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-maple-strong);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-maple-strong);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-maple);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-maple-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-maple-soft);
+}
+
+/* Iris (ADR-0082): the still signal roles with one hue rotated. Comparison
+   and brand follow the palette so a screen keeps a single hue. */
+:root[data-accent="iris"] {
+  --primary: var(--vt-foundation-color-iris);
+  --ring: var(--vt-foundation-color-iris);
+  --chart-3: var(--vt-foundation-color-iris);
+  --sidebar-primary: var(--vt-foundation-color-iris);
+  --sidebar-accent: var(--vt-foundation-color-iris-soft);
+  --sidebar-ring: var(--vt-foundation-color-iris);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-iris-strong);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-iris);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-iris-soft);
+  --vt-accent-seed: var(--vt-foundation-color-iris);
+  --vt-accent-strong: var(--vt-foundation-color-iris-strong);
+
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-iris);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-iris-strong);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-iris);
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-iris-strong);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-iris-strong);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-iris);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-iris-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-iris-soft);
+}
+
+:root.dark,
+.vt-dark-scope {
+  color-scheme: dark;
+  --background: var(--vt-foundation-color-dark-canvas);
+  --foreground: var(--vt-foundation-color-dark-text);
+  --card: var(--vt-foundation-color-dark-surface);
+  --card-foreground: var(--vt-foundation-color-dark-text);
+  --popover: var(--vt-foundation-color-dark-surface-raised);
+  --popover-foreground: var(--vt-foundation-color-dark-text);
+  --primary: var(--vt-foundation-color-still-bright);
+  --primary-foreground: var(--vt-foundation-color-dark-canvas);
+  --secondary: var(--vt-foundation-color-dark-neutral-soft);
+  --secondary-foreground: var(--vt-foundation-color-dark-text);
+  --muted: var(--vt-foundation-color-dark-surface-raised);
+  --muted-foreground: var(--vt-foundation-color-dark-muted);
+  --accent: var(--vt-foundation-color-dark-neutral-soft);
+  --accent-foreground: var(--vt-foundation-color-dark-text);
+  --destructive: var(--vt-foundation-color-danger-soft);
+  --border: var(--vt-foundation-color-dark-border);
+  --input: var(--vt-foundation-color-dark-border-strong);
+  --ring: var(--vt-foundation-color-still-bright);
+  --chart-3: var(--vt-foundation-color-still-bright);
+  --sidebar: var(--vt-foundation-color-dark-canvas);
+  --sidebar-foreground: var(--vt-foundation-color-clear);
+  --sidebar-primary: var(--vt-foundation-color-still-bright);
+  --sidebar-primary-foreground: var(--vt-foundation-color-dark-canvas);
+  --sidebar-accent: var(--vt-foundation-color-dark-still-soft);
+  --sidebar-accent-foreground: var(--vt-foundation-color-clear);
+  --sidebar-border: var(--vt-foundation-color-dark-border);
+  --sidebar-ring: var(--vt-foundation-color-still-bright);
+  --vt-shell-sidebar-background: var(--vt-foundation-color-dark-canvas);
+  --vt-shell-sidebar-border: var(--vt-foundation-color-dark-border);
+  --vt-shell-sidebar-text: var(--vt-foundation-color-clear);
+  --vt-shell-sidebar-muted: var(--vt-foundation-color-alloy);
+  --vt-shell-sidebar-danger: var(--vt-foundation-color-danger-soft);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-still-bright);
+  --vt-shell-sidebar-signal-soft: var(--vt-foundation-color-dark-muted);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-still-bright);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-dark-still-soft);
+
+  --vt-semantic-color-text-primary: var(--vt-foundation-color-dark-text);
+  --vt-semantic-color-text-muted: var(--vt-foundation-color-dark-muted);
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-still-bright);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-still-bright);
+  --vt-semantic-color-text-danger: var(--vt-foundation-color-danger-soft);
+  --vt-semantic-color-text-warning: var(--vt-foundation-color-warning-soft);
+  --vt-semantic-color-text-test: var(--vt-foundation-color-test-amber-soft);
+  --vt-semantic-color-text-positive: var(--vt-foundation-color-affirm-green-soft);
+  --vt-semantic-color-text-on-action: var(--vt-foundation-color-dark-canvas);
+  --vt-semantic-color-surface-canvas: var(--vt-foundation-color-dark-canvas);
+  --vt-semantic-color-surface-base: var(--vt-foundation-color-dark-surface);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-dark-still-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-dark-still-soft);
+  --vt-semantic-color-surface-subtle: var(--vt-foundation-color-dark-neutral-soft);
+  --vt-semantic-color-surface-scrim: var(--vt-foundation-color-dark-scrim);
+  --vt-semantic-color-surface-recede: var(--vt-foundation-color-dark-recede);
+  --vt-semantic-shadow-edge-start: var(--vt-foundation-shadow-dark-edge-start);
+  --vt-semantic-shadow-edge-end: var(--vt-foundation-shadow-dark-edge-end);
+  --vt-semantic-shadow-edge-top: var(--vt-foundation-shadow-dark-edge-top);
+  --vt-semantic-shadow-edge-above: var(--vt-foundation-shadow-dark-edge-above);
+  --vt-semantic-color-surface-danger: var(--vt-foundation-color-dark-danger-soft);
+  --vt-semantic-color-surface-warning: var(--vt-foundation-color-dark-warning-soft);
+  --vt-semantic-color-surface-test: var(--vt-foundation-color-dark-test-soft);
+  --vt-semantic-color-surface-positive: var(--vt-foundation-color-dark-affirm-soft);
+  --vt-semantic-color-border-default: var(--vt-foundation-color-dark-border);
+  --vt-semantic-color-border-strong: var(--vt-foundation-color-dark-border-strong);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-still-bright);
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-still-bright);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-still-bright-hover);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-still-bright);
+  --vt-semantic-color-action-quiet: var(--vt-foundation-color-dark-surface);
+  --vt-component-button-primary-background: var(--vt-foundation-color-still-bright);
+  --vt-component-button-primary-hover: var(--vt-foundation-color-still-bright-hover);
+  --vt-component-button-primary-text: var(--vt-foundation-color-dark-canvas);
+  --vt-component-button-secondary-background: var(--vt-foundation-color-dark-surface);
+  --vt-component-button-secondary-text: var(--vt-foundation-color-dark-text);
+  --vt-component-button-quiet-hover: var(--vt-foundation-color-dark-neutral-soft);
+  --vt-state-focus-color: var(--vt-foundation-color-still-bright);
+}
+
+:root.dark[data-accent="neutral"],
+:root[data-accent="neutral"] .vt-dark-scope {
+  --primary: var(--vt-foundation-color-dark-text);
+  --primary-foreground: var(--vt-foundation-color-dark-canvas);
+  --ring: var(--vt-foundation-color-dark-text);
+  --chart-3: var(--vt-foundation-color-dark-text);
+  --sidebar-primary: var(--vt-foundation-color-clear);
+  --sidebar-primary-foreground: var(--vt-foundation-color-dark-canvas);
+  --sidebar-accent: var(--vt-foundation-color-dark-neutral-soft);
+  --sidebar-ring: var(--vt-foundation-color-clear);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-clear);
+  --vt-shell-sidebar-signal-soft: var(--vt-foundation-color-dark-muted);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-dark-border-strong);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-dark-neutral-soft);
+
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-dark-text);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-dark-text);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-dark-neutral-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-dark-neutral-soft);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-dark-text);
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-dark-text);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-clear);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-dark-text);
+  --vt-component-button-primary-background: var(--vt-foundation-color-dark-text);
+  --vt-component-button-primary-hover: var(--vt-foundation-color-clear);
+  --vt-component-button-primary-text: var(--vt-foundation-color-dark-canvas);
+  --vt-state-focus-color: var(--vt-foundation-color-dark-text);
+}
+
+/* Dark mappings per palette. The selector also covers an always-dark region on a
+   light page so the login shell glows in the chosen palette. */
+:root.dark[data-accent="moss"],
+:root[data-accent="moss"] .vt-dark-scope {
+  --primary: var(--vt-foundation-color-moss-bright);
+  --ring: var(--vt-foundation-color-moss-bright);
+  --chart-3: var(--vt-foundation-color-moss-bright);
+  --sidebar-primary: var(--vt-foundation-color-moss-bright);
+  --sidebar-accent: var(--vt-foundation-color-dark-moss-soft);
+  --sidebar-ring: var(--vt-foundation-color-moss-bright);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-moss-bright);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-moss-bright);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-dark-moss-soft);
+
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-moss-bright);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-moss-bright);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-dark-moss-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-dark-moss-soft);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-moss-bright);
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-moss-bright);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-moss-bright-hover);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-moss-bright);
+  --vt-component-button-primary-background: var(--vt-foundation-color-moss-bright);
+  --vt-component-button-primary-hover: var(--vt-foundation-color-moss-bright-hover);
+  --vt-state-focus-color: var(--vt-foundation-color-moss-bright);
+}
+
+:root.dark[data-accent="maple"],
+:root[data-accent="maple"] .vt-dark-scope {
+  --primary: var(--vt-foundation-color-maple-bright);
+  --ring: var(--vt-foundation-color-maple-bright);
+  --chart-3: var(--vt-foundation-color-maple-bright);
+  --sidebar-primary: var(--vt-foundation-color-maple-bright);
+  --sidebar-accent: var(--vt-foundation-color-dark-maple-soft);
+  --sidebar-ring: var(--vt-foundation-color-maple-bright);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-maple-bright);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-maple-bright);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-dark-maple-soft);
+
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-maple-bright);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-maple-bright);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-dark-maple-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-dark-maple-soft);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-maple-bright);
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-maple-bright);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-maple-bright-hover);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-maple-bright);
+  --vt-component-button-primary-background: var(--vt-foundation-color-maple-bright);
+  --vt-component-button-primary-hover: var(--vt-foundation-color-maple-bright-hover);
+  --vt-state-focus-color: var(--vt-foundation-color-maple-bright);
+}
+
+:root.dark[data-accent="iris"],
+:root[data-accent="iris"] .vt-dark-scope {
+  --primary: var(--vt-foundation-color-iris-bright);
+  --ring: var(--vt-foundation-color-iris-bright);
+  --chart-3: var(--vt-foundation-color-iris-bright);
+  --sidebar-primary: var(--vt-foundation-color-iris-bright);
+  --sidebar-accent: var(--vt-foundation-color-dark-iris-soft);
+  --sidebar-ring: var(--vt-foundation-color-iris-bright);
+  --vt-shell-sidebar-signal: var(--vt-foundation-color-iris-bright);
+  --vt-shell-sidebar-active-border: var(--vt-foundation-color-iris-bright);
+  --vt-shell-sidebar-active-background: var(--vt-foundation-color-dark-iris-soft);
+
+  --vt-semantic-color-text-accent: var(--vt-foundation-color-iris-bright);
+  --vt-semantic-color-text-comparison: var(--vt-foundation-color-iris-bright);
+  --vt-semantic-color-surface-selected: var(--vt-foundation-color-dark-iris-soft);
+  --vt-semantic-color-surface-comparison: var(--vt-foundation-color-dark-iris-soft);
+  --vt-semantic-color-border-focus: var(--vt-foundation-color-iris-bright);
+  --vt-semantic-color-action-primary: var(--vt-foundation-color-iris-bright);
+  --vt-semantic-color-action-primary-hover: var(--vt-foundation-color-iris-bright-hover);
+  --vt-semantic-color-action-brand: var(--vt-foundation-color-iris-bright);
+  --vt-component-button-primary-background: var(--vt-foundation-color-iris-bright);
+  --vt-component-button-primary-hover: var(--vt-foundation-color-iris-bright-hover);
+  --vt-state-focus-color: var(--vt-foundation-color-iris-bright);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: var(--vt-foundation-motion-duration-instant) !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--vt-foundation-motion-duration-instant) !important;
+  }
+}
+
+/* Curation product notice stays blue independently of the selected accent. */
+:root { --vt-shell-sidebar-notification: var(--vt-foundation-color-still); }
+:root[data-theme="dark"] { --vt-shell-sidebar-notification: var(--vt-foundation-color-still-bright); }

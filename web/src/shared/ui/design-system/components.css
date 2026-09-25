@@ -1,0 +1,1399 @@
+/* Still Water (ADR-0073): four emphases. primary is the one filled action of a
+   screen; secondary is a neutral soft fill with no outline; quiet and danger are
+   text-only. tertiary is an alias of secondary kept for one release. */
+.vt-button[data-slot="button"] {
+  font-family: var(--vt-semantic-font-body);
+  font-weight: var(--vt-component-button-font-weight);
+  border-radius: var(--vt-component-button-radius);
+  text-decoration: none;
+  /* Explicit width and style: the contract must not lean on the Tailwind
+     `border` utility (Design Lab has no utility layer and fell back to the
+     browser 2px outset). */
+  border: var(--vt-component-button-border-width) solid transparent;
+}
+
+.vt-button--primary {
+  background: var(--vt-component-button-primary-background);
+  color: var(--vt-component-button-primary-text);
+}
+
+.vt-button--primary:hover:not(:disabled) {
+  background: var(--vt-component-button-primary-hover);
+  color: var(--vt-component-button-primary-text);
+}
+
+.vt-button.vt-button--secondary,
+.vt-button.vt-button--tertiary {
+  background: var(--vt-component-button-secondary-background);
+  border-color: transparent;
+  color: var(--vt-component-button-secondary-text);
+}
+
+.vt-button.vt-button--secondary:hover:not(:disabled),
+.vt-button.vt-button--tertiary:hover:not(:disabled),
+.vt-button.vt-button--secondary[aria-expanded="true"],
+.vt-button.vt-button--tertiary[aria-expanded="true"] {
+  background: color-mix(
+    in srgb,
+    var(--vt-component-button-secondary-background) 88%,
+    var(--vt-semantic-color-text-primary)
+  );
+  border-color: transparent;
+  color: var(--vt-component-button-secondary-text);
+}
+
+.vt-button.vt-button--quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--vt-semantic-color-text-accent);
+}
+
+/* Open-state fill belongs to popup triggers only (menu, combobox). A
+   disclosure toggle that stays expanded — sidebar, target collapse — keeps the
+   quiet ground so the icon is the whole signal (2026-09-14 owner decision). */
+.vt-button.vt-button--quiet:hover:not(:disabled),
+.vt-button.vt-button--quiet[aria-expanded="true"]:is([aria-haspopup], [role="combobox"]) {
+  background: var(--vt-component-button-quiet-hover);
+  color: var(--vt-semantic-color-text-accent);
+}
+
+.vt-button.vt-button--quiet[aria-expanded="true"]:not([aria-haspopup]):not([role="combobox"]):not(:hover) {
+  background: transparent;
+  color: var(--vt-semantic-color-text-accent);
+}
+
+.vt-button.vt-button--danger {
+  background: transparent;
+  border-color: transparent;
+  color: var(--vt-semantic-color-text-danger);
+}
+
+.vt-button.vt-button--danger:hover:not(:disabled) {
+  background: var(--vt-semantic-color-surface-danger);
+  color: var(--vt-semantic-color-text-danger);
+}
+
+.vt-appearance-controls {
+  display: grid;
+  gap: var(--vt-foundation-space-4);
+}
+
+.vt-appearance-controls__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vt-foundation-space-3);
+}
+
+.vt-appearance-controls__heading > svg {
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+  flex: 0 0 auto;
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.vt-appearance-controls__heading > span {
+  display: grid;
+  gap: var(--vt-foundation-space-1);
+}
+
+.vt-appearance-controls__heading small,
+.vt-appearance-controls__row > span {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.vt-appearance-controls__row {
+  display: grid;
+  gap: var(--vt-foundation-space-2);
+}
+
+.vt-appearance-controls__toggle {
+  width: 100%;
+}
+
+.vt-appearance-controls__toggle > [data-slot="toggle-group-item"] {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.vt-appearance-controls__toggle
+  > [data-slot="toggle-group-item"]
+  > svg:last-child {
+  margin-inline-start: auto;
+}
+
+/* Accent palettes (ADR-0082): five dots, one per palette, and a caption line.
+   The dot shows the palette's seed (light) or its dark accent; the selected dot
+   carries an inner mark so selection never depends on color alone. */
+.vt-appearance-controls__dots {
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+/* 2rem matches the theme toggle's item height and keeps five dots on one line
+   inside the compact profile panel. */
+.vt-appearance-controls__dots > [data-slot="toggle-group-item"] {
+  width: var(--vt-foundation-space-8);
+  height: var(--vt-foundation-space-8);
+  min-width: 0;
+  padding: 0;
+  border-radius: var(--vt-foundation-radius-pill);
+}
+
+.vt-appearance-controls__dots > [data-slot="toggle-group-item"][data-state="on"] {
+  background: var(--vt-semantic-color-surface-subtle);
+}
+
+.vt-appearance-controls__caption {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.vt-appearance-controls__swatch {
+  position: relative;
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+  flex: 0 0 auto;
+  border-radius: var(--vt-foundation-radius-pill);
+  background: var(--vt-foundation-color-ink);
+}
+
+[data-state="on"] > .vt-appearance-controls__swatch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: var(--vt-foundation-space-2);
+  height: var(--vt-foundation-space-2);
+  margin: auto;
+  border-radius: var(--vt-foundation-radius-pill);
+  background: var(--vt-semantic-color-text-on-action);
+}
+
+.vt-appearance-controls__swatch.is-blue {
+  background: var(--vt-foundation-color-still);
+}
+
+.vt-appearance-controls__swatch.is-moss {
+  background: var(--vt-foundation-color-moss);
+}
+
+.vt-appearance-controls__swatch.is-maple {
+  background: var(--vt-foundation-color-maple);
+}
+
+.vt-appearance-controls__swatch.is-iris {
+  background: var(--vt-foundation-color-iris);
+}
+
+/* The Ink dot shows its identity (black) in dark too, with a thin rim so it
+   stays visible on the dark panel; its mark is light instead of canvas-dark. */
+:root.dark .vt-appearance-controls__swatch.is-neutral {
+  background: var(--vt-foundation-color-ink);
+  border: var(--vt-foundation-border-thin) solid var(--vt-foundation-color-dark-border-strong);
+}
+
+:root.dark [data-state="on"] > .vt-appearance-controls__swatch.is-neutral::after {
+  background: var(--vt-foundation-color-dark-text);
+}
+
+:root.dark .vt-appearance-controls__swatch.is-blue {
+  background: var(--vt-foundation-color-still-bright);
+}
+
+:root.dark .vt-appearance-controls__swatch.is-moss {
+  background: var(--vt-foundation-color-moss-bright);
+}
+
+:root.dark .vt-appearance-controls__swatch.is-maple {
+  background: var(--vt-foundation-color-maple-bright);
+}
+
+:root.dark .vt-appearance-controls__swatch.is-iris {
+  background: var(--vt-foundation-color-iris-bright);
+}
+
+.vt-disclosure {
+  min-width: 0;
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  border-radius: var(--vt-semantic-radius-control);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.vt-disclosure__trigger.vt-button {
+  width: 100%;
+  min-height: var(--vt-foundation-size-touch);
+  padding-inline: var(--vt-foundation-space-4);
+  justify-content: space-between;
+  border-radius: inherit;
+  text-align: start;
+  /* Radix trigger carries its own data-slot, so it needs the same explicit
+     border as the button base. */
+  border: var(--vt-component-button-border-width) solid transparent;
+}
+
+.vt-disclosure__trigger > svg {
+  flex: 0 0 auto;
+  transition: transform var(--vt-semantic-motion-interactive)
+    var(--vt-foundation-motion-easing-standard);
+}
+
+.vt-disclosure__trigger[data-state="open"] > svg {
+  transform: rotate(180deg);
+}
+
+.vt-disclosure__content {
+  padding: 0 var(--vt-foundation-space-4)
+    var(--vt-foundation-space-4);
+}
+
+.vt-disclosure__content[data-state="closed"] {
+  display: none;
+}
+
+.vt-brand-mark {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-primary);
+  font-family: var(--vt-semantic-font-body);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  font-weight: var(--vt-foundation-font-weight-heading);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  text-decoration: none;
+}
+
+.vt-brand-mark__symbol {
+  width: var(--vt-component-brand-mark-size);
+  height: var(--vt-component-brand-mark-size);
+  flex: 0 0 auto;
+  background: currentColor;
+  mask: url("../assets/vitlane-lane-mark.svg") center / contain no-repeat;
+}
+
+.vt-brand-mark--inverted {
+  color: var(--vt-foundation-color-clear);
+}
+
+.vt-brand-mark:focus-visible,
+.vt-app-header a:focus-visible,
+.vt-candidate-card summary:focus-visible {
+  outline: var(--vt-state-focus-width) solid var(--vt-state-focus-color);
+  outline-offset: var(--vt-state-focus-offset);
+}
+
+.vt-visually-hidden {
+  width: var(--vt-foundation-border-thin);
+  height: var(--vt-foundation-border-thin);
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+  border: 0;
+  margin: calc(var(--vt-foundation-border-thin) * -1);
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.vt-app-header {
+  width: 100%;
+  min-height: var(--vt-component-app-header-height);
+  padding-inline: var(--vt-component-app-header-padding-inline);
+  display: flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-6);
+  flex-wrap: wrap;
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-component-app-header-border);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+  font-family: var(--vt-semantic-font-body);
+}
+
+.vt-app-header nav {
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  gap: var(--vt-foundation-space-1);
+  flex: 1 1 auto;
+  overflow-x: auto;
+}
+
+.vt-app-header nav a {
+  padding: var(--vt-foundation-space-2) var(--vt-foundation-space-3);
+  flex: 0 0 auto;
+  border-bottom: var(--vt-foundation-border-focus) solid transparent;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  text-decoration: none;
+}
+
+.vt-app-header nav a[aria-current="page"] {
+  border-bottom-color: var(--vt-semantic-color-action-primary);
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.vt-app-header__actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+}
+
+.vt-app-header__menu {
+  display: none;
+}
+
+.vt-app-header__menu-content {
+  min-width: var(--vt-foundation-size-candidate-media);
+}
+
+.vt-app-header__menu-content nav {
+  display: grid;
+}
+
+.vt-app-header__menu-content nav a {
+  width: 100%;
+  min-height: var(--vt-foundation-size-control);
+  padding-inline: var(--vt-foundation-space-3);
+  display: flex;
+  align-items: center;
+  border-bottom: 0;
+  border-inline-start: var(--vt-foundation-border-focus) solid transparent;
+  text-decoration: none;
+}
+
+.vt-app-header__menu-content nav a[aria-current="page"] {
+  border-inline-start-color: var(--vt-semantic-color-action-primary);
+  background: var(--vt-semantic-color-surface-selected);
+}
+
+@media (max-width: 48rem) {
+  .vt-app-header__desktop-nav {
+    display: none;
+  }
+
+  .vt-app-header__menu {
+    display: inline-flex;
+  }
+}
+
+.vt-app-header.is-compact {
+  padding-block: var(--vt-foundation-space-2);
+}
+
+.vt-app-header.is-compact nav {
+  order: 3;
+  flex-basis: 100%;
+}
+
+.vt-field {
+  min-width: 0;
+  display: grid;
+  gap: var(--vt-component-field-label-gap);
+  color: var(--vt-semantic-color-text-primary);
+  font-family: var(--vt-semantic-font-body);
+}
+
+.vt-field__label {
+  font-size: var(--vt-foundation-font-size-body);
+  font-weight: var(--vt-foundation-font-weight-control);
+}
+
+.vt-field__control > :where(input, select, textarea):not([data-slot]) {
+  width: 100%;
+  min-height: var(--vt-component-field-height);
+  padding-inline: var(--vt-component-field-padding-inline);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-component-field-border);
+  border-radius: var(--vt-component-field-radius);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+  font: inherit;
+}
+
+.vt-field__control > textarea:not([data-slot]) {
+  padding-block: var(--vt-foundation-space-3);
+  resize: vertical;
+}
+
+.vt-field__control
+  > :where(input, select, textarea):not([data-slot]):focus-visible {
+  border-color: var(--vt-component-field-border-focus);
+  outline: var(--vt-state-focus-width) solid var(--vt-state-focus-color);
+  outline-offset: var(--vt-state-focus-offset);
+}
+
+.vt-field__control > [aria-invalid="true"]:not([data-slot]) {
+  border-color: var(--vt-component-field-border-error);
+}
+
+.vt-field__control
+  > :where(input, select, textarea):not([data-slot]):disabled {
+  opacity: var(--vt-state-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.vt-field__hint,
+.vt-field__error {
+  font-size: var(--vt-foundation-font-size-caption);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.vt-field__hint {
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.vt-field__error {
+  color: var(--vt-semantic-color-text-danger);
+  font-weight: var(--vt-foundation-font-weight-medium);
+}
+
+/* Still Water (ADR-0073): icon + one sentence + at most one quiet action. No
+   stripe, no border, no title row. neutral has no fill; test, warning and danger
+   use their soft surface with the icon in the tone color. */
+.vt-notice {
+  min-width: 0;
+  padding: var(--vt-component-notice-padding) var(--vt-component-notice-padding-inline);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vt-component-notice-gap);
+  flex-wrap: wrap;
+  border: 0;
+  border-radius: var(--vt-component-notice-radius);
+  color: var(--vt-semantic-color-text-primary);
+  background: transparent;
+  font-family: var(--vt-semantic-font-body);
+}
+
+.vt-notice__icon {
+  flex: 0 0 auto;
+  width: calc(var(--vt-foundation-size-icon) * 2 / 3);
+  height: calc(var(--vt-foundation-size-icon) * 2 / 3);
+  margin-block-start: calc(
+    (var(--vt-foundation-font-size-body) * var(--vt-foundation-font-line-height-body) - var(--vt-foundation-size-icon) * 2 / 3) / 2
+  );
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.vt-notice--test {
+  background: var(--vt-semantic-color-surface-test);
+}
+
+.vt-notice--test .vt-notice__icon,
+.vt-notice--test .vt-notice__title {
+  color: var(--vt-semantic-color-text-test);
+}
+
+.vt-notice--warning {
+  background: var(--vt-semantic-color-surface-warning);
+}
+
+.vt-notice--warning .vt-notice__icon {
+  color: var(--vt-semantic-color-text-warning);
+}
+
+.vt-notice--danger {
+  background: var(--vt-semantic-color-surface-danger);
+}
+
+.vt-notice--danger .vt-notice__icon,
+.vt-notice--danger .vt-notice__message {
+  color: var(--vt-semantic-color-text-danger);
+}
+
+.vt-notice__body {
+  min-width: 0;
+  flex: 1 1 var(--vt-foundation-size-candidate-media);
+}
+
+.vt-notice__title {
+  font-weight: var(--vt-foundation-font-weight-medium);
+  margin-inline-end: var(--vt-foundation-space-1);
+}
+
+.vt-notice__message {
+  font-size: var(--vt-foundation-font-size-body);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.vt-notice__action {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+}
+
+.vt-feedback-state {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--vt-foundation-space-3);
+}
+
+.vt-feedback-state__icon {
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+  display: inline-grid;
+  place-items: center;
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-strong);
+  border-radius: var(--vt-foundation-radius-pill);
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-control);
+}
+
+.vt-feedback-state.is-loading .vt-feedback-state__icon {
+  border-color: var(--vt-semantic-color-border-default);
+  border-inline-start-color: var(--vt-semantic-color-action-primary);
+}
+
+.vt-feedback-state.is-error .vt-feedback-state__icon {
+  border-color: var(--vt-semantic-color-border-danger);
+  color: var(--vt-semantic-color-text-danger);
+}
+
+.vt-feedback-state.is-expired .vt-feedback-state__icon,
+.vt-feedback-state.is-partial .vt-feedback-state__icon {
+  border-color: var(--vt-semantic-color-border-warning);
+  color: var(--vt-semantic-color-text-warning);
+}
+
+.vt-feedback-state.is-success .vt-feedback-state__icon {
+  border-color: var(--vt-semantic-color-border-focus);
+  color: var(--vt-semantic-color-text-accent);
+}
+
+.vt-feedback-state .vt-notice {
+  padding-block: var(--vt-foundation-space-3);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vt-feedback-state.is-loading .vt-feedback-state__icon {
+    animation: vt-feedback-spin 720ms linear infinite;
+  }
+}
+
+@keyframes vt-feedback-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.vt-page-header {
+  min-width: 0;
+  padding-block-end: var(--vt-foundation-space-6);
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--vt-foundation-size-candidate-media)), 1fr)
+  );
+  gap: var(--vt-component-page-header-gap);
+  align-items: end;
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  color: var(--vt-semantic-color-text-primary);
+  font-family: var(--vt-semantic-font-body);
+}
+
+.vt-page-header__copy {
+  max-width: var(--vt-component-page-header-measure);
+}
+
+/* Still Water (ADR-0073): the one uppercase contract. At most one per section. */
+.vt-eyebrow {
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-body);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-medium);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-eyebrow);
+  text-transform: uppercase;
+}
+
+.vt-page-header__eyebrow {
+  margin: 0 0 var(--vt-foundation-space-2);
+}
+
+.vt-page-header h1 {
+  margin: 0;
+  font-size: clamp(
+    var(--vt-foundation-font-size-heading-small),
+    4vw,
+    var(--vt-foundation-font-size-heading)
+  );
+  line-height: var(--vt-foundation-font-line-height-compact);
+  letter-spacing: var(--vt-foundation-font-letter-spacing-tight);
+}
+
+.vt-page-header__description {
+  margin-block-start: var(--vt-foundation-space-3);
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.vt-page-header__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--vt-foundation-space-2);
+  flex-wrap: wrap;
+}
+
+.vt-page-header__summary {
+  grid-column: 1 / -1;
+  padding-block-start: var(--vt-foundation-space-3);
+}
+
+.vt-decision-lane {
+  min-width: 0;
+  color: var(--vt-semantic-color-text-primary);
+  font-family: var(--vt-semantic-font-body);
+}
+
+.vt-decision-lane ol {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--vt-foundation-size-candidate-media)), 1fr)
+  );
+  gap: var(--vt-component-decision-lane-gap);
+  list-style: none;
+}
+
+.vt-decision-lane__segment {
+  min-width: 0;
+  padding: var(--vt-component-decision-lane-padding);
+  border-top: var(--vt-foundation-border-focus) solid
+    var(--vt-component-decision-lane-line);
+}
+
+.vt-decision-lane__segment.is-current {
+  border-top-color: var(--vt-component-decision-lane-active);
+  background: var(--vt-semantic-color-surface-selected);
+}
+
+.vt-decision-lane__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.vt-decision-lane__meta span {
+  font-family: var(--vt-semantic-font-data);
+}
+
+.vt-decision-lane__meta strong {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.vt-decision-lane h3 {
+  margin: var(--vt-foundation-space-6) 0 var(--vt-foundation-space-2);
+  font-size: var(--vt-foundation-font-size-body-strong);
+  line-height: var(--vt-foundation-font-line-height-compact);
+}
+
+.vt-decision-lane p {
+  margin: 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.vt-product-media {
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  grid-template-rows: auto auto;
+  overflow: hidden;
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.vt-candidate-card__media-link {
+  min-width: 0;
+  display: block;
+}
+
+.vt-product-media img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+  object-fit: contain;
+}
+
+.vt-product-media__placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-muted);
+  background: var(--vt-semantic-color-surface-canvas);
+  font-family: var(--vt-semantic-font-body);
+  text-align: center;
+}
+
+.vt-product-media.is-loading .vt-product-media__placeholder {
+  background: linear-gradient(
+    100deg,
+    var(--vt-semantic-color-surface-canvas) 20%,
+    var(--vt-semantic-color-surface-selected) 45%,
+    var(--vt-semantic-color-surface-canvas) 70%
+  );
+  background-size: 240% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vt-product-media.is-loading .vt-product-media__placeholder {
+    animation: vt-candidate-skeleton 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes vt-candidate-skeleton {
+  to {
+    background-position: -140% 0;
+  }
+}
+
+.vt-product-media__placeholder span {
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-heading-small);
+}
+
+.vt-product-media__placeholder strong,
+.vt-product-media figcaption {
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.vt-product-media figcaption {
+  padding: var(--vt-foundation-space-2) var(--vt-foundation-space-3);
+  color: var(--vt-semantic-color-text-muted);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.vt-candidate-card {
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-component-candidate-card-border);
+  border-radius: var(--vt-component-candidate-card-radius);
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+  font-family: var(--vt-semantic-font-body);
+}
+
+.vt-candidate-card.is-in-cart {
+  border-color: var(--vt-semantic-color-border-strong);
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.vt-candidate-card.is-pinned {
+  border-color: var(--vt-semantic-color-border-focus);
+  box-shadow: inset 0 0 0 var(--vt-foundation-border-thin)
+    var(--vt-semantic-color-surface-selected);
+}
+
+.vt-candidate-card.is-configuration-required {
+  border-color: var(--vt-semantic-color-border-warning);
+}
+
+.vt-candidate-card.is-unavailable {
+  border-color: var(--vt-semantic-color-border-warning);
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+.vt-candidate-card.is-loading {
+  opacity: var(--vt-state-disabled-opacity);
+}
+
+.vt-candidate-card__body {
+  min-width: 0;
+  padding: var(--vt-component-candidate-card-padding);
+  display: grid;
+  grid-template-rows: auto auto auto auto auto auto auto auto auto;
+  gap: var(--vt-component-candidate-card-content-gap);
+}
+
+.vt-candidate-card__body > *,
+.vt-candidate-card__identity {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vt-candidate-card__meta {
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vt-foundation-space-2);
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.vt-candidate-card__meta > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vt-candidate-card__meta strong {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.vt-candidate-card__title {
+  min-width: 0;
+  min-height: calc(
+    var(--vt-foundation-font-size-body-strong) *
+      var(--vt-foundation-font-line-height-compact) *
+      2
+  );
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--vt-foundation-font-size-body-strong);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.vt-candidate-card__title > a {
+  min-width: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  color: inherit;
+  line-height: inherit;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.vt-candidate-card__source {
+  width: fit-content;
+  min-width: 0;
+  margin-block-start: var(--vt-foundation-space-1);
+}
+
+.vt-candidate-card__price {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--vt-foundation-font-size-heading-small);
+  font-weight: var(--vt-foundation-font-weight-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.vt-candidate-card__evidence {
+  min-width: 0;
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+  line-height: var(--vt-foundation-font-line-height-body);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-height: calc(
+    var(--vt-foundation-font-size-caption) *
+    var(--vt-foundation-font-line-height-body) * 2
+  );
+}
+
+.vt-candidate-card__option strong {
+  display: block;
+  margin-block-end: var(--vt-foundation-space-1);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.vt-candidate-card__option {
+  min-width: 0;
+  margin: 0;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+}
+
+.vt-candidate-card__option span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.vt-candidate-card__actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--vt-foundation-space-2);
+  flex-wrap: wrap;
+}
+
+.vt-candidate-card__icon-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+}
+
+.vt-candidate-card__icon-action.vt-button {
+  width: var(--vt-foundation-size-touch);
+  min-width: var(--vt-foundation-size-touch);
+  height: var(--vt-foundation-size-touch);
+  padding: 0;
+  border-radius: var(--vt-foundation-radius-pill);
+  color: var(--vt-semantic-color-text-muted);
+}
+
+.vt-candidate-card__icon-action svg {
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.vt-candidate-card__icon-action svg.is-reversed {
+  transform: rotate(180deg);
+}
+
+.vt-candidate-card__icon-action[aria-pressed="true"] {
+  border-color: var(--vt-semantic-color-border-focus);
+  color: var(--vt-semantic-color-text-accent);
+  background: var(--vt-semantic-color-surface-selected);
+}
+
+.vt-candidate-card__icon-action[aria-pressed="true"] .vt-visually-hidden {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.vt-candidate-card__icon-action.is-dislike[aria-pressed="true"] {
+  border-color: var(--vt-semantic-color-border-danger);
+  color: var(--vt-semantic-color-text-danger);
+  background: var(--vt-semantic-color-surface-danger);
+}
+
+/* Corner badges surfacing saved variant interactions (pin/like/dislike) on
+   the card itself. Element+class selector out-specifies the generic
+   `.vt-candidate-card > :not(...)` stacking rule so the badges float over
+   the media without stealing the hit-area click. */
+.vt-candidate-card > div.vt-candidate-card__signals {
+  position: absolute;
+  z-index: 3;
+  top: var(--vt-foundation-space-2);
+  left: var(--vt-foundation-space-2);
+  display: flex;
+  gap: var(--vt-foundation-space-1);
+  pointer-events: none;
+}
+
+.vt-candidate-card__signal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--vt-foundation-size-icon);
+  height: var(--vt-foundation-size-icon);
+  border: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-focus);
+  border-radius: var(--vt-foundation-radius-pill);
+  color: var(--vt-semantic-color-text-accent);
+  background: var(--vt-semantic-color-surface-selected);
+}
+
+.vt-candidate-card__signal.is-like {
+  border-color: var(--vt-semantic-color-border-positive);
+  color: var(--vt-semantic-color-text-positive);
+  background: var(--vt-semantic-color-surface-positive);
+}
+
+.vt-candidate-card__signal.is-dislike {
+  border-color: var(--vt-semantic-color-border-danger);
+  color: var(--vt-semantic-color-text-danger);
+  background: var(--vt-semantic-color-surface-danger);
+}
+
+/* Self-reported purchase (ADR-0075): accent, not the positive/danger reaction hues. */
+.vt-candidate-card__signal.is-purchased {
+  border-color: var(--vt-semantic-color-border-focus);
+  color: var(--vt-semantic-color-text-accent);
+  background: var(--vt-semantic-color-surface-selected);
+}
+
+.vt-candidate-card__signal svg {
+  width: calc(var(--vt-foundation-size-icon) * 0.66);
+  height: calc(var(--vt-foundation-size-icon) * 0.66);
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.vt-candidate-card__signal svg.is-reversed {
+  transform: rotate(180deg);
+}
+
+.vt-candidate-card__actions .vt-button {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.vt-candidate-card__primary-action {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--vt-foundation-space-2);
+}
+
+.vt-candidate-card__primary-action .vt-button {
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.vt-candidate-card__status {
+  margin: 0;
+  color: var(--vt-semantic-color-text-accent);
+  font-size: var(--vt-foundation-font-size-caption);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.vt-candidate-card__details {
+  min-width: 0;
+  max-width: 100%;
+  padding-block-start: var(--vt-foundation-space-2);
+  border-width: var(--vt-foundation-border-thin) 0 0;
+  border-radius: 0;
+  border-top: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+  background: transparent;
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+  line-height: var(--vt-foundation-font-line-height-body);
+}
+
+.vt-candidate-card__details .vt-disclosure__trigger {
+  width: fit-content;
+  min-height: var(--vt-foundation-size-control);
+  padding-inline: 0;
+  color: var(--vt-semantic-color-text-primary);
+  font-weight: var(--vt-foundation-font-weight-control);
+}
+
+.vt-candidate-card__details .vt-disclosure__content {
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--vt-foundation-space-2) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.vt-order-summary {
+  min-width: 0;
+  color: var(--vt-semantic-color-text-primary);
+  font-family: var(--vt-semantic-font-body);
+}
+
+.vt-order-summary > header {
+  padding-block-end: var(--vt-foundation-space-4);
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-strong);
+}
+
+.vt-order-summary > header p {
+  margin: 0 0 var(--vt-foundation-space-1);
+  color: var(--vt-semantic-color-text-muted);
+  font-family: var(--vt-semantic-font-data);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.vt-order-summary > header :is(h2, h3) {
+  margin: 0;
+  font-size: var(--vt-foundation-font-size-heading-small);
+}
+
+.vt-order-summary dl {
+  margin: 0;
+}
+
+.vt-order-summary__row {
+  padding-block: var(--vt-component-purchase-summary-row-gap);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--vt-foundation-space-4);
+  border-bottom: var(--vt-foundation-border-thin) solid
+    var(--vt-semantic-color-border-default);
+}
+
+.vt-order-summary dt {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-body);
+}
+
+.vt-order-summary dd {
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  justify-items: end;
+  gap: var(--vt-foundation-space-1);
+  text-align: end;
+}
+
+.vt-order-summary dd strong {
+  overflow-wrap: anywhere;
+  font-size: var(--vt-foundation-font-size-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.vt-order-summary dd span {
+  color: var(--vt-semantic-color-text-muted);
+  font-size: var(--vt-foundation-font-size-caption);
+}
+
+.vt-order-summary dd.is-monospaced strong {
+  font-family: var(--vt-semantic-font-data);
+  font-weight: var(--vt-foundation-font-weight-medium);
+}
+
+.vt-order-summary__boundary {
+  margin-block-start: var(--vt-component-purchase-summary-section-gap);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vt-button {
+    transition:
+      color var(--vt-semantic-motion-interactive)
+        var(--vt-foundation-motion-easing-standard),
+      border-color var(--vt-semantic-motion-interactive)
+        var(--vt-foundation-motion-easing-standard),
+      background-color var(--vt-semantic-motion-interactive)
+        var(--vt-foundation-motion-easing-standard),
+      transform var(--vt-semantic-motion-interactive)
+        var(--vt-foundation-motion-easing-standard);
+  }
+
+  .vt-button:hover:not(:disabled) {
+    transform: translateY(var(--vt-state-hover-lift));
+  }
+}
+
+@media (max-width: 32rem) {
+  .vt-candidate-card__primary-action {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Chip (ADR-0073, component-contracts 3-1). Sentence-case caption sans; the
+   dot is the only place a state carries color. mode = TEST/LIVE boundary as a
+   soft tone surface; attention = danger soft surface. */
+.vt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vt-foundation-space-2);
+  max-width: 100%;
+  padding: var(--vt-foundation-space-1) var(--vt-foundation-space-2);
+  border-radius: var(--vt-foundation-radius-pill);
+  color: var(--vt-semantic-color-text-muted);
+  background: var(--vt-semantic-color-surface-base);
+  font-family: var(--vt-semantic-font-body);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-regular);
+  line-height: var(--vt-foundation-font-line-height-compact);
+  overflow-wrap: anywhere;
+}
+
+.vt-chip[data-tone] {
+  color: var(--vt-semantic-color-text-primary);
+}
+
+.vt-chip[data-tone]::before {
+  content: "";
+  flex: none;
+  width: var(--vt-foundation-space-2);
+  height: var(--vt-foundation-space-2);
+  border: var(--vt-foundation-border-thin) solid var(--vt-semantic-color-text-muted);
+  border-radius: var(--vt-foundation-radius-pill);
+  background: transparent;
+}
+
+.vt-chip[data-tone="progress"]::before {
+  border-color: var(--vt-semantic-color-text-accent);
+  background: var(--vt-semantic-color-text-accent);
+}
+
+.vt-chip[data-tone="done"]::before {
+  border-color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-text-primary);
+}
+
+.vt-chip[data-tone="failed"]::before {
+  border-color: var(--vt-semantic-color-text-danger);
+  background: var(--vt-semantic-color-text-danger);
+}
+
+.vt-chip--mode {
+  font-weight: var(--vt-foundation-font-weight-medium);
+}
+
+.vt-chip--mode.is-test {
+  color: var(--vt-semantic-color-text-test);
+  background: var(--vt-semantic-color-surface-test);
+}
+
+.vt-chip--mode.is-live {
+  color: var(--vt-semantic-color-text-positive);
+  background: var(--vt-semantic-color-surface-positive);
+}
+
+.vt-chip--attention {
+  color: var(--vt-semantic-color-text-danger);
+  background: var(--vt-semantic-color-surface-danger);
+}
+
+/* Selection (ADR-0073, component-contracts 3-1). The chosen option is the
+   selected surface with accent text; no ring, no outline, hover is subtle. */
+.vt-selection {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--vt-foundation-space-1);
+  padding: var(--vt-foundation-space-1);
+  border-radius: var(--vt-semantic-radius-control);
+  background: var(--vt-semantic-color-surface-subtle);
+}
+
+.vt-selection .vt-selection__option {
+  min-height: var(--vt-foundation-space-8);
+  padding: 0 var(--vt-foundation-space-3);
+  border: none;
+  border-radius: var(--vt-semantic-radius-control);
+  color: var(--vt-semantic-color-text-muted);
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--vt-semantic-font-body);
+  font-size: var(--vt-foundation-font-size-caption);
+  font-weight: var(--vt-foundation-font-weight-regular);
+}
+
+.vt-selection .vt-selection__option:hover:not(:disabled) {
+  color: var(--vt-semantic-color-text-primary);
+  background: var(--vt-semantic-color-surface-base);
+}
+
+.vt-selection .vt-selection__option[data-state="on"] {
+  color: var(--vt-semantic-color-text-accent);
+  background: var(--vt-semantic-color-surface-selected);
+  font-weight: var(--vt-foundation-font-weight-medium);
+}
+
+/* Scrim (still-water-zen-system §3, N10·N11). The one layer that pushes the page
+   back behind a dialog, drawer or mobile sidebar. It darkens in both themes and
+   never blurs (owner 2026-09-23: backgrounds are not blurred); the surface in
+   front of it marks its own edge with a shadow (semantic.shadow.edge*).
+   Consumers own only position, alignment and z-index. */
+.vt-scrim {
+  background: var(--vt-semantic-color-surface-scrim);
+}
+
+/* Sheet grabber (useSwipeDismiss). A bottom sheet that can be dragged down
+   shows one short bar in a strip across its top edge; the strip is the mouse
+   and pen handle, while touch may drag the whole sheet. */
+.vt-sheet-grabber {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: var(--vt-foundation-space-5);
+  display: grid;
+  place-items: center;
+  background: var(--vt-semantic-color-surface-base);
+  cursor: grab;
+  touch-action: none;
+}
+
+.vt-sheet-grabber::before {
+  content: "";
+  width: var(--vt-foundation-space-8);
+  height: var(--vt-foundation-space-1);
+  border-radius: var(--vt-foundation-radius-pill);
+  background: var(--vt-semantic-color-border-strong);
+}
+
+/* ReededGlass (ADR-0078, component-contracts 13): a Still Water background
+   surface. It fills its positioned parent and the canvas paints its base from
+   this background token, so a consumer changes the surface by overriding it.
+   The light is the brand Still hue in both themes and under the neutral accent,
+   so it mixes the theme-layer accent seed alias (theme.css, per palette; the
+   semantic brand turns pale in dark). */
+.vt-reeded-glass {
+  --vt-reeded-glass-light-body: color-mix(in srgb, var(--vt-accent-seed) 40%, var(--vt-foundation-color-clear));
+  --vt-reeded-glass-light-core: color-mix(in srgb, var(--vt-accent-seed) 75%, var(--vt-foundation-color-clear));
+  --vt-reeded-glass-sheen: var(--vt-foundation-color-clear);
+  --vt-reeded-glass-reed: 22px;
+  --vt-reeded-glass-rim-light: color-mix(in srgb, var(--vt-foundation-color-clear) 16%, transparent);
+  --vt-reeded-glass-rim-shade: color-mix(in srgb, var(--vt-accent-strong) 9%, transparent);
+  /* The reeds fade out toward the copy. Only the alpha of these stops is read;
+     the component sets data-fade from its own shape (wide fades across, tall up). */
+  --vt-reeded-glass-rim-fade: linear-gradient(
+    90deg,
+    transparent 6%,
+    var(--vt-accent-seed) 58%
+  );
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--vt-semantic-color-surface-canvas);
+}
+
+:root.dark .vt-reeded-glass,
+.vt-dark-scope .vt-reeded-glass {
+  --vt-reeded-glass-light-body: color-mix(in srgb, var(--vt-accent-seed) 44%, var(--vt-foundation-color-dark-surface));
+  --vt-reeded-glass-light-core: color-mix(in srgb, var(--vt-accent-seed) 72%, var(--vt-foundation-color-dark-surface));
+  --vt-reeded-glass-sheen: var(--vt-foundation-color-dark-surface);
+  --vt-reeded-glass-rim-light: color-mix(in srgb, var(--vt-foundation-color-dark-text) 5%, transparent);
+  --vt-reeded-glass-rim-shade: color-mix(in srgb, var(--vt-foundation-color-dark-scrim) 45%, transparent);
+}
+
+/* The reed rims: a light left edge and a shaded right edge on every reed. They
+   never move, so they stay out of the canvas and are not repainted per frame.
+   One reed-wide tile repeats; Firefox fills repeating-linear-gradient stops
+   that use color-mix() with the last color, so the tile is a plain gradient. */
+.vt-reeded-glass[data-fade="y"] {
+  --vt-reeded-glass-rim-fade: linear-gradient(
+    180deg,
+    transparent 6%,
+    var(--vt-accent-seed) 58%
+  );
+}
+
+.vt-reeded-glass::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  -webkit-mask-image: var(--vt-reeded-glass-rim-fade);
+  mask-image: var(--vt-reeded-glass-rim-fade);
+  background-image: linear-gradient(
+    90deg,
+    var(--vt-reeded-glass-rim-light) 0%,
+    transparent 14%,
+    transparent 78%,
+    var(--vt-reeded-glass-rim-shade) 100%
+  );
+  background-repeat: repeat-x;
+  background-size: var(--vt-reeded-glass-reed) 100%;
+}
+
+.vt-reeded-glass__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

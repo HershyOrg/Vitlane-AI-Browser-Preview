@@ -1,0 +1,33 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "structuredContent": {
+      "ucp": {
+        "version": "2026-04-08",
+        "status": "success",
+        "capabilities": {
+          "dev.ucp.shopping.catalog.search": [
+            {
+              "version": "2026-04-08"
+            }
+          ],
+          "dev.shopify.catalog.global": [
+            {
+              "version": "2026-04-08"
+            }
+          ]
+        }
+      },
+      "products": [],
+      "messages": [
+        {
+          "type": "info",
+          "code": "price_filter_applied",
+          "path": "$.filters.price",
+          "content": "Price filtering was applied on a USD basis; returned prices are contextualized to the buyer's market and may differ."
+        }
+      ]
+    }
+  }
+}

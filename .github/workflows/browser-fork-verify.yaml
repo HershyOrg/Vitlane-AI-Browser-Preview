@@ -1,0 +1,38 @@
+name: Browser fork verify
+
+on:
+  pull_request:
+    paths:
+      - 'browser-fork/**'
+      - '.github/workflows/browser-fork-verify.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'browser-fork/**'
+      - '.github/workflows/browser-fork-verify.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: browser-fork
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: browser-fork/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: npm run test:browser
+      - run: npm run check:patch
+      - run: bash -n scripts/build-android.sh

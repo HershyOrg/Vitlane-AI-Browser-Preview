@@ -1,0 +1,28 @@
+.catalog-ui-curation .vt-notice,
+.catalog-ui-curation .catalog-ui-search-platform,
+.curation-action-activity .vt-notice,
+.candidate-detail .vt-notice { border: 0; }
+.curation-dismissible-notice {
+  position: relative;
+  min-width: 0;
+  margin-block: var(--vt-foundation-space-2);
+}
+.curation-dismissible-notice__banner.vt-notice {
+  border: 0;
+  min-height: var(--vt-foundation-size-touch);
+  padding-inline-end: calc(var(--vt-foundation-size-touch) + var(--vt-foundation-space-3));
+  overflow-wrap: anywhere;
+}
+.curation-dismissible-notice__banner .vt-notice__body { flex-basis: auto; }
+.curation-dismissible-notice__banner p { margin: 0; }
+.curation-dismissible-notice__banner p + p { margin-block-start: var(--vt-foundation-space-2); }
+.curation-dismissible-notice__close.vt-button {
+  position: absolute;
+  inset-block-start: calc(var(--vt-component-notice-padding) - (var(--vt-foundation-size-touch) - var(--vt-foundation-font-size-body) * var(--vt-foundation-font-line-height-body)) / 2);
+  inset-inline-end: var(--vt-foundation-space-1);
+  width: var(--vt-foundation-size-touch);
+  min-width: var(--vt-foundation-size-touch);
+  height: var(--vt-foundation-size-touch);
+  padding: 0;
+  color: var(--vt-semantic-color-text-primary);
+}

@@ -1,0 +1,50 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "structuredContent": {
+      "ucp": {
+        "version": "2026-04-08",
+        "status": "success",
+        "capabilities": {
+          "dev.ucp.shopping.catalog.search": [{"version": "2026-04-08"}],
+          "dev.shopify.catalog.global": [{"version": "2026-04-08"}]
+        }
+      },
+      "products": [
+        {
+          "id": "gid://shopify/p/multi-variant",
+          "handle": "trail-runner",
+          "title": "Trail Runner",
+          "description": {"plain": "A multi-variant trail shoe."},
+          "price_range": {
+            "min": {"amount": 9000, "currency": "USD"},
+            "max": {"amount": 11000, "currency": "USD"}
+          },
+          "media": [{"type": "image", "url": "https://cdn.example/trail-runner.jpg"}],
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/first",
+              "title": "Black / 10",
+              "price": {"amount": 9000, "currency": "USD"},
+              "availability": {"available": true, "status": "in_stock"},
+              "seller": {
+                "id": "gid://shopify/Shop/merchant",
+                "name": "Merchant",
+                "domain": "merchant.example",
+                "url": "https://merchant.example"
+              }
+            },
+            {
+              "id": "gid://shopify/ProductVariant/second",
+              "title": "Blue / 11",
+              "price": {"amount": 11000, "currency": "USD"},
+              "availability": {"available": true},
+              "seller": {"domain": "merchant.example"}
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "capturedAt": "2026-09-25T00:00:00Z",
+  "source": "public preview source-owned vector fixture",
+  "tokenSourceHash": "sha256:8bc9792d03df333129e281b17c786eb6291520b7c863e7b0d54f2c4f92821ba6",
+  "overviewResults": [
+    {
+      "target": "public-preview",
+      "screenshot": "overview.svg"
+    }
+  ]
+}

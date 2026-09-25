@@ -1,0 +1,2940 @@
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+@@ -208,6 +208,7 @@
+ import org.chromium.chrome.browser.navigation_predictor.NavigationPredictorBridge;
+ import org.chromium.chrome.browser.new_tab_url.DseNewTabUrlManager;
+ import org.chromium.chrome.browser.night_mode.NightModeStateProvider;
++import org.chromium.chrome.browser.lane.LaneAgentCoordinator;
+ import org.chromium.chrome.browser.notifications.tips.TipsPromoCoordinator;
+ import org.chromium.chrome.browser.notifications.tips.TipsUtils;
+ import org.chromium.chrome.browser.ntp.NewTabPage;
+@@ -727,6 +728,8 @@
+     private @SupportedProfileType int mSupportedProfileType = SupportedProfileType.UNSET;
+ 
+     private TipsPromoCoordinator mTipsPromoCoordinator;
++
++    private @Nullable LaneAgentCoordinator mLaneAgent;
+     private RecentlyClosedEntriesManager mRecentlyClosedEntriesManager;
+     private FindsManager mFindsManager;
+ 
+@@ -1656,6 +1659,8 @@
+             }
+ 
+             super.finishNativeInitialization();
++            mLaneAgent = new LaneAgentCoordinator(
++                    this, this::getActivityTab);
+ 
+             TabbedStartupWindowPolicyDelegate.getInstance().initializeWithNative(profile);
+ 
+@@ -1796,6 +1801,7 @@
+ 
+     @Override
+     public void onStopWithNative() {
++        if (mLaneAgent != null) mLaneAgent.onBackgrounded();
+         super.onStopWithNative();
+ 
+         if (!ChromeFeatureList.isEnabled(ChromeFeatureList.UMA_SESSION_CORRECTNESS_FIXES)) {
+@@ -5300,6 +5306,10 @@
+ 
+     @Override
+     public void onDestroyInternal() {
++        if (mLaneAgent != null) {
++            mLaneAgent.destroy();
++            mLaneAgent = null;
++        }
+ 
+         if (mPrefChangeRegistrar != null) {
+             mPrefChangeRegistrar.destroy();
+diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java_sources.gni
+--- a/chrome/android/chrome_java_sources.gni
++++ b/chrome/android/chrome_java_sources.gni
+@@ -5,6 +5,8 @@
+ import("//content/public/common/features.gni")
+ 
+ chrome_java_sources = [
++  "java/src/org/chromium/chrome/browser/lane/LaneAgentCoordinator.java",
++  "java/src/org/chromium/chrome/browser/lane/LanePageScript.java",
+   "java/src/com/google/android/apps/chrome/appwidget/bookmarks/BookmarkThumbnailWidgetProvider.java",
+   "java/src/org/chromium/chrome/browser/ActivityTabProvider.java",
+   "java/src/org/chromium/chrome/browser/ActivityUtils.java",
+diff --git a/content/public/android/java/src/org/chromium/content_public/browser/WebContents.java b/content/public/android/java/src/org/chromium/content_public/browser/WebContents.java
+--- a/content/public/android/java/src/org/chromium/content_public/browser/WebContents.java
++++ b/content/public/android/java/src/org/chromium/content_public/browser/WebContents.java
+@@ -378,6 +378,13 @@
+      */
+     void evaluateJavaScript(String script, @Nullable JavaScriptCallback callback);
+ 
++    /** Runs Vitlane-owned code only in Vitlane's dedicated isolated world. */
++    default void evaluateVitlaneAgentJavaScript(
++            String script, @Nullable JavaScriptCallback callback) {
++        throw new UnsupportedOperationException(
++                "Vitlane agent execution requires a live WebContentsImpl");
++    }
++
+     /**
+      * Injects the passed Javascript code in the current page and evaluates it.
+      * If a result is required, pass in a callback.
+diff --git a/content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java b/content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java
+--- a/content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java
++++ b/content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java
+@@ -749,6 +749,15 @@
+     }
+ 
+     @Override
++    public void evaluateVitlaneAgentJavaScript(
++            String script, @Nullable JavaScriptCallback callback) {
++        ThreadUtils.assertOnUiThread();
++        if (isDestroyed() || script == null) return;
++        WebContentsImplJni.get().evaluateVitlaneAgentJavaScript(
++                mNativeWebContentsAndroid, script, callback);
++    }
++
++    @Override
+     public void evaluateJavaScriptForTests(String script, @Nullable JavaScriptCallback callback) {
+         ThreadUtils.assertOnUiThread();
+         if (script == null) return;
+@@ -1446,6 +1455,11 @@
+                 String script,
+                 @Nullable JavaScriptCallback callback);
+ 
++        void evaluateVitlaneAgentJavaScript(
++                long nativeWebContentsAndroid,
++                String script,
++                @Nullable JavaScriptCallback callback);
++
+         void evaluateJavaScriptForTests(
+                 long nativeWebContentsAndroid,
+                 String script,
+diff --git a/content/browser/web_contents/web_contents_android.h b/content/browser/web_contents/web_contents_android.h
+--- a/content/browser/web_contents/web_contents_android.h
++++ b/content/browser/web_contents/web_contents_android.h
+@@ -125,6 +125,10 @@
+   void EvaluateJavaScript(JNIEnv* env,
+                           const base::android::JavaRef<jstring>& script,
+                           const base::android::JavaRef<jobject>& callback);
++  void EvaluateVitlaneAgentJavaScript(
++      JNIEnv* env,
++      const base::android::JavaRef<jstring>& script,
++      const base::android::JavaRef<jobject>& callback);
+   void EvaluateJavaScriptForTests(
+       JNIEnv* env,
+       const base::android::JavaRef<jstring>& script,
+diff --git a/content/browser/web_contents/web_contents_android.cc b/content/browser/web_contents/web_contents_android.cc
+--- a/content/browser/web_contents/web_contents_android.cc
++++ b/content/browser/web_contents/web_contents_android.cc
+@@ -626,6 +626,38 @@
+       base::BindOnce(&JavaScriptResultCallback, j_callback));
+ }
+ 
++void WebContentsAndroid::EvaluateVitlaneAgentJavaScript(
++    JNIEnv* env,
++    const JavaRef<jstring>& script,
++    const JavaRef<jobject>& callback) {
++  // This browser-owned API has no caller-selected world ID. Keep the value in
++  // sync with ISOLATED_WORLD_ID_LANE_AGENT in chrome_isolated_world_ids.h
++  // without adding a //content -> //chrome dependency.
++  constexpr int32_t kIsolatedWorldIdLaneAgent =
++      ISOLATED_WORLD_ID_CONTENT_END + 4;
++  static_assert(kIsolatedWorldIdLaneAgent < ISOLATED_WORLD_ID_MAX);
++  auto* frame = web_contents_->GetPrimaryMainFrame();
++  if (!frame || !frame->IsRenderFrameLive() ||
++      !frame->GetLastCommittedURL().SchemeIsHTTPOrHTTPS()) {
++    if (callback) {
++      ScopedJavaGlobalRef<jobject> retained(env, callback);
++      JavaScriptResultCallback(retained, base::Value());
++    }
++    return;
++  }
++  if (!callback) {
++    frame->ExecuteJavaScriptInIsolatedWorld(
++        ConvertJavaStringToUTF16(env, script), base::NullCallback(),
++        kIsolatedWorldIdLaneAgent);
++    return;
++  }
++  ScopedJavaGlobalRef<jobject> retained(env, callback);
++  frame->ExecuteJavaScriptInIsolatedWorld(
++      ConvertJavaStringToUTF16(env, script),
++      base::BindOnce(&JavaScriptResultCallback, retained),
++      kIsolatedWorldIdLaneAgent);
++}
++
+ void WebContentsAndroid::EvaluateJavaScriptForTests(
+     JNIEnv* env,
+     const JavaRef<jstring>& script,
+diff --git a/chrome/common/chrome_isolated_world_ids.h b/chrome/common/chrome_isolated_world_ids.h
+--- a/chrome/common/chrome_isolated_world_ids.h
++++ b/chrome/common/chrome_isolated_world_ids.h
+@@ -19,6 +19,9 @@
+   // Isolated world ID for internal Chrome features.
+   ISOLATED_WORLD_ID_CHROME_INTERNAL,
+ 
++  // Lane's browser-owned agent scripts.
++  ISOLATED_WORLD_ID_LANE_AGENT,
++
+ #if BUILDFLAG(IS_MAC)
+   // Isolated world ID for AppleScript.
+   ISOLATED_WORLD_ID_APPLESCRIPT,
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/common/ChromeIsolatedWorldIds.java b/chrome/android/java/src/org/chromium/chrome/browser/common/ChromeIsolatedWorldIds.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/common/ChromeIsolatedWorldIds.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/common/ChromeIsolatedWorldIds.java
+@@ -23,6 +23,7 @@
+     ChromeIsolatedWorldIds.ISOLATED_WORLD_ID_TRANSLATE,
+     ChromeIsolatedWorldIds.ISOLATED_WORLD_ID_INDIGO,
+     ChromeIsolatedWorldIds.ISOLATED_WORLD_ID_CHROME_INTERNAL,
++    ChromeIsolatedWorldIds.ISOLATED_WORLD_ID_LANE_AGENT,
+     ChromeIsolatedWorldIds.ISOLATED_WORLD_UNUSED_MAC,
+     ChromeIsolatedWorldIds.ISOLATED_WORLD_ID_UNUSED_EXTENSIONS
+ })
+@@ -32,7 +33,8 @@
+     int ISOLATED_WORLD_ID_TRANSLATE = IsolatedWorldIds.ISOLATED_WORLD_ID_CONTENT_END + 1;
+     int ISOLATED_WORLD_ID_INDIGO = IsolatedWorldIds.ISOLATED_WORLD_ID_CONTENT_END + 2;
+     int ISOLATED_WORLD_ID_CHROME_INTERNAL = IsolatedWorldIds.ISOLATED_WORLD_ID_CONTENT_END + 3;
+-    int ISOLATED_WORLD_UNUSED_MAC = IsolatedWorldIds.ISOLATED_WORLD_ID_CONTENT_END + 4;
+-    int ISOLATED_WORLD_ID_UNUSED_EXTENSIONS = IsolatedWorldIds.ISOLATED_WORLD_ID_CONTENT_END + 5;
++    int ISOLATED_WORLD_ID_LANE_AGENT = IsolatedWorldIds.ISOLATED_WORLD_ID_CONTENT_END + 4;
++    int ISOLATED_WORLD_UNUSED_MAC = IsolatedWorldIds.ISOLATED_WORLD_ID_CONTENT_END + 5;
++    int ISOLATED_WORLD_ID_UNUSED_EXTENSIONS = IsolatedWorldIds.ISOLATED_WORLD_ID_CONTENT_END + 6;
+ }
+ // LINT.ThenChange(//chrome/common/chrome_isolated_world_ids.h)
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/lane/LaneAgentCoordinator.java b/chrome/android/java/src/org/chromium/chrome/browser/lane/LaneAgentCoordinator.java
+new file mode 100644
+--- /dev/null
++++ b/chrome/android/java/src/org/chromium/chrome/browser/lane/LaneAgentCoordinator.java
+@@ -0,0 +1,2054 @@
++// Copyright 2026 Vitlane Browser contributors. BSD-3-Clause.
++package org.chromium.chrome.browser.lane;
++
++import android.app.Activity;
++import android.app.Dialog;
++import android.graphics.Color;
++import android.graphics.Typeface;
++import android.graphics.drawable.GradientDrawable;
++import android.os.Handler;
++import android.os.Looper;
++import android.os.SystemClock;
++import android.text.InputType;
++import android.util.Base64;
++import android.view.Gravity;
++import android.view.View;
++import android.view.ViewGroup;
++import android.view.Window;
++import android.view.WindowManager;
++import android.widget.Button;
++import android.widget.EditText;
++import android.widget.FrameLayout;
++import android.widget.LinearLayout;
++import android.widget.ScrollView;
++import android.widget.TextView;
++
++import org.chromium.chrome.browser.tab.Tab;
++import org.chromium.chrome.browser.tab.TabObserver;
++import org.chromium.content_public.browser.WebContents;
++
++import org.json.JSONArray;
++import org.json.JSONObject;
++
++import java.io.ByteArrayOutputStream;
++import java.io.InputStream;
++import java.net.HttpURLConnection;
++import java.net.URI;
++import java.net.URL;
++import java.nio.charset.StandardCharsets;
++import java.security.MessageDigest;
++import java.text.Normalizer;
++import java.text.SimpleDateFormat;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Collections;
++import java.util.Date;
++import java.util.HashSet;
++import java.util.Iterator;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map;
++import java.util.Set;
++import java.util.TimeZone;
++import java.util.UUID;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
++import java.util.function.Consumer;
++import java.util.function.Supplier;
++
++import javax.crypto.Mac;
++import javax.crypto.spec.SecretKeySpec;
++
++/**
++ * Foreground-only native owner for Vitlane's constrained browser agent.
++ *
++ * <p>The model can only propose an action. This class verifies the bridge HMAC, local run binding,
++ * page identity, sequence, lease and control generation before the fixed isolated-world agent may
++ * inspect or execute it. The bridge credential remains in native process memory and is never sent
++ * to JavaScript or persisted.
++ */
++public final class LaneAgentCoordinator {
++    private static final int PROTOCOL_VERSION = 1;
++    private static final int MAX_STEPS = 20;
++    private static final long RUN_TIMEOUT_MS = 300_000;
++    private static final long SAFE_INTEGER_MAX = 9_007_199_254_740_991L;
++    private static final long MAX_WON = 1_000_000_000_000L;
++    private static final long PURCHASE_APPROVAL_TTL_MS = 10 * 60_000L;
++    private static final String FRAME_ID = "frame_main";
++    private static final String COUPANG_ADAPTER = "builtin.coupang.purchase-preparation";
++    private static final Set<String> ACTION_KINDS =
++            setOf("inspect_page", "open_candidate", "scroll", "run_preparation_step",
++                    "request_human", "finish");
++    private static final Set<String> HUMAN_REASON_CODES =
++            setOf("AUTHENTICATION_REQUIRED", "SENSITIVE_INPUT_REQUIRED",
++                    "FORM_SUBMISSION_REQUIRED", "PAYMENT_OR_COMMITMENT",
++                    "UNSUPPORTED_INTERACTION", "CROSS_ORIGIN_FRAME",
++                    "PRIVATE_NETWORK_BLOCKED", "PAGE_CHANGED", "USER_DECISION_REQUIRED");
++    private static final Set<String> COUPANG_PRODUCT_ORIGINS =
++            setOf("https://coupang.com", "https://www.coupang.com");
++    private static final Set<String> COUPANG_PREPARATION_STEPS =
++            setOf("select_option", "verify_options", "set_quantity", "buy_now",
++                    "add_to_cart", "start_checkout");
++    private static final Set<String> COUPANG_CONTINUING_STEPS =
++            setOf("select_option", "verify_options", "set_quantity");
++    private static final Set<String> COUPANG_ACTIVATION_HANDOFF_STEPS =
++            setOf("buy_now", "add_to_cart", "start_checkout");
++
++    private static final class CoupangProductIdentity {
++        final String origin;
++        final String path;
++        final String productId;
++        final String itemId;
++        final String vendorItemId;
++
++        CoupangProductIdentity(String origin, String path, String productId, String itemId,
++                String vendorItemId) {
++            this.origin = origin;
++            this.path = path;
++            this.productId = productId;
++            this.itemId = itemId;
++            this.vendorItemId = vendorItemId;
++        }
++
++        String canonicalProductUrl() {
++            return "https://www.coupang.com/vp/products/" + productId
++                    + "?itemId=" + itemId + "&vendorItemId=" + vendorItemId;
++        }
++    }
++
++    private static final class JournalEntry {
++        final String commandId;
++        final String actionHash;
++        final long sequence;
++        final String actionKind;
++        final String preparationAdapterId;
++        final String preparationStepId;
++        String state = "RECEIVED";
++        String resultStatus;
++        String resultCode;
++        String displayMessage = "";
++
++        JournalEntry(String commandId, String actionHash, long sequence, String actionKind,
++                String preparationAdapterId, String preparationStepId) {
++            this.commandId = commandId;
++            this.actionHash = actionHash;
++            this.sequence = sequence;
++            this.actionKind = actionKind;
++            this.preparationAdapterId = preparationAdapterId;
++            this.preparationStepId = preparationStepId;
++        }
++
++        boolean isTerminal() {
++            return "APPLIED".equals(state) || "OUTCOME_UNKNOWN".equals(state);
++        }
++    }
++
++    private final Activity mActivity;
++    private final Supplier<Tab> mCurrentTab;
++    private final Handler mUi = new Handler(Looper.getMainLooper());
++    private final ExecutorService mNetwork = Executors.newSingleThreadExecutor();
++    private final String mDeviceId = "device_" + UUID.randomUUID();
++    // This binding identifies the same persistent regular Chromium profile used
++    // for user sign-in. Cookies and storage stay inside Chromium and are never
++    // included in observations. The sanitizer removes account/profile chrome
++    // from public product pages and fails closed on account/session/cart/payment
++    // pages; checkout and payment always remain under direct user control.
++    private final String mProfileRef = "profile_regular_unisolated";
++    private final Button mLauncher;
++    private final LinearLayout mControlBar;
++    private final TextView mTrustedOrigin;
++    private final TextView mCurrentAction;
++    private final TextView mDataScope;
++    private final LinkedHashMap<String, JournalEntry> mJournal =
++            new LinkedHashMap<String, JournalEntry>() {
++                @Override
++                protected boolean removeEldestEntry(Map.Entry<String, JournalEntry> eldest) {
++                    return size() > 64;
++                }
++            };
++
++    private Dialog mPanel;
++    private TextView mStatus;
++    private EditText mGoalInput;
++    private EditText mEndpointInput;
++    private EditText mTokenInput;
++    private EditText mCoupangQuantityInput;
++    private EditText mCoupangUnitCeilingInput;
++    private EditText mCoupangTotalCeilingInput;
++    private EditText mCoupangOptionsInput;
++    private Button mStartButton;
++    private String mEndpoint;
++    private String mToken = "";
++    private String mGoal = "";
++    private String mLog;
++    private String mRunId = "";
++    private String mLastObservationId = "";
++    private String mLastObservationOrigin = "";
++    private String mDocumentUrl = "";
++    private Tab mTaskTab;
++    private WebContents mTaskContents;
++    private JSONArray mHistory = new JSONArray();
++    private JSONObject mApprovedPreparation;
++    private boolean mRunning;
++    private boolean mDestroyed;
++    private volatile int mGeneration;
++    private long mControlGeneration;
++    private long mDocumentEpoch;
++    private long mSequence;
++    private long mLeaseEpoch;
++    private int mSteps;
++    private long mDeadline;
++    private volatile HttpURLConnection mConnection;
++
++    private final TabObserver mTabObserver = new TabObserver() {
++        @Override
++        public void onHidden(Tab tab, int type) {
++            if (mRunning) stop(tr("탭이 숨겨져 작업을 중지했습니다.",
++                    "The tab was hidden, so the run stopped."));
++        }
++
++        @Override
++        public void onDestroyed(Tab tab) {
++            if (mRunning) stop(tr("탭이 닫혀 작업을 중지했습니다.",
++                    "The tab was closed, so the run stopped."));
++        }
++
++        @Override
++        public void onContentChanged(Tab tab) {
++            if (mRunning && tab.getWebContents() != mTaskContents) {
++                stop(tr("페이지 실행 환경이 변경되었습니다.",
++                        "The page execution context changed."));
++            }
++        }
++
++        @Override
++        public void onLoadStarted(Tab tab, boolean toDifferentDocument) {
++            if (mRunning && toDifferentDocument) {
++                takeOver(navigationTakeoverMessage());
++            }
++        }
++
++        @Override
++        public void onUrlUpdated(Tab tab) {
++            if (!mRunning) return;
++            String url = tab.getUrl().getSpec();
++            if (!url.equals(mDocumentUrl)) {
++                takeOver(navigationTakeoverMessage());
++            }
++        }
++    };
++
++    public LaneAgentCoordinator(Activity activity, Supplier<Tab> currentTab) {
++        mActivity = activity;
++        mCurrentTab = currentTab;
++        mEndpoint = activity.getPreferences(0).getString(
++                "lane.endpoint", "http://127.0.0.1:8787");
++        mLog = tr("현재 브라우저의 로그인 세션은 그대로 유지됩니다. 공개 상품 페이지에서는 "
++                        + "계정 영역을 제외한 상품 내용으로 검색과 비교를 돕습니다. 계정·장바구니·"
++                        + "결제 화면은 수집하지 않습니다.",
++                "Your sign-in stays in this browser session. On public product pages, I can "
++                        + "search and compare using product content after account areas are removed. "
++                        + "Account, cart, and payment pages are not collected.");
++
++        mLauncher = button("AI", 0xffbaff68, 0xff17200f);
++        mLauncher.setContentDescription(tr("Vitlane AI 브라우저 열기",
++                "Open Vitlane AI Browser"));
++        FrameLayout.LayoutParams launcherParams = new FrameLayout.LayoutParams(dp(64), dp(48));
++        launcherParams.gravity = Gravity.BOTTOM | Gravity.END;
++        launcherParams.setMargins(dp(16), dp(16), dp(16), dp(80));
++        activity.addContentView(mLauncher, launcherParams);
++        mLauncher.setOnClickListener(v -> showPanel());
++
++        mControlBar = new LinearLayout(activity);
++        mControlBar.setOrientation(LinearLayout.VERTICAL);
++        mControlBar.setPadding(dp(14), dp(10), dp(14), dp(10));
++        mControlBar.setBackground(background(0xf2182016));
++        mTrustedOrigin = label("", 13);
++        mTrustedOrigin.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
++        mCurrentAction = label("", 12);
++        mDataScope = label("", 11);
++        mControlBar.addView(mTrustedOrigin);
++        mControlBar.addView(mCurrentAction);
++        mControlBar.addView(mDataScope);
++        LinearLayout controls = new LinearLayout(activity);
++        controls.setOrientation(LinearLayout.HORIZONTAL);
++        Button stopButton = button(tr("중지", "Stop"), 0xff34412d, Color.WHITE);
++        Button directControl = button(tr("직접 조작", "Take control"), 0xffbaff68, 0xff17200f);
++        controls.addView(stopButton, weighted());
++        controls.addView(directControl, weighted());
++        stopButton.setOnClickListener(v -> stop(tr("작업을 중지했습니다.", "Run stopped.")));
++        directControl.setOnClickListener(v -> takeOver());
++        mControlBar.addView(controls);
++        mControlBar.setVisibility(View.GONE);
++        FrameLayout.LayoutParams barParams = new FrameLayout.LayoutParams(
++                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
++        barParams.gravity = Gravity.TOP;
++        barParams.setMargins(dp(8), dp(8), dp(8), dp(8));
++        activity.addContentView(mControlBar, barParams);
++    }
++
++    private static Set<String> setOf(String... values) {
++        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(values)));
++    }
++
++    private String tr(String korean, String english) {
++        return "ko".equalsIgnoreCase(Locale.getDefault().getLanguage()) ? korean : english;
++    }
++
++    private String navigationTakeoverMessage() {
++        return mApprovedPreparation == null
++                ? tr("페이지 이동이 시작되어 자동 실행을 중지했습니다. 새 페이지를 확인한 뒤 "
++                                + "다시 시작해 주세요.",
++                        "Navigation started, so automation stopped. Review the new page and "
++                                + "start again.")
++                : tr("쿠팡 페이지 이동이 시작되어 구매 준비 자동화를 중지했습니다. 주문서와 최종 "
++                                + "가격을 확인하고 로그인·최종 주문·결제는 직접 진행해 주세요.",
++                        "Coupang navigation started, so preparation automation stopped. Review "
++                                + "checkout and the final price, then complete sign-in, the final "
++                                + "order, and payment yourself.");
++    }
++
++    private int dp(int value) {
++        return Math.round(value * mActivity.getResources().getDisplayMetrics().density);
++    }
++
++    private LinearLayout.LayoutParams weighted() {
++        LinearLayout.LayoutParams params =
++                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
++        params.setMargins(dp(4), dp(2), dp(4), dp(2));
++        return params;
++    }
++
++    private GradientDrawable background(int color) {
++        GradientDrawable drawable = new GradientDrawable();
++        drawable.setColor(color);
++        drawable.setCornerRadius(dp(20));
++        return drawable;
++    }
++
++    private Button button(String title, int bg, int fg) {
++        Button button = new Button(mActivity);
++        button.setText(title);
++        button.setTextColor(fg);
++        button.setAllCaps(false);
++        button.setBackground(background(bg));
++        return button;
++    }
++
++    private TextView label(String value, int size) {
++        TextView label = new TextView(mActivity);
++        label.setText(value);
++        label.setTextColor(0xffe9eee3);
++        label.setTextSize(size);
++        label.setPadding(0, dp(6), 0, dp(6));
++        return label;
++    }
++
++    private EditText input(String hint, String value, int type) {
++        EditText input = new EditText(mActivity);
++        input.setHint(hint);
++        input.setText(value);
++        input.setTextColor(Color.WHITE);
++        input.setHintTextColor(0xffa3ae99);
++        input.setInputType(type);
++        input.setPadding(dp(12), dp(10), dp(12), dp(10));
++        input.setBackground(background(0xff283025));
++        input.setEnabled(!mRunning);
++        return input;
++    }
++
++    private void showPanel() {
++        if (mDestroyed || mActivity.isFinishing()) return;
++        if (mPanel != null && mPanel.isShowing()) return;
++        mPanel = new Dialog(mActivity);
++        mPanel.requestWindowFeature(Window.FEATURE_NO_TITLE);
++        LinearLayout body = new LinearLayout(mActivity);
++        body.setOrientation(LinearLayout.VERTICAL);
++        body.setPadding(dp(22), dp(12), dp(22), dp(22));
++        body.setBackground(background(0xff182016));
++        TextView title = label(tr("Vitlane · AI 브라우저", "Vitlane · AI Browser"), 22);
++        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
++        body.addView(title);
++        body.addView(label(tr("브라우저가 확인한 주소", "Browser-verified origin"), 12));
++        body.addView(label(displayOrigin(), 14));
++        body.addView(label(tr("무엇을 할까요?", "What should I do?"), 14));
++        mGoalInput = input(tr("예: 이 페이지에서 가벼운 운동화를 찾아줘",
++                        "Example: Find lightweight shoes on this site"),
++                mGoal, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
++        mGoalInput.setMinLines(2);
++        body.addView(mGoalInput);
++        body.addView(label(tr("AI 연결 주소", "AI connection URL"), 13));
++        mEndpointInput = input("https://your-ai.example", mEndpoint,
++                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
++        body.addView(mEndpointInput);
++        body.addView(label(tr("연결 키", "Connection key"), 13));
++        mTokenInput = input(tr("서버의 BRIDGE_TOKEN", "Server BRIDGE_TOKEN"), mToken,
++                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
++        mTokenInput.setSaveEnabled(false);
++        mTokenInput.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
++        body.addView(mTokenInput);
++        body.addView(label(tr(
++                "로그인 쿠키는 현재 브라우저 안에 유지되고 전송되지 않습니다. 로그인된 공개 상품 "
++                        + "페이지에서는 계정·프로필 영역을 제외한 상품 텍스트와 검색 후보만 "
++                        + "전송합니다. 계정·장바구니·결제 화면, 입력값, 비밀번호, OTP, 결제정보와 "
++                        + "스크린샷은 제외합니다.",
++                "Sign-in cookies stay in this browser and are not sent. On signed-in public "
++                        + "product pages, only product text and search candidates are shared after "
++                        + "account and profile areas are removed. Account, cart, and payment pages, "
++                        + "input values, passwords, OTPs, payment data, and screenshots are excluded."), 12));
++
++        CoupangProductIdentity coupangProduct = currentCoupangProduct();
++        if (!mRunning && coupangProduct != null) {
++            TextView preparationTitle = label(tr(
++                    "현재 쿠팡 상품 구매 준비 승인",
++                    "Approve preparation for this Coupang product"), 16);
++            preparationTitle.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
++            body.addView(preparationTitle);
++            body.addView(label(tr(
++                    "브라우저가 확인한 상품 · productId " + coupangProduct.productId
++                            + " · itemId " + coupangProduct.itemId
++                            + " · vendorItemId " + coupangProduct.vendorItemId,
++                    "Browser-verified offer · productId " + coupangProduct.productId
++                            + " · itemId " + coupangProduct.itemId
++                            + " · vendorItemId " + coupangProduct.vendorItemId), 11));
++            body.addView(label(tr("수량", "Quantity"), 12));
++            mCoupangQuantityInput = input("1", "1", InputType.TYPE_CLASS_NUMBER);
++            body.addView(mCoupangQuantityInput);
++            body.addView(label(tr("개당 최대 가격 (KRW)", "Maximum unit price (KRW)"), 12));
++            mCoupangUnitCeilingInput = input("15000", "",
++                    InputType.TYPE_CLASS_NUMBER);
++            body.addView(mCoupangUnitCeilingInput);
++            body.addView(label(tr("전체 최대 가격 (KRW)", "Maximum total price (KRW)"), 12));
++            mCoupangTotalCeilingInput = input("15000", "",
++                    InputType.TYPE_CLASS_NUMBER);
++            body.addView(mCoupangTotalCeilingInput);
++            body.addView(label(tr(
++                    "선택 옵션 (선택 사항, 줄마다 정확한 그룹=값)",
++                    "Options (optional, exact group=value on each line)"), 12));
++            mCoupangOptionsInput = input(tr("예: 색상=블랙\n사이즈=270",
++                            "Example: Color=Black\nSize=270"), "",
++                    InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
++            mCoupangOptionsInput.setMinLines(2);
++            body.addView(mCoupangOptionsInput);
++            body.addView(label(tr(
++                    "승인하면 위 상품·옵션·수량·가격 상한만 준비하고 바로구매를 한 번 활성화한 뒤 "
++                            + "직접 조작으로 전환합니다. 주문서 검토, 로그인, 최종 주문과 결제는 직접 "
++                            + "진행해야 합니다.",
++                    "Approval covers only this offer, exact options, quantity, and price ceilings. "
++                            + "The browser activates Buy now once, then returns control. You must "
++                            + "review checkout and complete sign-in, the final order, and payment."), 12));
++            Button approveCoupang = button(tr("이 범위로 승인하고 준비", "Approve and prepare"),
++                    0xffffd76a, 0xff17200f);
++            body.addView(approveCoupang);
++            approveCoupang.setOnClickListener(v -> startApprovedCoupangPreparation());
++        }
++
++        mStartButton = button(mRunning ? tr("실행 중…", "Running…")
++                        : tr("현재 탭에서 시작", "Start in current tab"),
++                0xffbaff68, 0xff17200f);
++        mStartButton.setEnabled(!mRunning);
++        body.addView(mStartButton);
++        mStartButton.setOnClickListener(v -> start(null));
++        Button stop = button(tr("중지", "Stop"), 0xff34412d, Color.WHITE);
++        body.addView(stop);
++        stop.setOnClickListener(v -> stop(tr("작업을 중지했습니다.", "Run stopped.")));
++        Button direct = button(tr("내가 직접 조작", "I’ll take control"),
++                0xff283025, Color.WHITE);
++        body.addView(direct);
++        direct.setOnClickListener(v -> takeOver());
++        mStatus = label(mLog, 14);
++        mStatus.setTextIsSelectable(true);
++        body.addView(mStatus);
++        ScrollView scroll = new ScrollView(mActivity);
++        scroll.addView(body);
++        mPanel.setContentView(scroll);
++        Window window = mPanel.getWindow();
++        if (window != null) {
++            window.setBackgroundDrawableResource(android.R.color.transparent);
++            window.setGravity(Gravity.BOTTOM);
++            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE);
++            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
++        }
++        mPanel.show();
++        if (window != null) {
++            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
++                    Math.round(mActivity.getResources().getDisplayMetrics().heightPixels * 0.86f));
++        }
++    }
++
++    private void startApprovedCoupangPreparation() {
++        if (mRunning || mDestroyed) return;
++        try {
++            start(buildApprovedCoupangPreparation());
++        } catch (Exception e) {
++            if (!mRunning) {
++                mApprovedPreparation = null;
++                mTaskContents = null;
++                mTaskTab = null;
++            }
++            append(e.getMessage());
++        }
++    }
++
++    private void start(JSONObject approvedPreparation) {
++        if (mRunning || mDestroyed) return;
++        try {
++            mGoal = mGoalInput.getText().toString().trim();
++            if (approvedPreparation != null && mGoal.isEmpty()) {
++                mGoal = "Prepare the explicitly approved Coupang offer for checkout review";
++            }
++            mEndpoint = mEndpointInput.getText().toString().trim().replaceAll("/+$", "");
++            mToken = mTokenInput.getText().toString().trim();
++            URI endpoint = new URI(mEndpoint);
++            String host = endpoint.getHost();
++            boolean local = "127.0.0.1".equals(host) || "localhost".equals(host)
++                    || "::1".equals(host);
++            if (host == null || endpoint.getUserInfo() != null || endpoint.getQuery() != null
++                    || endpoint.getFragment() != null || (endpoint.getPort() != -1 && !local)
++                    || !("https".equals(endpoint.getScheme())
++                            || (local && "http".equals(endpoint.getScheme())))) {
++                throw new Exception(tr("연결 주소는 HTTPS 또는 localhost HTTP를 사용하세요.",
++                        "Use HTTPS, or HTTP on localhost, for the bridge."));
++            }
++            if (mGoal.isEmpty() || mGoal.length() > 4000) {
++                throw new Exception(tr("할 일을 4,000자 이내로 입력하세요.",
++                        "Describe the task in 4,000 characters or fewer."));
++            }
++            if (mToken.getBytes(StandardCharsets.UTF_8).length < 32) {
++                throw new Exception(tr("연결 키를 확인하세요. 32바이트 이상이어야 합니다.",
++                        "Check the connection key. It must contain at least 32 bytes."));
++            }
++            mTaskTab = mCurrentTab.get();
++            if (mTaskTab == null || mTaskTab.isOffTheRecord()) {
++                throw new Exception(tr("일반 탭에서 웹사이트를 먼저 여세요.",
++                        "Open a website in a regular tab first."));
++            }
++            mTaskContents = mTaskTab.getWebContents();
++            if (mTaskContents == null || currentOrigin() == null) {
++                throw new Exception(tr("공개 HTTP(S) 웹사이트에서 시작하세요.",
++                        "Start on a public HTTP(S) website."));
++            }
++            if (mTaskTab.isLoading()) {
++                throw new Exception(tr("페이지 로딩이 끝난 뒤 다시 시작해 주세요.",
++                        "Wait for the page to finish loading, then start again."));
++            }
++            if (approvedPreparation != null) {
++                verifyLocalApprovedPreparation(approvedPreparation, true);
++                mApprovedPreparation = new JSONObject(approvedPreparation.toString());
++            } else {
++                mApprovedPreparation = null;
++            }
++            mActivity.getPreferences(0).edit().putString("lane.endpoint", mEndpoint).apply();
++            // The bridge token deliberately remains only in process memory.
++            mHistory = new JSONArray();
++            mJournal.clear();
++            mSteps = 0;
++            mSequence = 1;
++            mLeaseEpoch = 1;
++            mDocumentEpoch = 1;
++            mRunId = "run_" + UUID.randomUUID();
++            mDocumentUrl = mTaskTab.getUrl().getSpec();
++            mLastObservationId = "";
++            mLastObservationOrigin = "";
++            mGeneration++;
++            mControlGeneration++;
++            mRunning = true;
++            mTaskTab.addObserver(mTabObserver);
++            mDeadline = SystemClock.elapsedRealtime() + RUN_TIMEOUT_MS;
++            mLog = approvedPreparation == null
++                    ? tr("필터를 적용해 페이지 텍스트와 검색 후보를 확인하고 있습니다…",
++                            "Applying the filter to page text and search candidates…")
++                    : tr("승인한 쿠팡 상품·옵션·수량·가격 범위를 다시 확인하고 있습니다…",
++                            "Rechecking the approved Coupang offer, options, quantity, and price ceilings…");
++            mPanel.dismiss();
++            updateNativeSurface();
++            int generation = mGeneration;
++            mUi.postDelayed(() -> step(generation), 120);
++        } catch (Exception e) {
++            if (!mRunning) {
++                mApprovedPreparation = null;
++                mTaskContents = null;
++                mTaskTab = null;
++            }
++            append(e.getMessage());
++        }
++    }
++
++    private boolean valid(int generation) {
++        if (!mRunning || mDestroyed || generation != mGeneration) return false;
++        if (SystemClock.elapsedRealtime() > mDeadline) {
++            stop(tr("시간 제한에 도달했습니다. 결과를 확인하고 다시 시작하세요.",
++                    "The run reached its time limit. Review the result and start again."));
++            return false;
++        }
++        if (!mActivity.hasWindowFocus() && (mPanel == null || !mPanel.isShowing())) {
++            stop(tr("브라우저가 전면에 있지 않아 작업을 중지했습니다.",
++                    "The browser is not in the foreground, so the run stopped."));
++            return false;
++        }
++        if (!mDocumentUrl.equals(mTaskTab.getUrl().getSpec())) {
++            takeOver(tr("페이지 주소가 바뀌어 자동 실행을 중지했습니다. 새 주소를 확인한 뒤 "
++                            + "다시 시작해 주세요.",
++                    "The page URL changed, so automation stopped. Review the new URL and "
++                            + "start again."));
++            return false;
++        }
++        if (mCurrentTab.get() != mTaskTab || mTaskTab.getWebContents() != mTaskContents
++                || mTaskTab.isOffTheRecord() || currentOrigin() == null) {
++            stop(tr("탭 또는 페이지가 변경되어 작업을 중지했습니다.",
++                    "The tab or page changed, so the run stopped."));
++            return false;
++        }
++        return true;
++    }
++
++    private void append(String text) {
++        mLog += "\n" + (text == null ? tr("작업을 진행할 수 없습니다.",
++                "The task cannot continue.") : text);
++        if (mLog.length() > 6000) mLog = mLog.substring(mLog.length() - 6000);
++        if (mStatus != null) mStatus.setText(mLog);
++    }
++
++    private void updateNativeSurface() {
++        if (!mRunning) {
++            mControlBar.setVisibility(View.GONE);
++            return;
++        }
++        mTrustedOrigin.setText(tr("브라우저 확인 주소 · ", "Browser-verified origin · ")
++                + displayOrigin());
++        if (mCurrentAction.getText().length() == 0) {
++            mCurrentAction.setText(tr("현재 작업 · 페이지 확인", "Current action · Inspect page"));
++        }
++        mDataScope.setText(mApprovedPreparation == null
++                ? tr("데이터 범위 · 공개 상품 텍스트/검색 후보 · 계정·장바구니·결제 화면 제외",
++                        "Data scope · Public product text/search candidates · Account, cart, and "
++                                + "payment pages excluded")
++                : tr("승인 범위 · 현재 쿠팡 상품·정확한 옵션·수량·가격 상한 · 최종 주문/결제 제외",
++                        "Approved scope · Current Coupang offer, exact options, quantity, and price "
++                                + "ceilings · Final order/payment excluded"));
++        mControlBar.setVisibility(View.VISIBLE);
++    }
++
++    private String displayOrigin() {
++        String origin = currentOrigin();
++        return origin == null ? tr("확인할 수 없음", "Unavailable") : origin;
++    }
++
++    private String currentOrigin() {
++        Tab tab = mRunning ? mTaskTab : mCurrentTab.get();
++        if (tab == null || tab.getWebContents() == null) return null;
++        return publicOrigin(tab.getWebContents().getLastCommittedUrl().getSpec());
++    }
++
++    private CoupangProductIdentity currentCoupangProduct() {
++        Tab tab = mTaskTab != null ? mTaskTab : mCurrentTab.get();
++        if (tab == null || tab.getWebContents() == null) return null;
++        return coupangProductIdentity(tab.getWebContents().getLastCommittedUrl().getSpec());
++    }
++
++    private static CoupangProductIdentity coupangProductIdentity(String value) {
++        try {
++            URI uri = new URI(value);
++            if (!"https".equals(uri.getScheme()) || uri.getUserInfo() != null
++                    || uri.getPort() != -1 || uri.getFragment() != null) {
++                return null;
++            }
++            String origin = publicOrigin(value);
++            String host = uri.getHost();
++            if (origin == null || host == null || !COUPANG_PRODUCT_ORIGINS.contains(origin)) {
++                return null;
++            }
++            String path = uri.getRawPath();
++            if (path == null || !path.matches("^/vp/products/[1-9][0-9]{0,19}/?$")) {
++                return null;
++            }
++            String productId = path.replaceFirst("^/vp/products/", "").replaceFirst("/$", "");
++            String itemId = uniqueNumericQueryParameter(uri.getRawQuery(), "itemId");
++            String vendorItemId = uniqueNumericQueryParameter(uri.getRawQuery(), "vendorItemId");
++            if (itemId == null || vendorItemId == null) return null;
++            return new CoupangProductIdentity(origin, path, productId, itemId, vendorItemId);
++        } catch (Exception e) {
++            return null;
++        }
++    }
++
++    private static String uniqueNumericQueryParameter(String rawQuery, String name) {
++        if (rawQuery == null || rawQuery.isEmpty()) return null;
++        String result = null;
++        for (String part : rawQuery.split("&", -1)) {
++            int separator = part.indexOf('=');
++            if (separator <= 0 || !name.equals(part.substring(0, separator))) continue;
++            String value = part.substring(separator + 1);
++            if (result != null || !value.matches("^[1-9][0-9]{0,19}$")) return null;
++            result = value;
++        }
++        return result;
++    }
++
++    private JSONObject buildApprovedCoupangPreparation() throws Exception {
++        CoupangProductIdentity identity = currentCoupangProduct();
++        if (identity == null) {
++            throw new Exception(tr(
++                    "itemId와 vendorItemId가 있는 정확한 쿠팡 상품 페이지에서만 승인할 수 있습니다.",
++                    "Approval is available only on an exact Coupang product URL with itemId and vendorItemId."));
++        }
++        long quantity = boundedDecimalInput(mCoupangQuantityInput, 1, 99,
++                tr("수량은 1~99의 정수여야 합니다.", "Quantity must be an integer from 1 to 99."));
++        long unitCeiling = boundedDecimalInput(mCoupangUnitCeilingInput, 1, MAX_WON,
++                tr("개당 최대 가격을 1~1조 KRW로 입력하세요.",
++                        "Enter a maximum unit price from 1 to 1 trillion KRW."));
++        long totalCeiling = boundedDecimalInput(mCoupangTotalCeilingInput, 1, MAX_WON,
++                tr("전체 최대 가격을 1~1조 KRW로 입력하세요.",
++                        "Enter a maximum total price from 1 to 1 trillion KRW."));
++        if (Math.multiplyExact(unitCeiling, quantity) > totalCeiling) {
++            throw new Exception(tr("전체 최대 가격은 개당 최대 가격 × 수량 이상이어야 합니다.",
++                    "The maximum total must be at least the maximum unit price times quantity."));
++        }
++
++        JSONObject options = approvedCoupangOptions(mCoupangOptionsInput.getText().toString());
++        JSONObject offerIdentity = new JSONObject()
++                .put("productId", identity.productId)
++                .put("itemId", identity.itemId)
++                .put("vendorItemId", identity.vendorItemId);
++        JSONObject item = new JSONObject()
++                .put("query", "Current Coupang product")
++                .put("offerIdentity", offerIdentity)
++                .put("quantity", quantity)
++                .put("unitPriceCeilingKrw", unitCeiling)
++                .put("linePriceCeilingKrw", totalCeiling)
++                .put("productUrl", identity.canonicalProductUrl())
++                .put("options", options);
++        JSONArray items = new JSONArray().put(item);
++        String expiry = formatTimestamp(System.currentTimeMillis() + 5 * 60_000L);
++        JSONObject approvalWithoutDigest = new JSONObject()
++                .put("approvalId", "approval_" + UUID.randomUUID().toString().replace("-", ""))
++                .put("currency", "KRW")
++                .put("revision", 1)
++                .put("expiresAt", expiry)
++                .put("totalPriceCeilingKrw", totalCeiling);
++        JSONObject digestMaterial = new JSONObject()
++                .put("merchantId", "COUPANG")
++                .put("recipeVersion", "1")
++                .put("mode", "single")
++                .put("route", "single_buy_now")
++                .put("approval", approvalWithoutDigest)
++                .put("items", items);
++        JSONObject approval = new JSONObject(approvalWithoutDigest.toString())
++                .put("approvalDigest", "sha256:" + hex(sha256(canonicalize(digestMaterial))));
++        return new JSONObject()
++                .put("merchantId", "COUPANG")
++                .put("recipeVersion", "1")
++                .put("mode", "single")
++                .put("approval", approval)
++                .put("items", new JSONArray(items.toString()))
++                .put("cursor", 2)
++                .put("expectedPage", new JSONObject()
++                        .put("origin", identity.origin)
++                        .put("pathname", identity.path));
++    }
++
++    private long boundedDecimalInput(EditText input, long minimum, long maximum, String message)
++            throws Exception {
++        if (input == null) throw new Exception(message);
++        String value = input.getText().toString().trim();
++        if (!value.matches("^[0-9]{1,13}$")) throw new Exception(message);
++        long result;
++        try {
++            result = Long.parseLong(value);
++        } catch (NumberFormatException e) {
++            throw new Exception(message);
++        }
++        if (result < minimum || result > maximum) throw new Exception(message);
++        return result;
++    }
++
++    private JSONObject approvedCoupangOptions(String raw) throws Exception {
++        String value = raw == null ? "" : raw.trim();
++        if (value.isEmpty()) return new JSONObject().put("kind", "none");
++        JSONArray choices = new JSONArray();
++        Set<String> seenGroups = new HashSet<>();
++        for (String line : value.split("\\r?\\n", -1)) {
++            if (choices.length() >= 10 || line.indexOf('=') <= 0
++                    || line.indexOf('=') != line.lastIndexOf('=')) {
++                throw new Exception(tr("옵션은 최대 10개이며 줄마다 정확히 그룹=값으로 입력하세요.",
++                        "Enter at most 10 options, with exactly one group=value pair per line."));
++            }
++            int separator = line.indexOf('=');
++            String groupName = normalizedPublicText(line.substring(0, separator), 120);
++            String valueName = normalizedPublicText(line.substring(separator + 1), 120);
++            if (groupName == null || valueName == null || likelySensitive(groupName)
++                    || likelySensitive(valueName) || !seenGroups.add(groupName)) {
++                throw new Exception(tr("각 옵션 그룹에는 공개 텍스트 값 하나만 입력하세요.",
++                        "Enter exactly one public-text value for each option group."));
++            }
++            choices.put(new JSONObject().put("groupName", groupName).put("valueName", valueName));
++        }
++        return new JSONObject().put("kind", "choices").put("choices", choices);
++    }
++
++    private static String formatTimestamp(long milliseconds) {
++        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
++        format.setTimeZone(TimeZone.getTimeZone("UTC"));
++        return format.format(new Date(milliseconds));
++    }
++
++    private static String publicOrigin(String value) {
++        try {
++            URI uri = new URI(value);
++            String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.US);
++            String host = uri.getHost();
++            if (!("https".equals(scheme) || "http".equals(scheme)) || host == null
++                    || uri.getUserInfo() != null || uri.getPort() != -1 || !isPublicHost(host)) {
++                return null;
++            }
++            String normalizedHost = host.toLowerCase(Locale.US);
++            if (normalizedHost.indexOf(':') >= 0) normalizedHost = "[" + normalizedHost + "]";
++            return scheme + "://" + normalizedHost;
++        } catch (Exception e) {
++            return null;
++        }
++    }
++
++    private static boolean isPublicHost(String value) {
++        String host = value.toLowerCase(Locale.US);
++        if (host.isEmpty() || "localhost".equals(host) || host.endsWith(".localhost")
++                || host.endsWith(".local") || host.endsWith(".internal")
++                || host.endsWith(".lan") || host.endsWith(".home.arpa")
++                || host.endsWith(".test") || host.endsWith(".invalid")
++                || host.endsWith(".example")) {
++            return false;
++        }
++        if (host.indexOf(':') >= 0) {
++            return !("::".equals(host) || "::1".equals(host) || host.startsWith("fc")
++                    || host.startsWith("fd") || host.startsWith("::ffff:")
++                    || host.matches("^fe[89ab].*"));
++        }
++        String[] parts = host.split("\\.");
++        if (parts.length == 4) {
++            try {
++                int[] bytes = new int[4];
++                for (int i = 0; i < 4; i++) {
++                    bytes[i] = Integer.parseInt(parts[i]);
++                    if (bytes[i] < 0 || bytes[i] > 255) return false;
++                }
++                int a = bytes[0];
++                int b = bytes[1];
++                return !(a == 0 || a == 10 || a == 127 || a >= 224
++                        || (a == 100 && b >= 64 && b <= 127)
++                        || (a == 169 && b == 254)
++                        || (a == 172 && b >= 16 && b <= 31)
++                        || (a == 192 && (b == 0 || b == 168))
++                        || (a == 198 && (b == 18 || b == 19 || b == 51))
++                        || (a == 203 && b == 0));
++            } catch (NumberFormatException e) {
++                return false;
++            }
++        }
++        return host.indexOf('.') > 0;
++    }
++
++    private JSONObject nativeMetadata() throws Exception {
++        String origin = currentOrigin();
++        if (origin == null) throw new Exception("ORIGIN_POLICY_DENIED");
++        URI current = new URI(mTaskTab.getUrl().getSpec());
++        String pathname = current.getRawPath();
++        if (pathname == null || pathname.isEmpty()) pathname = "/";
++        if (!pathname.startsWith("/") || pathname.indexOf('?') >= 0
++                || pathname.indexOf('#') >= 0 || pathname.length() > 1024) {
++            throw new Exception("URL_POLICY_DENIED");
++        }
++        return new JSONObject()
++                .put("tabId", "tab_" + mTaskTab.getId())
++                .put("frameId", FRAME_ID)
++                .put("documentEpoch", mDocumentEpoch)
++                .put("topOrigin", origin)
++                .put("frameOrigin", origin)
++                .put("pathname", pathname)
++                .put("queryOrFragmentPresent",
++                        current.getRawQuery() != null || current.getRawFragment() != null)
++                .put("foreground", true);
++    }
++
++    private void evaluateAgentCall(
++            int generation, String fixedExpression, Consumer<JSONObject> callback) {
++        if (!valid(generation)) return;
++        final boolean[] completed = {false};
++        Runnable timeout = () -> {
++            if (!completed[0] && valid(generation)) {
++                stop(tr("페이지 응답이 늦어 작업을 중지했습니다.",
++                        "The page response timed out, so the run stopped."));
++            }
++        };
++        mUi.postDelayed(timeout, 8000);
++        String script = LanePageScript.SOURCE + "\n(() => { try { return {ok:true,value:("
++                + fixedExpression
++                + ")}; } catch(e) { return {ok:false,error:String(e.message).slice(0,120)}; } })()";
++        mTaskContents.evaluateVitlaneAgentJavaScript(script, json -> {
++                    completed[0] = true;
++                    mUi.removeCallbacks(timeout);
++                    if (!valid(generation)) return;
++                    try {
++                        JSONObject envelope = new JSONObject(json);
++                        if (!envelope.optBoolean("ok")) {
++                            stop(tr("페이지가 바뀌었거나 조작할 수 없습니다.",
++                                    "The page changed or cannot be controlled."));
++                            return;
++                        }
++                        callback.accept(envelope.getJSONObject("value"));
++                    } catch (Exception e) {
++                        stop(tr("페이지 응답을 읽을 수 없습니다.",
++                                "The page response could not be read."));
++                    }
++                });
++    }
++
++    private void step(int generation) {
++        if (!valid(generation)) return;
++        if (mSteps >= MAX_STEPS) {
++            stop(tr("20단계까지 실행했습니다. 결과를 확인하고 이어서 요청하세요.",
++                    "The run reached 20 steps. Review the result before continuing."));
++            return;
++        }
++        if (mTaskTab.isLoading()) {
++            mUi.postDelayed(() -> step(generation), 400);
++            return;
++        }
++        try {
++            JSONObject metadata = nativeMetadata();
++            String expression = "globalThis.__laneAgent.snapshot(" + metadata + ")";
++            evaluateAgentCall(generation, expression, observation -> sendStep(generation, observation));
++        } catch (Exception e) {
++            stop(tr("현재 페이지를 안전하게 확인할 수 없습니다.",
++                    "The current page cannot be inspected safely."));
++        }
++    }
++
++    private void sendStep(int generation, JSONObject observation) {
++        try {
++            JSONObject metadata = observation.getJSONObject("nativeMetadata");
++            if (!metadataMatchesCurrent(metadata)) {
++                stop(tr("페이지가 바뀌어 새로 확인해야 합니다.",
++                        "The page changed and must be observed again."));
++                return;
++            }
++            mLastObservationId = requiredId(observation, "observationId");
++            mLastObservationOrigin = metadata.getString("topOrigin");
++            JSONObject context = new JSONObject()
++                    .put("runId", mRunId)
++                    .put("deviceId", mDeviceId)
++                    .put("profileRef", mProfileRef)
++                    .put("sequence", mSequence)
++                    .put("leaseEpoch", mLeaseEpoch)
++                    .put("controlGeneration", mControlGeneration);
++            JSONObject request = new JSONObject()
++                    .put("protocolVersion", PROTOCOL_VERSION)
++                    .put("goal", mGoal)
++                    .put("observation", observation)
++                    .put("history", mHistory)
++                    .put("commandContext", context);
++            if (mApprovedPreparation != null) {
++                verifyLocalApprovedPreparation(mApprovedPreparation, true);
++                request.put("approvedPreparation",
++                        new JSONObject(mApprovedPreparation.toString()));
++            }
++            final String payload = request.toString();
++            final String endpoint = mEndpoint;
++            final String token = mToken;
++            mSteps++;
++            mCurrentAction.setText(tr("현재 작업 · 다음 안전한 동작 결정",
++                    "Current action · Choosing the next safe action"));
++            append(mSteps + " · " + tr("다음 동작을 확인하고 있습니다…",
++                    "Checking the next action…"));
++            mNetwork.execute(() -> {
++                try {
++                    if (generation != mGeneration) return;
++                    JSONObject response = post(generation, endpoint, token, payload);
++                    mUi.post(() -> {
++                        if (valid(generation)) handle(generation, response);
++                    });
++                } catch (Exception e) {
++                    mUi.post(() -> {
++                        if (valid(generation)) {
++                            stop(tr("AI 연결에 실패했습니다. 서버 주소, 연결 키, 모델 설정을 확인하세요.",
++                                    "The AI connection failed. Check the server URL, key, and model settings."));
++                        }
++                    });
++                }
++            });
++        } catch (Exception e) {
++            stop(tr("요청을 만들 수 없습니다.", "The request could not be created."));
++        }
++    }
++
++    private JSONObject post(int generation, String endpoint, String token, String payload)
++            throws Exception {
++        HttpURLConnection connection =
++                (HttpURLConnection) new URL(endpoint + "/v1/step").openConnection();
++        mConnection = connection;
++        try {
++            if (generation != mGeneration) throw new Exception("Cancelled");
++            connection.setRequestMethod("POST");
++            connection.setInstanceFollowRedirects(false);
++            connection.setConnectTimeout(10000);
++            connection.setReadTimeout(55000);
++            connection.setDoOutput(true);
++            connection.setRequestProperty("Authorization", "Bearer " + token);
++            connection.setRequestProperty("Content-Type", "application/json");
++            byte[] body = payload.getBytes(StandardCharsets.UTF_8);
++            if (body.length > 262144) throw new Exception("Request too large");
++            connection.setFixedLengthStreamingMode(body.length);
++            try (java.io.OutputStream output = connection.getOutputStream()) {
++                output.write(body);
++            }
++            if (connection.getResponseCode() != 200) throw new Exception("Bridge error");
++            try (InputStream input = connection.getInputStream();
++                    ByteArrayOutputStream output = new ByteArrayOutputStream()) {
++                byte[] buffer = new byte[4096];
++                int count;
++                while ((count = input.read(buffer)) != -1) {
++                    if (output.size() + count > 32768) throw new Exception("Response too large");
++                    output.write(buffer, 0, count);
++                }
++                return new JSONObject(output.toString("UTF-8"));
++            }
++        } finally {
++            mConnection = null;
++            connection.disconnect();
++        }
++    }
++
++    private void handle(int generation, JSONObject response) {
++        try {
++            if (!hasOnlyKeys(response, "authorizedCommand")) throw new Exception("INVALID_RESPONSE");
++            JSONObject command = response.getJSONObject("authorizedCommand");
++            JSONObject action = command.getJSONObject("action");
++            String commandId = requiredId(command, "commandId");
++            String actionHash = requiredHash(command, "actionHash");
++            long sequence = requiredInteger(command, "sequence", 1);
++            String kind = requiredId(action, "kind");
++            String preparationAdapterId = "run_preparation_step".equals(kind)
++                    ? requiredString(action, "adapterId", 80) : "";
++            String preparationStepId = "run_preparation_step".equals(kind)
++                    ? requiredString(action, "stepId", 80) : "";
++            JournalEntry existing = mJournal.get(commandId);
++            if (existing != null && !existing.actionHash.equals(actionHash)) {
++                stop(tr("같은 명령 ID에 다른 내용이 도착해 실행을 차단했습니다.",
++                        "A command ID was reused with different content, so execution was blocked."));
++                return;
++            }
++            JournalEntry received = existing;
++            if (received == null) {
++                received = new JournalEntry(commandId, actionHash, sequence, kind,
++                        preparationAdapterId, preparationStepId);
++                mJournal.put(commandId, received);
++                appendJournal(received, "RECEIVED");
++            }
++            long expectedSequence = existing == null ? mSequence : received.sequence;
++            verifyAuthorizedCommand(command, expectedSequence, existing != null);
++            if (existing != null) {
++                if (existing.isTerminal()) {
++                    append(tr("이미 처리한 명령의 기존 결과를 사용했습니다.",
++                            "Used the recorded outcome for an already processed command."));
++                    return;
++                }
++                if ("STARTED".equals(existing.state)) {
++                    finishJournal(existing, "OUTCOME_UNKNOWN", "outcome_unknown",
++                            "REPLAY_AFTER_START");
++                    stop(tr("실행 도중 같은 명령이 다시 도착해 결과를 알 수 없습니다.",
++                            "The command was replayed after execution started, so its outcome is unknown."));
++                    return;
++                }
++            }
++            JournalEntry entry = received;
++            entry.state = "VALIDATED";
++            if ("finish".equals(kind) || "request_human".equals(kind)) {
++                entry.displayMessage = sanitizeTranscript(action.getString("message"));
++            }
++            appendJournal(entry, "VALIDATED");
++            mCurrentAction.setText(tr("현재 작업 · ", "Current action · ")
++                    + actionLabel(kind));
++            String commandJson = command.toString();
++            evaluateAgentCall(generation,
++                    "globalThis.__laneAgent.inspect(" + commandJson + ")", check -> {
++                        if (!commandId.equals(check.optString("commandId"))
++                                || !check.optBoolean("allowed")) {
++                            finishJournal(entry, "OUTCOME_UNKNOWN", "rejected",
++                                    check.optString("code", "LOCAL_POLICY_DENIED"));
++                            stop(tr("현재 페이지 상태와 명령이 달라 실행을 차단했습니다.",
++                                    "The command no longer matches the page, so execution was blocked."));
++                            return;
++                        }
++                        if (!valid(generation)) return;
++                        entry.state = "STARTED";
++                        appendJournal(entry, "STARTED");
++                        execute(generation, commandJson, entry);
++                    });
++        } catch (Exception e) {
++            stop(tr("서명되었거나 현재 실행에 연결된 올바른 명령이 아닙니다.",
++                    "The command is not validly signed or bound to this run."));
++        }
++    }
++
++    private void execute(int generation, String commandJson, JournalEntry entry) {
++        evaluateAgentCall(generation,
++                "globalThis.__laneAgent.execute(" + commandJson + ")", result -> {
++                    try {
++                        if (!entry.commandId.equals(result.getString("commandId"))) {
++                            throw new Exception("COMMAND_RESULT_MISMATCH");
++                        }
++                        String status = result.getString("status");
++                        String code = requiredId(result, "code");
++                        if (!setOf("applied", "outcome_unknown", "handoff", "rejected")
++                                .contains(status)) {
++                            throw new Exception("INVALID_RESULT");
++                        }
++                        String journalState = ("outcome_unknown".equals(status)
++                                || "rejected".equals(status)) ? "OUTCOME_UNKNOWN" : "APPLIED";
++                        finishJournal(entry, journalState, status, code);
++                        scheduleNextFrom(entry, generation);
++                    } catch (Exception e) {
++                        finishJournal(entry, "OUTCOME_UNKNOWN", "outcome_unknown",
++                                "INVALID_EXECUTION_RESULT");
++                        stop(tr("동작 결과를 확인할 수 없어 자동 실행을 중지했습니다.",
++                                "The action outcome could not be verified, so automation stopped."));
++                    }
++                });
++    }
++
++    private void scheduleNextFrom(JournalEntry entry, int generation) {
++        if (!entry.isTerminal()) return;
++        if (entry.sequence >= mSequence) mSequence = entry.sequence + 1;
++        if ("outcome_unknown".equals(entry.resultStatus)) {
++            stop(tr("동작 결과를 알 수 없습니다. 페이지를 직접 확인해 주세요.",
++                    "The action outcome is unknown. Please inspect the page directly."));
++            return;
++        }
++        if ("handoff".equals(entry.resultStatus)) {
++            appendUntrustedMessage(entry);
++            if (COUPANG_ADAPTER.equals(entry.preparationAdapterId)
++                    && COUPANG_ACTIVATION_HANDOFF_STEPS.contains(entry.preparationStepId)) {
++                takeOver(tr(
++                        "승인한 구매 준비 동작을 한 번 실행했습니다. 주문서와 최종 가격을 확인하고 "
++                                + "로그인·최종 주문·결제는 직접 진행해 주세요.",
++                        "The approved preparation action ran once. Review checkout and the final "
++                                + "price, then complete sign-in, the final order, and payment yourself."));
++            } else if ("open_candidate".equals(entry.actionKind)) {
++                takeOver(tr("보안을 위해 링크 자동 열기를 중지했습니다. 링크를 직접 열어 주세요.",
++                        "Automatic link opening is disabled for safety. Please open the link directly."));
++            } else {
++                takeOver(tr("로그인과 인증은 직접 완료하고 공개 상품 페이지로 돌아온 뒤 다시 "
++                                + "시작해 주세요. 장바구니·결제·최종 결정은 계속 직접 진행해야 합니다.",
++                        "Complete sign-in and verification yourself, return to the public product "
++                                + "page, and start again. Cart, payment, and final decisions remain "
++                                + "under your direct control."));
++            }
++            return;
++        }
++        if ("finish".equals(entry.actionKind)) {
++            appendUntrustedMessage(entry);
++            stop(tr("AI 응답을 받았습니다. 완료 여부와 근거를 직접 확인해 주세요.",
++                    "An AI response was received. Review the evidence and completion status yourself."));
++            return;
++        }
++        if ("rejected".equals(entry.resultStatus)) {
++            stop(tr("현재 페이지에서 이 동작은 허용되지 않습니다.",
++                    "This action is not allowed on the current page."));
++            return;
++        }
++        if (COUPANG_ADAPTER.equals(entry.preparationAdapterId)
++                && COUPANG_ACTIVATION_HANDOFF_STEPS.contains(entry.preparationStepId)) {
++            takeOver(tr(
++                    "승인한 구매 준비 동작을 한 번 실행했습니다. 주문서와 최종 가격을 확인하고 "
++                            + "로그인·최종 주문·결제는 직접 진행해 주세요.",
++                    "The approved preparation action ran once. Review checkout and the final price, "
++                            + "then complete sign-in, the final order, and payment yourself."));
++            return;
++        }
++        if (COUPANG_ADAPTER.equals(entry.preparationAdapterId)
++                && COUPANG_CONTINUING_STEPS.contains(entry.preparationStepId)) {
++            try {
++                advanceApprovedPreparationCursor();
++            } catch (Exception e) {
++                stop(tr("승인된 구매 준비 순서를 이어갈 수 없어 중지했습니다.",
++                        "The approved preparation cursor could not advance, so the run stopped."));
++                return;
++            }
++        }
++        mUi.postDelayed(() -> step(generation), 700);
++    }
++
++    private String actionLabel(String kind) {
++        switch (kind) {
++            case "inspect_page":
++                return tr("필터 적용 페이지 확인", "Inspecting filtered page data");
++            case "open_candidate":
++                return tr("링크 직접 열기 요청", "Requesting direct link open");
++            case "scroll":
++                return tr("페이지 스크롤", "Scrolling page");
++            case "run_preparation_step":
++                return mApprovedPreparation == null
++                        ? tr("공개 검색어 준비", "Preparing public search text")
++                        : tr("승인된 쿠팡 구매 준비", "Preparing the approved Coupang offer");
++            case "request_human":
++                return tr("직접 조작 요청", "Requesting direct control");
++            case "finish":
++                return tr("AI 응답 검토", "Reviewing AI response");
++            default:
++                return tr("안전 정책 확인", "Checking safety policy");
++        }
++    }
++
++    private void appendUntrustedMessage(JournalEntry entry) {
++        if (entry.displayMessage.isEmpty()) return;
++        append(tr("AI 응답 · 신뢰하지 않는 한 줄 텍스트 · 결과 증거 아님 · ",
++                       "AI response · untrusted single-line text · not result evidence · ")
++                + entry.displayMessage);
++    }
++
++    private static String sanitizeTranscript(String value) {
++        StringBuilder output = new StringBuilder();
++        boolean pendingSpace = false;
++        for (int offset = 0; offset < value.length() && output.length() < 320; ) {
++            int codePoint = value.codePointAt(offset);
++            offset += Character.charCount(codePoint);
++            boolean unsafe = Character.isISOControl(codePoint)
++                    || Character.getType(codePoint) == Character.FORMAT
++                    || (codePoint >= 0x202a && codePoint <= 0x202e)
++                    || (codePoint >= 0x2066 && codePoint <= 0x2069);
++            if (unsafe || Character.isWhitespace(codePoint)) {
++                pendingSpace = output.length() > 0;
++                continue;
++            }
++            if (pendingSpace && output.length() < 320) output.append(' ');
++            pendingSpace = false;
++            if (output.length() + Character.charCount(codePoint) > 320) break;
++            output.appendCodePoint(codePoint);
++        }
++        return output.toString().trim();
++    }
++
++    private void appendJournal(JournalEntry entry, String state) {
++        append("#" + entry.sequence + " · " + entry.actionKind + " · " + state);
++    }
++
++    private void finishJournal(
++            JournalEntry entry, String state, String resultStatus, String resultCode) {
++        if (entry.isTerminal()) return;
++        entry.state = state;
++        entry.resultStatus = resultStatus;
++        entry.resultCode = resultCode;
++        appendJournal(entry, state);
++        try {
++            mHistory.put(new JSONObject()
++                    .put("sequence", entry.sequence)
++                    .put("actionKind", entry.actionKind)
++                    .put("status", resultStatus)
++                    .put("code", resultCode));
++        } catch (Exception e) {
++            entry.state = "OUTCOME_UNKNOWN";
++            entry.resultStatus = "outcome_unknown";
++            entry.resultCode = "JOURNAL_WRITE_FAILED";
++        }
++        while (mHistory.length() > 20) {
++            JSONArray trimmed = new JSONArray();
++            for (int i = 1; i < mHistory.length(); i++) trimmed.put(mHistory.opt(i));
++            mHistory = trimmed;
++        }
++    }
++
++    private void verifyAuthorizedCommand(
++            JSONObject command, long expectedSequence, boolean replay) throws Exception {
++        if (!hasOnlyKeys(command, "protocolVersion", "commandId", "runId", "deviceId",
++                    "profileRef", "sequence", "leaseEpoch", "controlGeneration", "expiresAt",
++                    "actionHash", "action", "serverPermit")
++                || requiredInteger(command, "protocolVersion", 1) != PROTOCOL_VERSION) {
++            throw new Exception("INVALID_COMMAND");
++        }
++        String commandId = requiredId(command, "commandId");
++        if (!mRunId.equals(requiredId(command, "runId"))
++                || !mDeviceId.equals(requiredId(command, "deviceId"))
++                || !mProfileRef.equals(requiredId(command, "profileRef"))
++                || requiredInteger(command, "sequence", 1) != expectedSequence
++                || requiredInteger(command, "leaseEpoch", 1) != mLeaseEpoch
++                || requiredInteger(command, "controlGeneration", 0) != mControlGeneration) {
++            throw new Exception("COMMAND_BINDING_MISMATCH");
++        }
++        long expiration = parseExpiry(requiredString(command, "expiresAt", 80));
++        long now = System.currentTimeMillis();
++        if (expiration <= now || expiration - now > 60_000) {
++            throw new Exception(expiration <= now ? "COMMAND_EXPIRED" : "INVALID_COMMAND_EXPIRY");
++        }
++        JSONObject action = command.getJSONObject("action");
++        verifyAllowedAction(action, !replay);
++        String actionHash = requiredHash(command, "actionHash");
++        if (!constantTimeEquals(hex(sha256(canonicalize(action))), actionHash)) {
++            throw new Exception("ACTION_HASH_MISMATCH");
++        }
++        String permit = requiredString(command, "serverPermit", 256);
++        if (!permit.matches("^hmac-sha256:[A-Za-z0-9_-]{43}$")) {
++            throw new Exception("INVALID_SERVER_PERMIT");
++        }
++        JSONObject unsigned = new JSONObject()
++                .put("protocolVersion", PROTOCOL_VERSION)
++                .put("commandId", commandId)
++                .put("runId", command.getString("runId"))
++                .put("deviceId", command.getString("deviceId"))
++                .put("profileRef", command.getString("profileRef"))
++                .put("sequence", command.getLong("sequence"))
++                .put("leaseEpoch", command.getLong("leaseEpoch"))
++                .put("controlGeneration", command.getLong("controlGeneration"))
++                .put("expiresAt", command.getString("expiresAt"))
++                .put("actionHash", actionHash)
++                .put("action", action);
++        Mac mac = Mac.getInstance("HmacSHA256");
++        mac.init(new SecretKeySpec(mToken.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
++        String expected = "hmac-sha256:" + Base64.encodeToString(
++                mac.doFinal(canonicalize(unsigned).getBytes(StandardCharsets.UTF_8)),
++                Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
++        if (!constantTimeEquals(expected, permit)) throw new Exception("INVALID_SERVER_PERMIT");
++    }
++
++    private void verifyAllowedAction(JSONObject action, boolean requireCurrentPage) throws Exception {
++        String kind = requiredId(action, "kind");
++        if (!ACTION_KINDS.contains(kind)) throw new Exception("POLICY_DENIED");
++        JSONObject page = action.getJSONObject("page");
++        if (!hasOnlyKeys(page, "tabId", "frameId", "documentEpoch", "observationId",
++                    "topOrigin", "frameOrigin", "pathname", "queryOrFragmentPresent")) {
++            throw new Exception("REOBSERVE_REQUIRED");
++        }
++        String tabId = requiredId(page, "tabId");
++        String frameId = requiredId(page, "frameId");
++        long documentEpoch = requiredInteger(page, "documentEpoch", 0);
++        String observationId = requiredId(page, "observationId");
++        String topOrigin = requiredString(page, "topOrigin", 512);
++        String frameOrigin = requiredString(page, "frameOrigin", 512);
++        String pathname = requiredString(page, "pathname", 1024);
++        Object queryOrFragmentRaw = page.get("queryOrFragmentPresent");
++        if (!(queryOrFragmentRaw instanceof Boolean) || !pathname.startsWith("/")
++                || pathname.indexOf('?') >= 0 || pathname.indexOf('#') >= 0) {
++            throw new Exception("URL_POLICY_DENIED");
++        }
++        boolean queryOrFragmentPresent = (Boolean) queryOrFragmentRaw;
++        if (!topOrigin.equals(publicOrigin(topOrigin + "/"))
++                || !frameOrigin.equals(publicOrigin(frameOrigin + "/"))) {
++            throw new Exception("ORIGIN_POLICY_DENIED");
++        }
++        JSONObject currentMetadata = requireCurrentPage ? nativeMetadata() : null;
++        if (requireCurrentPage
++                && (!("tab_" + mTaskTab.getId()).equals(tabId)
++                        || !FRAME_ID.equals(frameId)
++                        || documentEpoch != mDocumentEpoch
++                        || !mLastObservationId.equals(observationId)
++                        || !mLastObservationOrigin.equals(topOrigin)
++                        || !mLastObservationOrigin.equals(frameOrigin)
++                        || !mLastObservationOrigin.equals(currentOrigin())
++                        || !pathname.equals(currentMetadata.getString("pathname"))
++                        || queryOrFragmentPresent
++                                != currentMetadata.getBoolean("queryOrFragmentPresent"))) {
++            throw new Exception("REOBSERVE_REQUIRED");
++        }
++        requiredString(action, "reason", 500);
++        switch (kind) {
++            case "inspect_page":
++                requireOnlyActionKeys(action, "kind", "page", "reason");
++                return;
++            case "open_candidate":
++                requireOnlyActionKeys(action, "kind", "page", "candidateRef", "reason");
++                requiredId(action, "candidateRef");
++                return;
++            case "scroll":
++                requireOnlyActionKeys(action, "kind", "page", "direction", "reason");
++                String direction = requiredString(action, "direction", 8);
++                if (!("up".equals(direction) || "down".equals(direction))) {
++                    throw new Exception("POLICY_DENIED");
++                }
++                return;
++            case "run_preparation_step":
++                requireOnlyActionKeys(action, "kind", "page", "adapterId", "recipeVersion",
++                        "stepId", "bindings", "reason");
++                String adapterId = requiredString(action, "adapterId", 80);
++                if (COUPANG_ADAPTER.equals(adapterId)) {
++                    verifyCoupangPreparationAction(action);
++                    return;
++                }
++                if (!"builtin.public-search".equals(adapterId)
++                        || !"1".equals(requiredString(action, "recipeVersion", 16))
++                        || !"prepare_query".equals(requiredString(action, "stepId", 80))) {
++                    throw new Exception("POLICY_DENIED");
++                }
++                JSONObject bindings = action.getJSONObject("bindings");
++                if (!hasOnlyKeys(bindings, "candidateRef", "query")) {
++                    throw new Exception("POLICY_DENIED");
++                }
++                requiredId(bindings, "candidateRef");
++                String query = requiredString(bindings, "query", 160);
++                if (!query.equals(query.trim()) || likelySensitive(query)) {
++                    throw new Exception("POLICY_DENIED");
++                }
++                return;
++            case "request_human":
++                requireOnlyActionKeys(action, "kind", "page", "reasonCode", "message", "reason");
++                if (!HUMAN_REASON_CODES.contains(requiredId(action, "reasonCode"))) {
++                    throw new Exception("POLICY_DENIED");
++                }
++                requiredString(action, "message", 1000);
++                return;
++            case "finish":
++                requireOnlyActionKeys(action, "kind", "page", "message", "reason");
++                requiredString(action, "message", 4000);
++                return;
++            default:
++                throw new Exception("POLICY_DENIED");
++        }
++    }
++
++    private void verifyCoupangPreparationAction(JSONObject action) throws Exception {
++        if (mApprovedPreparation == null
++                || !"1".equals(requiredString(action, "recipeVersion", 16))) {
++            throw new Exception("APPROVAL_REQUIRED");
++        }
++        String stepId = requiredString(action, "stepId", 80);
++        if (!COUPANG_PREPARATION_STEPS.contains(stepId)) {
++            throw new Exception("POLICY_DENIED");
++        }
++        verifyLocalApprovedPreparation(mApprovedPreparation, true);
++        String expectedStep = expectedLocalCoupangStep(mApprovedPreparation);
++        if (!stepId.equals(expectedStep)) throw new Exception("APPROVAL_STEP_MISMATCH");
++
++        JSONObject bindings = action.getJSONObject("bindings");
++        JSONObject actionApproval = bindings.getJSONObject("approval");
++        JSONObject snapshot = bindings.getJSONObject("approvedPreparation");
++        long now = System.currentTimeMillis();
++        verifyCoupangSnapshot(snapshot, actionApproval, now);
++        JSONObject expectedSnapshot = approvedSnapshotFromLocal(mApprovedPreparation);
++        if (!sameCanonicalJson(snapshot, expectedSnapshot)
++                || !sameCanonicalJson(actionApproval,
++                        mApprovedPreparation.getJSONObject("approval"))) {
++            throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++
++        JSONObject approvedPage = mApprovedPreparation.getJSONObject("expectedPage");
++        String expectedOrigin = requiredString(bindings, "expectedOrigin", 512);
++        String expectedPath = requiredString(bindings, "expectedPath", 1024);
++        if (!expectedOrigin.equals(approvedPage.getString("origin"))
++                || !expectedPath.equals(approvedPage.getString("pathname"))) {
++            throw new Exception("APPROVAL_PAGE_MISMATCH");
++        }
++
++        if ("start_checkout".equals(stepId)) {
++            if (!hasOnlyKeys(bindings, "approvedPreparation", "approval", "approvedLines",
++                        "expectedOrigin", "expectedPath")
++                    || !"multi".equals(snapshot.getString("mode"))) {
++                throw new Exception("POLICY_DENIED");
++            }
++            if (!"https://cart.coupang.com".equals(expectedOrigin)
++                    || !"/cartView.pang".equals(expectedPath)) {
++                throw new Exception("APPROVAL_PAGE_MISMATCH");
++            }
++            JSONArray approvedLines = bindings.getJSONArray("approvedLines");
++            JSONArray items = snapshot.getJSONArray("items");
++            if (approvedLines.length() != items.length() || approvedLines.length() < 2
++                    || approvedLines.length() > 20) {
++                throw new Exception("APPROVAL_BINDING_MISMATCH");
++            }
++            for (int i = 0; i < approvedLines.length(); i++) {
++                JSONObject line = verifiedCoupangLine(approvedLines.getJSONObject(i), true);
++                if (!sameCanonicalJson(line, lineFromItem(items.getJSONObject(i)))) {
++                    throw new Exception("APPROVAL_BINDING_MISMATCH");
++                }
++            }
++            return;
++        }
++
++        String[] baseKeys = {"approvedPreparation", "approval", "targetLineIndex",
++                "productId", "itemId", "vendorItemId", "quantity", "unitPriceCeilingKrw",
++                "linePriceCeilingKrw", "expectedOrigin", "expectedPath"};
++        if ("select_option".equals(stepId)) {
++            if (!hasOnlyKeys(bindings, "approvedPreparation", "approval", "targetLineIndex",
++                        "productId", "itemId", "vendorItemId", "quantity",
++                        "unitPriceCeilingKrw", "linePriceCeilingKrw", "expectedOrigin",
++                        "expectedPath", "targetOptionIndex", "groupName", "valueName")) {
++                throw new Exception("POLICY_DENIED");
++            }
++        } else if (!hasOnlyKeys(bindings, baseKeys)) {
++            throw new Exception("POLICY_DENIED");
++        }
++        if (!COUPANG_PRODUCT_ORIGINS.contains(expectedOrigin)
++                || !expectedPath.matches("^/vp/products/[1-9][0-9]{0,19}/?$")) {
++            throw new Exception("APPROVAL_PAGE_MISMATCH");
++        }
++        JSONArray items = snapshot.getJSONArray("items");
++        long targetLineIndex = requiredIntegerRange(bindings, "targetLineIndex", 0,
++                items.length() - 1);
++        JSONObject item = items.getJSONObject((int) targetLineIndex);
++        JSONObject line = verifiedCoupangLine(bindings, false);
++        if (!sameCanonicalJson(line, lineFromItem(item))
++                || !expectedPath.replaceFirst("/$", "").endsWith("/" + line.getString("productId"))
++                || ("buy_now".equals(stepId) && !"single".equals(snapshot.getString("mode")))
++                || ("add_to_cart".equals(stepId) && !"multi".equals(snapshot.getString("mode")))) {
++            throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++        if ("select_option".equals(stepId)) {
++            JSONObject options = item.getJSONObject("options");
++            if (!"choices".equals(options.getString("kind"))) {
++                throw new Exception("APPROVAL_BINDING_MISMATCH");
++            }
++            JSONArray choices = options.getJSONArray("choices");
++            long targetOptionIndex = requiredIntegerRange(bindings, "targetOptionIndex", 0,
++                    choices.length() - 1);
++            JSONObject choice = choices.getJSONObject((int) targetOptionIndex);
++            String groupName = requiredNormalizedPublicText(bindings, "groupName", 120);
++            String valueName = requiredNormalizedPublicText(bindings, "valueName", 120);
++            long cursor = requiredInteger(mApprovedPreparation, "cursor", 0);
++            if (targetOptionIndex != cursor - 2
++                    || !groupName.equals(choice.getString("groupName"))
++                    || !valueName.equals(choice.getString("valueName"))) {
++                throw new Exception("APPROVAL_BINDING_MISMATCH");
++            }
++        }
++    }
++
++    private void verifyLocalApprovedPreparation(JSONObject value, boolean requireCurrentPage)
++            throws Exception {
++        if (!hasOnlyKeys(value, "merchantId", "recipeVersion", "mode", "approval", "items",
++                    "cursor", "expectedPage")
++                || !"COUPANG".equals(requiredString(value, "merchantId", 16))
++                || !"1".equals(requiredString(value, "recipeVersion", 16))
++                || !"single".equals(requiredString(value, "mode", 16))) {
++            throw new Exception("INVALID_LOCAL_APPROVAL");
++        }
++        JSONObject approval = value.getJSONObject("approval");
++        JSONArray items = value.getJSONArray("items");
++        verifyCoupangPlan("single", "single_buy_now", approval, items,
++                System.currentTimeMillis());
++        expectedLocalCoupangStep(value);
++
++        JSONObject expectedPage = value.getJSONObject("expectedPage");
++        if (!hasOnlyKeys(expectedPage, "origin", "pathname")) {
++            throw new Exception("APPROVAL_PAGE_MISMATCH");
++        }
++        String origin = requiredString(expectedPage, "origin", 512);
++        String path = requiredString(expectedPage, "pathname", 1024);
++        JSONObject line = lineFromItem(items.getJSONObject(0));
++        if (!COUPANG_PRODUCT_ORIGINS.contains(origin)
++                || !path.matches("^/vp/products/" + line.getString("productId") + "/?$")) {
++            throw new Exception("APPROVAL_PAGE_MISMATCH");
++        }
++        if (requireCurrentPage) {
++            CoupangProductIdentity current = currentCoupangProduct();
++            if (current == null || !origin.equals(current.origin) || !path.equals(current.path)
++                    || !line.getString("productId").equals(current.productId)
++                    || !line.getString("itemId").equals(current.itemId)
++                    || !line.getString("vendorItemId").equals(current.vendorItemId)) {
++                throw new Exception("APPROVAL_PAGE_MISMATCH");
++            }
++        }
++    }
++
++    private static JSONObject approvedSnapshotFromLocal(JSONObject local) throws Exception {
++        String mode = local.getString("mode");
++        return new JSONObject()
++                .put("merchantId", local.getString("merchantId"))
++                .put("recipeVersion", local.getString("recipeVersion"))
++                .put("mode", mode)
++                .put("route", "single".equals(mode) ? "single_buy_now" : "multi_cart_checkout")
++                .put("approval", new JSONObject(local.getJSONObject("approval").toString()))
++                .put("items", new JSONArray(local.getJSONArray("items").toString()));
++    }
++
++    private static void verifyCoupangSnapshot(
++            JSONObject snapshot, JSONObject actionApproval, long now) throws Exception {
++        if (!hasOnlyKeys(snapshot, "merchantId", "recipeVersion", "mode", "route", "approval",
++                    "items")
++                || !"COUPANG".equals(requiredString(snapshot, "merchantId", 16))
++                || !"1".equals(requiredString(snapshot, "recipeVersion", 16))) {
++            throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++        String mode = requiredString(snapshot, "mode", 16);
++        String route = requiredString(snapshot, "route", 32);
++        JSONObject approval = snapshot.getJSONObject("approval");
++        if (!sameCanonicalJson(approval, actionApproval)) {
++            throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++        verifyCoupangPlan(mode, route, approval, snapshot.getJSONArray("items"), now);
++    }
++
++    private static void verifyCoupangPlan(String mode, String route, JSONObject approval,
++            JSONArray items, long now) throws Exception {
++        if (!("single".equals(mode) && "single_buy_now".equals(route))
++                && !("multi".equals(mode) && "multi_cart_checkout".equals(route))) {
++            throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++        verifyCoupangApproval(approval, now);
++        if (items.length() < 1 || items.length() > 20
++                || ("single".equals(mode) && items.length() != 1)
++                || ("multi".equals(mode) && items.length() < 2)) {
++            throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++        long total = 0;
++        Set<String> lineKeys = new HashSet<>();
++        for (int i = 0; i < items.length(); i++) {
++            JSONObject item = items.getJSONObject(i);
++            verifyCoupangItem(item);
++            JSONObject line = lineFromItem(item);
++            total = Math.addExact(total, line.getLong("linePriceCeilingKrw"));
++            String key = line.getString("productId") + ":" + line.getString("itemId") + ":"
++                    + line.getString("vendorItemId");
++            if (!lineKeys.add(key)) throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++        if (total > approval.getLong("totalPriceCeilingKrw")) {
++            throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++        JSONObject unsignedApproval = new JSONObject()
++                .put("approvalId", approval.getString("approvalId"))
++                .put("currency", approval.getString("currency"))
++                .put("revision", approval.getLong("revision"))
++                .put("expiresAt", approval.getString("expiresAt"))
++                .put("totalPriceCeilingKrw", approval.getLong("totalPriceCeilingKrw"));
++        JSONObject material = new JSONObject()
++                .put("merchantId", "COUPANG")
++                .put("recipeVersion", "1")
++                .put("mode", mode)
++                .put("route", route)
++                .put("approval", unsignedApproval)
++                .put("items", items);
++        String expectedDigest = "sha256:" + hex(sha256(canonicalize(material)));
++        if (!constantTimeEquals(expectedDigest, approval.getString("approvalDigest"))) {
++            throw new Exception("APPROVAL_DIGEST_MISMATCH");
++        }
++    }
++
++    private static void verifyCoupangApproval(JSONObject approval, long now) throws Exception {
++        if (!hasOnlyKeys(approval, "approvalId", "approvalDigest", "currency", "revision",
++                    "expiresAt", "totalPriceCeilingKrw")) {
++            throw new Exception("APPROVAL_INVALID");
++        }
++        String approvalId = requiredString(approval, "approvalId", 100);
++        if (!approvalId.matches("^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$")
++                || !requiredString(approval, "approvalDigest", 71)
++                        .matches("^sha256:[a-f0-9]{64}$")
++                || !"KRW".equals(requiredString(approval, "currency", 3))) {
++            throw new Exception("APPROVAL_INVALID");
++        }
++        requiredIntegerRange(approval, "revision", 1, SAFE_INTEGER_MAX);
++        requiredIntegerRange(approval, "totalPriceCeilingKrw", 1, MAX_WON);
++        long expiry = parseExpiry(requiredString(approval, "expiresAt", 80));
++        if (expiry <= now || expiry - now > PURCHASE_APPROVAL_TTL_MS) {
++            throw new Exception("APPROVAL_EXPIRED_OR_TOO_LONG");
++        }
++    }
++
++    private static void verifyCoupangItem(JSONObject item) throws Exception {
++        if (!hasOnlyKeys(item, "query", "offerIdentity", "quantity", "unitPriceCeilingKrw",
++                    "linePriceCeilingKrw", "productUrl", "options")) {
++            throw new Exception("APPROVAL_BINDING_MISMATCH");
++        }
++        String query = requiredNormalizedPublicText(item, "query", 160);
++        if (likelySensitive(query)) throw new Exception("QUERY_POLICY_DENIED");
++        JSONObject identity = item.getJSONObject("offerIdentity");
++        if (!hasOnlyKeys(identity, "productId", "itemId", "vendorItemId")) {
++            throw new Exception("OFFER_IDENTITY_INVALID");
++        }
++        String productId = requiredCoupangId(identity, "productId");
++        String itemId = requiredCoupangId(identity, "itemId");
++        String vendorItemId = requiredCoupangId(identity, "vendorItemId");
++        JSONObject line = lineFromItem(item);
++        String productUrl = requiredString(item, "productUrl", 4096);
++        String expectedUrl = "https://www.coupang.com/vp/products/" + productId
++                + "?itemId=" + itemId + "&vendorItemId=" + vendorItemId;
++        if (!expectedUrl.equals(productUrl)) throw new Exception("PRODUCT_URL_DENIED");
++        verifyCoupangOptions(item.getJSONObject("options"));
++        // Force the bounded multiplication check even though lineFromItem already validates it.
++        Math.multiplyExact(line.getLong("unitPriceCeilingKrw"), line.getLong("quantity"));
++    }
++
++    private static void verifyCoupangOptions(JSONObject options) throws Exception {
++        String kind = requiredString(options, "kind", 16);
++        if ("none".equals(kind)) {
++            if (!hasOnlyKeys(options, "kind")) throw new Exception("OPTION_POLICY_DENIED");
++            return;
++        }
++        if (!"choices".equals(kind) || !hasOnlyKeys(options, "kind", "choices")) {
++            throw new Exception("OPTION_POLICY_DENIED");
++        }
++        JSONArray choices = options.getJSONArray("choices");
++        if (choices.length() < 1 || choices.length() > 10) {
++            throw new Exception("OPTION_POLICY_DENIED");
++        }
++        Set<String> seenGroups = new HashSet<>();
++        for (int i = 0; i < choices.length(); i++) {
++            JSONObject choice = choices.getJSONObject(i);
++            if (!hasOnlyKeys(choice, "groupName", "valueName")) {
++                throw new Exception("OPTION_POLICY_DENIED");
++            }
++            String groupName = requiredNormalizedPublicText(choice, "groupName", 120);
++            String valueName = requiredNormalizedPublicText(choice, "valueName", 120);
++            if (likelySensitive(groupName) || likelySensitive(valueName)
++                    || !seenGroups.add(groupName)) {
++                throw new Exception("OPTION_POLICY_DENIED");
++            }
++        }
++    }
++
++    private static JSONObject lineFromItem(JSONObject item) throws Exception {
++        JSONObject identity = item.getJSONObject("offerIdentity");
++        JSONObject line = new JSONObject()
++                .put("productId", identity.get("productId"))
++                .put("itemId", identity.get("itemId"))
++                .put("vendorItemId", identity.get("vendorItemId"))
++                .put("quantity", item.get("quantity"))
++                .put("unitPriceCeilingKrw", item.get("unitPriceCeilingKrw"))
++                .put("linePriceCeilingKrw", item.get("linePriceCeilingKrw"));
++        return verifiedCoupangLine(line, true);
++    }
++
++    private static JSONObject verifiedCoupangLine(JSONObject value, boolean exactKeys)
++            throws Exception {
++        if (exactKeys && !hasOnlyKeys(value, "productId", "itemId", "vendorItemId", "quantity",
++                    "unitPriceCeilingKrw", "linePriceCeilingKrw")) {
++            throw new Exception("OFFER_IDENTITY_INVALID");
++        }
++        String productId = requiredCoupangId(value, "productId");
++        String itemId = requiredCoupangId(value, "itemId");
++        String vendorItemId = requiredCoupangId(value, "vendorItemId");
++        long quantity = requiredIntegerRange(value, "quantity", 1, 99);
++        long unit = requiredIntegerRange(value, "unitPriceCeilingKrw", 1, MAX_WON);
++        long line = requiredIntegerRange(value, "linePriceCeilingKrw", 1, MAX_WON);
++        if (Math.multiplyExact(unit, quantity) > line) {
++            throw new Exception("PRICE_CEILING_INVALID");
++        }
++        return new JSONObject()
++                .put("productId", productId)
++                .put("itemId", itemId)
++                .put("vendorItemId", vendorItemId)
++                .put("quantity", quantity)
++                .put("unitPriceCeilingKrw", unit)
++                .put("linePriceCeilingKrw", line);
++    }
++
++    private static String requiredCoupangId(JSONObject value, String key) throws Exception {
++        String result = requiredString(value, key, 20);
++        if (!result.matches("^[1-9][0-9]{0,19}$")) {
++            throw new Exception("OFFER_IDENTITY_INVALID");
++        }
++        return result;
++    }
++
++    private static long requiredIntegerRange(
++            JSONObject value, String key, long minimum, long maximum) throws Exception {
++        long result = requiredInteger(value, key, minimum);
++        if (result > maximum) throw new Exception("INVALID_" + key);
++        return result;
++    }
++
++    private static String requiredNormalizedPublicText(JSONObject value, String key, int max)
++            throws Exception {
++        String result = requiredString(value, key, max);
++        String normalized = normalizedPublicText(result, max);
++        if (normalized == null || !result.equals(normalized)) throw new Exception("INVALID_" + key);
++        return result;
++    }
++
++    private static String normalizedPublicText(String value, int max) {
++        if (value == null) return null;
++        String normalized = Normalizer.normalize(value, Normalizer.Form.NFKC);
++        StringBuilder output = new StringBuilder();
++        boolean pendingSpace = false;
++        for (int offset = 0; offset < normalized.length(); ) {
++            int codePoint = normalized.codePointAt(offset);
++            offset += Character.charCount(codePoint);
++            if (Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint)) {
++                pendingSpace = output.length() > 0;
++                continue;
++            }
++            if (Character.isISOControl(codePoint)) return null;
++            if (pendingSpace) output.append(' ');
++            pendingSpace = false;
++            output.appendCodePoint(codePoint);
++            if (output.length() > max) return null;
++        }
++        String result = output.toString();
++        return result.isEmpty() ? null : result;
++    }
++
++    private static boolean sameCanonicalJson(Object left, Object right) throws Exception {
++        return constantTimeEquals(canonicalize(left), canonicalize(right));
++    }
++
++    private static String expectedLocalCoupangStep(JSONObject approval) throws Exception {
++        long cursor = requiredIntegerRange(approval, "cursor", 0, 200);
++        JSONArray items = approval.getJSONArray("items");
++        if (items.length() != 1) throw new Exception("APPROVAL_STEP_MISMATCH");
++        JSONObject options = items.getJSONObject(0).getJSONObject("options");
++        int choiceCount = "choices".equals(options.getString("kind"))
++                ? options.getJSONArray("choices").length() : 0;
++        if (cursor >= 2 && cursor < 2 + choiceCount) return "select_option";
++        if (cursor == 2 + choiceCount) return "verify_options";
++        if (cursor == 3 + choiceCount) return "set_quantity";
++        if (cursor == 4 + choiceCount) return "buy_now";
++        throw new Exception("APPROVAL_STEP_MISMATCH");
++    }
++
++    private void advanceApprovedPreparationCursor() throws Exception {
++        if (mApprovedPreparation == null) throw new Exception("APPROVAL_REQUIRED");
++        long cursor = requiredIntegerRange(mApprovedPreparation, "cursor", 0, 200);
++        mApprovedPreparation.put("cursor", cursor + 1);
++        verifyLocalApprovedPreparation(mApprovedPreparation, true);
++    }
++
++    private boolean metadataMatchesCurrent(JSONObject metadata) throws Exception {
++        JSONObject current = nativeMetadata();
++        return hasOnlyKeys(metadata, "tabId", "frameId", "documentEpoch", "topOrigin",
++                       "frameOrigin", "pathname", "queryOrFragmentPresent", "foreground")
++                && current.getString("tabId").equals(metadata.getString("tabId"))
++                && current.getString("frameId").equals(metadata.getString("frameId"))
++                && current.getLong("documentEpoch") == metadata.getLong("documentEpoch")
++                && current.getString("topOrigin").equals(metadata.getString("topOrigin"))
++                && current.getString("frameOrigin").equals(metadata.getString("frameOrigin"))
++                && current.getString("pathname").equals(metadata.getString("pathname"))
++                && current.getBoolean("queryOrFragmentPresent")
++                        == metadata.getBoolean("queryOrFragmentPresent")
++                && metadata.getBoolean("foreground");
++    }
++
++    private static boolean likelySensitive(String value) {
++        String text = value.toLowerCase(Locale.US);
++        if (text.matches(".*(password|passwd|passcode|otp|one[- ]?time|cvv|cvc|card[ ]*number|"
++                + "access[_ -]?token|api[_ -]?key|secret|비밀번호|인증번호|카드[ ]*번호|"
++                + "보안[ ]*코드|주민등록).*")) {
++            return true;
++        }
++        if (text.matches(".*[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}.*")
++                || text.matches(".*https?://.*")) {
++            return true;
++        }
++        return text.replaceAll("[^0-9]", "").length() >= 11;
++    }
++
++    private static void requireOnlyActionKeys(JSONObject value, String... keys) throws Exception {
++        if (!hasOnlyKeys(value, keys)) throw new Exception("POLICY_DENIED");
++    }
++
++    private static boolean hasOnlyKeys(JSONObject value, String... keys) {
++        Set<String> expected = new HashSet<>(Arrays.asList(keys));
++        if (value.length() != expected.size()) return false;
++        Iterator<String> iterator = value.keys();
++        while (iterator.hasNext()) {
++            if (!expected.contains(iterator.next())) return false;
++        }
++        return true;
++    }
++
++    private static String requiredString(JSONObject value, String key, int max) throws Exception {
++        Object raw = value.get(key);
++        if (!(raw instanceof String)) throw new Exception("INVALID_" + key);
++        String result = (String) raw;
++        if (result.isEmpty() || result.length() > max) throw new Exception("INVALID_" + key);
++        for (int i = 0; i < result.length(); i++) {
++            char character = result.charAt(i);
++            if ((character <= 0x08) || character == 0x0b || character == 0x0c
++                    || (character >= 0x0e && character <= 0x1f)) {
++                throw new Exception("INVALID_" + key);
++            }
++        }
++        return result;
++    }
++
++    private static String requiredId(JSONObject value, String key) throws Exception {
++        String result = requiredString(value, key, 128);
++        if (!result.matches("^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")) {
++            throw new Exception("INVALID_" + key);
++        }
++        return result;
++    }
++
++    private static String requiredHash(JSONObject value, String key) throws Exception {
++        String result = requiredString(value, key, 64);
++        if (!result.matches("^[a-f0-9]{64}$")) throw new Exception("INVALID_" + key);
++        return result;
++    }
++
++    private static long requiredInteger(JSONObject value, String key, long minimum)
++            throws Exception {
++        Object raw = value.get(key);
++        if (!(raw instanceof Number)) throw new Exception("INVALID_" + key);
++        Number number = (Number) raw;
++        double decimal = number.doubleValue();
++        long result = number.longValue();
++        if (Double.isNaN(decimal) || Double.isInfinite(decimal) || decimal != result || result < minimum
++                || result > SAFE_INTEGER_MAX) {
++            throw new Exception("INVALID_" + key);
++        }
++        return result;
++    }
++
++    private static long parseExpiry(String value) throws Exception {
++        if (!value.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$")) {
++            throw new Exception("INVALID_EXPIRY");
++        }
++        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
++        format.setLenient(false);
++        format.setTimeZone(TimeZone.getTimeZone("UTC"));
++        Date date = format.parse(value);
++        if (date == null) throw new Exception("INVALID_EXPIRY");
++        return date.getTime();
++    }
++
++    private static byte[] sha256(String value) throws Exception {
++        return MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
++    }
++
++    private static String hex(byte[] bytes) {
++        StringBuilder output = new StringBuilder(bytes.length * 2);
++        for (byte value : bytes) output.append(String.format(Locale.US, "%02x", value & 0xff));
++        return output.toString();
++    }
++
++    private static boolean constantTimeEquals(String left, String right) {
++        return MessageDigest.isEqual(
++                left.getBytes(StandardCharsets.UTF_8), right.getBytes(StandardCharsets.UTF_8));
++    }
++
++    /** Canonical JSON must stay byte-for-byte compatible with server/protocol.mjs. */
++    private static String canonicalize(Object value) throws Exception {
++        if (value == null || value == JSONObject.NULL) return "null";
++        if (value instanceof Boolean) return value.toString();
++        if (value instanceof String) return quoteJson((String) value);
++        if (value instanceof Number) {
++            double decimal = ((Number) value).doubleValue();
++            if (Double.isNaN(decimal) || Double.isInfinite(decimal)) {
++                throw new Exception("NON_FINITE_NUMBER");
++            }
++            if (value instanceof Byte || value instanceof Short || value instanceof Integer
++                    || value instanceof Long) {
++                return Long.toString(((Number) value).longValue());
++            }
++            return JSONObject.numberToString((Number) value);
++        }
++        if (value instanceof JSONArray) {
++            JSONArray array = (JSONArray) value;
++            StringBuilder output = new StringBuilder("[");
++            for (int i = 0; i < array.length(); i++) {
++                if (i > 0) output.append(',');
++                output.append(canonicalize(array.get(i)));
++            }
++            return output.append(']').toString();
++        }
++        if (value instanceof JSONObject) {
++            JSONObject object = (JSONObject) value;
++            List<String> keys = new ArrayList<>();
++            Iterator<String> iterator = object.keys();
++            while (iterator.hasNext()) keys.add(iterator.next());
++            Collections.sort(keys);
++            StringBuilder output = new StringBuilder("{");
++            for (int i = 0; i < keys.size(); i++) {
++                if (i > 0) output.append(',');
++                String key = keys.get(i);
++                output.append(quoteJson(key)).append(':').append(canonicalize(object.get(key)));
++            }
++            return output.append('}').toString();
++        }
++        throw new Exception("UNSUPPORTED_CANONICAL_VALUE");
++    }
++
++    private static String quoteJson(String value) {
++        StringBuilder output = new StringBuilder(value.length() + 2).append('"');
++        for (int i = 0; i < value.length(); i++) {
++            char character = value.charAt(i);
++            switch (character) {
++                case '"': output.append("\\\""); break;
++                case '\\': output.append("\\\\"); break;
++                case '\b': output.append("\\b"); break;
++                case '\f': output.append("\\f"); break;
++                case '\n': output.append("\\n"); break;
++                case '\r': output.append("\\r"); break;
++                case '\t': output.append("\\t"); break;
++                default:
++                    if (character < 0x20 || (Character.isSurrogate(character)
++                            && (i + 1 >= value.length()
++                                    || !Character.isSurrogatePair(character, value.charAt(i + 1))))) {
++                        output.append(String.format(Locale.US, "\\u%04x", (int) character));
++                    } else {
++                        output.append(character);
++                        if (Character.isHighSurrogate(character) && i + 1 < value.length()
++                                && Character.isLowSurrogate(value.charAt(i + 1))) {
++                            output.append(value.charAt(++i));
++                        }
++                    }
++            }
++        }
++        return output.append('"').toString();
++    }
++
++    public void stop(String reason) {
++        cancelRun(reason, true);
++    }
++
++    private void takeOver() {
++        takeOver(tr("직접 조작으로 전환했습니다. 다시 시작하면 새 페이지를 확인합니다.",
++                "Control returned to you. Starting again will create a fresh observation."));
++    }
++
++    private void takeOver(String reason) {
++        cancelRun(reason, false);
++    }
++
++    private void cancelRun(String reason, boolean reopenPanel) {
++        boolean wasRunning = mRunning;
++        mRunning = false;
++        mGeneration++;
++        mControlGeneration++;
++        for (JournalEntry entry : new ArrayList<>(mJournal.values())) {
++            if ("STARTED".equals(entry.state)) {
++                finishJournal(entry, "OUTCOME_UNKNOWN", "outcome_unknown",
++                        "CANCELLED_AFTER_START");
++            }
++        }
++        mLastObservationId = "";
++        mLastObservationOrigin = "";
++        mApprovedPreparation = null;
++        if (mTaskTab != null) mTaskTab.removeObserver(mTabObserver);
++        mUi.removeCallbacksAndMessages(null);
++        HttpURLConnection connection = mConnection;
++        if (connection != null) connection.disconnect();
++        append(reason);
++        mToken = "";
++        if (mTokenInput != null) mTokenInput.setText("");
++        mControlBar.setVisibility(View.GONE);
++        if (mStartButton != null) {
++            mStartButton.setEnabled(true);
++            mStartButton.setText(tr("현재 탭에서 시작", "Start in current tab"));
++        }
++        if (mGoalInput != null) mGoalInput.setEnabled(true);
++        if (mEndpointInput != null) mEndpointInput.setEnabled(true);
++        if (mTokenInput != null) mTokenInput.setEnabled(true);
++        mTaskContents = null;
++        mTaskTab = null;
++        if (!reopenPanel && mPanel != null) mPanel.dismiss();
++        if (reopenPanel && wasRunning && !mDestroyed && !mActivity.isFinishing()) showPanel();
++    }
++
++    public void onBackgrounded() {
++        if (mRunning) {
++            mDestroyed = true;
++            cancelRun(tr("브라우저를 벗어나 작업을 중지했습니다.",
++                    "The run stopped when the browser left the foreground."), false);
++            mDestroyed = false;
++        }
++        if (mPanel != null) mPanel.dismiss();
++    }
++
++    public void destroy() {
++        mDestroyed = true;
++        cancelRun(tr("종료됨", "Closed"), false);
++        if (mPanel != null) mPanel.dismiss();
++        mNetwork.shutdownNow();
++        if (mLauncher.getParent() instanceof ViewGroup) {
++            ((ViewGroup) mLauncher.getParent()).removeView(mLauncher);
++        }
++        if (mControlBar.getParent() instanceof ViewGroup) {
++            ((ViewGroup) mControlBar.getParent()).removeView(mControlBar);
++        }
++    }
++}
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/lane/LanePageScript.java b/chrome/android/java/src/org/chromium/chrome/browser/lane/LanePageScript.java
+new file mode 100644
+--- /dev/null
++++ b/chrome/android/java/src/org/chromium/chrome/browser/lane/LanePageScript.java
+@@ -0,0 +1,677 @@
++// Generated by scripts/chromium_patch.py. Do not edit.
++package org.chromium.chrome.browser.lane;
++
++import android.util.Base64;
++import java.nio.charset.StandardCharsets;
++
++final class LanePageScript {
++    static final String SOURCE = new String(Base64.decode(
++            "Ly8gUnVucyBpbiBhIENocm9taXVtIGlzb2xhdGVkIHdvcmxkLiBUaGUgbmF0aXZlIGhvc3QgbXVzdCB2ZXJpZnkgdGhlIGNvbW1h"
++            + "bmQncwovLyBITUFDIHBlcm1pdCwgbGVhc2UsIHNlcXVlbmNlIGFuZCBjb250cm9sIGdlbmVyYXRpb24gYmVmb3JlIGNhbGxpbmcg"
++            + "ZXhlY3V0ZS4KLy8gVGhlIEFuZHJvaWQgaG9zdCBrZWVwcyB0aGUgY3VycmVudCByZWd1bGFyIENocm9taXVtIHByb2ZpbGUgc28g"
++            + "YSB1c2VyIGNhbgovLyBzaWduIGluIGFuZCBjb250aW51ZSBpbiB0aGUgc2FtZSBicm93c2VyIHNlc3Npb24uIENvb2tpZXMgYW5k"
++            + "IHN0b3JhZ2UgYXJlCi8vIG5ldmVyIGV4cG9ydGVkIGJ5IHRoaXMgYWdlbnQuIFByaXZhdGUgYWNjb3VudC9zZXNzaW9uL2NhcnQv"
++            + "cGF5bWVudCBwYWdlcyBmYWlsCi8vIGNsb3NlZCwgd2hpbGUgYWNjb3VudC9wcm9maWxlIGNocm9tZSBpcyByZW1vdmVkIGZyb20g"
++            + "cHVibGljIHByb2R1Y3QgcGFnZXMuCigoKSA9PiB7CiAgaWYgKGdsb2JhbFRoaXMuX19sYW5lQWdlbnQpIHJldHVybjsKCiAgbGV0"
++            + "IHN0YXRlID0gbnVsbDsKICBjb25zdCBjbGVhbiA9ICh2YWx1ZSwgbWF4KSA9PiBTdHJpbmcodmFsdWUgPz8gJycpLnJlcGxhY2Uo"
++            + "L1xzKy9nLCAnICcpLnRyaW0oKS5zbGljZSgwLCBtYXgpOwogIGNvbnN0IHJlY29yZCA9ICh2YWx1ZSkgPT4gdmFsdWUgIT09IG51"
++            + "bGwgJiYgdHlwZW9mIHZhbHVlID09PSAnb2JqZWN0JyAmJiAhQXJyYXkuaXNBcnJheSh2YWx1ZSk7CiAgY29uc3QgaWQgPSAodmFs"
++            + "dWUpID0+IHR5cGVvZiB2YWx1ZSA9PT0gJ3N0cmluZycgJiYgL15bQS1aYS16MC05XVtBLVphLXowLTkuXzotXXswLDEyN30kLy50"
++            + "ZXN0KHZhbHVlKTsKICBjb25zdCByYW5kb21JZCA9IChwcmVmaXgpID0+IGAke3ByZWZpeH1fJHtBcnJheS5mcm9tKGNyeXB0by5n"
++            + "ZXRSYW5kb21WYWx1ZXMobmV3IFVpbnQ4QXJyYXkoMTYpKSwKICAgIChieXRlKSA9PiBieXRlLnRvU3RyaW5nKDE2KS5wYWRTdGFy"
++            + "dCgyLCAnMCcpKS5qb2luKCcnKX1gOwoKICBmdW5jdGlvbiB2aXNpYmxlKGVsZW1lbnQpIHsKICAgIGNvbnN0IHN0eWxlID0gZ2V0"
++            + "Q29tcHV0ZWRTdHlsZShlbGVtZW50KTsKICAgIHJldHVybiBlbGVtZW50LmdldENsaWVudFJlY3RzKCkubGVuZ3RoID4gMCAmJiBz"
++            + "dHlsZS52aXNpYmlsaXR5ICE9PSAnaGlkZGVuJyAmJiBzdHlsZS5kaXNwbGF5ICE9PSAnbm9uZScgJiYKICAgICAgIWVsZW1lbnQu"
++            + "Y2xvc2VzdCgnW2FyaWEtaGlkZGVuPSJ0cnVlIl0sW2luZXJ0XScpOwogIH0KCiAgZnVuY3Rpb24gcHJpdmF0ZUlwdjQoaG9zdCkg"
++            + "ewogICAgY29uc3QgcGFydHMgPSBob3N0LnNwbGl0KCcuJykubWFwKE51bWJlcik7CiAgICBpZiAocGFydHMubGVuZ3RoICE9PSA0"
++            + "IHx8IHBhcnRzLnNvbWUoKHBhcnQpID0+ICFOdW1iZXIuaXNJbnRlZ2VyKHBhcnQpIHx8IHBhcnQgPCAwIHx8IHBhcnQgPiAyNTUp"
++            + "KSByZXR1cm4gdHJ1ZTsKICAgIGNvbnN0IFthLCBiXSA9IHBhcnRzOwogICAgcmV0dXJuIGEgPT09IDAgfHwgYSA9PT0gMTAgfHwg"
++            + "YSA9PT0gMTI3IHx8IGEgPj0gMjI0IHx8CiAgICAgIChhID09PSAxMDAgJiYgYiA+PSA2NCAmJiBiIDw9IDEyNykgfHwgKGEgPT09"
++            + "IDE2OSAmJiBiID09PSAyNTQpIHx8CiAgICAgIChhID09PSAxNzIgJiYgYiA+PSAxNiAmJiBiIDw9IDMxKSB8fCAoYSA9PT0gMTky"
++            + "ICYmIChiID09PSAwIHx8IGIgPT09IDE2OCkpIHx8CiAgICAgIChhID09PSAxOTggJiYgKGIgPT09IDE4IHx8IGIgPT09IDE5IHx8"
++            + "IGIgPT09IDUxKSkgfHwgKGEgPT09IDIwMyAmJiBiID09PSAwKTsKICB9CgogIGZ1bmN0aW9uIHB1YmxpY0hvc3QoaG9zdG5hbWUp"
++            + "IHsKICAgIGNvbnN0IGhvc3QgPSBob3N0bmFtZS5yZXBsYWNlKC9eXFt8XF0kL2csICcnKS50b0xvd2VyQ2FzZSgpLnJlcGxhY2Uo"
++            + "L1wuJC8sICcnKTsKICAgIGlmICghaG9zdCB8fCBob3N0ID09PSAnbG9jYWxob3N0JyB8fCAvKD86XnxcLikoPzpsb2NhbGhvc3R8"
++            + "bG9jYWx8aW50ZXJuYWx8bGFufGhvbWVcLmFycGF8dGVzdHxpbnZhbGlkfGV4YW1wbGUpJC8udGVzdChob3N0KSkgcmV0dXJuIGZh"
++            + "bHNlOwogICAgaWYgKC9eXGQrKD86XC5cZCspezN9JC8udGVzdChob3N0KSkgcmV0dXJuICFwcml2YXRlSXB2NChob3N0KTsKICAg"
++            + "IGlmIChob3N0LmluY2x1ZGVzKCc6JykpIHsKICAgICAgaWYgKGhvc3QgPT09ICc6OicgfHwgaG9zdCA9PT0gJzo6MScgfHwgaG9z"
++            + "dC5zdGFydHNXaXRoKCc6OicpIHx8IGhvc3Quc3RhcnRzV2l0aCgnZmMnKSB8fAogICAgICAgICAgaG9zdC5zdGFydHNXaXRoKCdm"
++            + "ZCcpIHx8IC9eZmVbODlhYl0vLnRlc3QoaG9zdCkpIHJldHVybiBmYWxzZTsKICAgICAgcmV0dXJuIHRydWU7CiAgICB9CiAgICBy"
++            + "ZXR1cm4gaG9zdC5pbmNsdWRlcygnLicpOwogIH0KCiAgZnVuY3Rpb24gcHVibGljVXJsKHZhbHVlLCB7IGFsbG93UXVlcnkgPSBm"
++            + "YWxzZSB9ID0ge30pIHsKICAgIGxldCB1cmw7CiAgICB0cnkgeyB1cmwgPSBuZXcgVVJMKHZhbHVlLCBsb2NhdGlvbi5ocmVmKTsg"
++            + "fSBjYXRjaCB7IHRocm93IG5ldyBFcnJvcigndXJsX3BvbGljeV9kZW5pZWQnKTsgfQogICAgaWYgKCFbJ2h0dHA6JywgJ2h0dHBz"
++            + "OiddLmluY2x1ZGVzKHVybC5wcm90b2NvbCkgfHwgdXJsLnVzZXJuYW1lIHx8IHVybC5wYXNzd29yZCB8fCB1cmwucG9ydCB8fAog"
++            + "ICAgICAgICFwdWJsaWNIb3N0KHVybC5ob3N0bmFtZSkgfHwgKCFhbGxvd1F1ZXJ5ICYmICh1cmwuc2VhcmNoIHx8IHVybC5oYXNo"
++            + "KSkpIHsKICAgICAgdGhyb3cgbmV3IEVycm9yKCd1cmxfcG9saWN5X2RlbmllZCcpOwogICAgfQogICAgcmV0dXJuIHVybC5ocmVm"
++            + "OwogIH0KCiAgZnVuY3Rpb24gcHVibGljT3JpZ2luKHZhbHVlKSB7CiAgICBsZXQgdXJsOwogICAgdHJ5IHsgdXJsID0gbmV3IFVS"
++            + "TCh2YWx1ZSk7IH0gY2F0Y2ggeyB0aHJvdyBuZXcgRXJyb3IoJ3VybF9wb2xpY3lfZGVuaWVkJyk7IH0KICAgIGlmICh2YWx1ZSAh"
++            + "PT0gdXJsLm9yaWdpbiAmJiB2YWx1ZSAhPT0gYCR7dXJsLm9yaWdpbn0vYCkgdGhyb3cgbmV3IEVycm9yKCd1cmxfcG9saWN5X2Rl"
++            + "bmllZCcpOwogICAgcHVibGljVXJsKGAke3VybC5vcmlnaW59L2ApOwogICAgcmV0dXJuIHVybC5vcmlnaW47CiAgfQoKICBmdW5j"
++            + "dGlvbiBhY2Nlc3NpYmxlTmFtZShlbGVtZW50KSB7CiAgICBjb25zdCBsYWJlbGxlZEJ5ID0gKGVsZW1lbnQuZ2V0QXR0cmlidXRl"
++            + "KCdhcmlhLWxhYmVsbGVkYnknKSB8fCAnJykuc3BsaXQoL1xzKy8pLmZpbHRlcihCb29sZWFuKQogICAgICAubWFwKChsYWJlbElk"
++            + "KSA9PiBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChsYWJlbElkKT8udGV4dENvbnRlbnQgfHwgJycpLmpvaW4oJyAnKTsKICAgIGNv"
++            + "bnN0IGxhYmVscyA9IEFycmF5LmZyb20oZWxlbWVudC5sYWJlbHMgfHwgW10pLm1hcCgobGFiZWwpID0+IGxhYmVsLmlubmVyVGV4"
++            + "dCkuam9pbignICcpOwogICAgcmV0dXJuIGNsZWFuKGVsZW1lbnQuZ2V0QXR0cmlidXRlKCdhcmlhLWxhYmVsJykgfHwgbGFiZWxs"
++            + "ZWRCeSB8fCBsYWJlbHMgfHwgZWxlbWVudC5pbm5lclRleHQgfHwKICAgICAgKGVsZW1lbnQubWF0Y2hlcz8uKCdpbnB1dFt0eXBl"
++            + "PSJidXR0b24iXSxpbnB1dFt0eXBlPSJzdWJtaXQiXScpID8gZWxlbWVudC52YWx1ZSA6ICcnKSB8fAogICAgICBlbGVtZW50LnBs"
++            + "YWNlaG9sZGVyIHx8IGVsZW1lbnQuZ2V0QXR0cmlidXRlKCd0aXRsZScpIHx8ICcnLCAyMDApOwogIH0KCiAgZnVuY3Rpb24gc2Vu"
++            + "c2l0aXZlSW5wdXQoZWxlbWVudCkgewogICAgY29uc3QgaGludHMgPSBbZWxlbWVudC50eXBlLCBlbGVtZW50LmF1dG9jb21wbGV0"
++            + "ZSwgZWxlbWVudC5uYW1lLCBlbGVtZW50LmlkLCBhY2Nlc3NpYmxlTmFtZShlbGVtZW50KV0uam9pbignICcpOwogICAgcmV0dXJu"
++            + "IC9wYXNzd29yZHxwYXNzd2R8cGFzc2NvZGV8KD86XnxccylmaWxlKD86XHN8JCl8b25lLXRpbWUtY29kZXxvdHB8Y2MtfGNyZWRp"
++            + "dC4/Y2FyZHxjYXJkLj9udW1iZXJ8Y3Z2fGN2Y3xzZWNyZXR8dG9rZW5867mE67CA67KI7Zi4fOyduOymneuyiO2YuHzsubTrk5wu"
++            + "P+uyiO2YuHzrs7TslYguP+y9lOuTnC9pLnRlc3QoaGludHMpOwogIH0KCiAgZnVuY3Rpb24gaGFzVXNlcklucHV0VmFsdWUoZWxl"
++            + "bWVudCkgewogICAgaWYgKCFbJ0lOUFVUJywgJ1RFWFRBUkVBJ10uaW5jbHVkZXMoZWxlbWVudC50YWdOYW1lKSkgcmV0dXJuIGZh"
++            + "bHNlOwogICAgaWYgKGVsZW1lbnQudGFnTmFtZSA9PT0gJ0lOUFVUJyAmJiBbJ2J1dHRvbicsICdzdWJtaXQnLCAncmVzZXQnLCAn"
++            + "Y2hlY2tib3gnLCAncmFkaW8nLCAnaW1hZ2UnLCAncmFuZ2UnLCAnY29sb3InLCAnaGlkZGVuJ10uaW5jbHVkZXMoZWxlbWVudC50"
++            + "eXBlKSkgcmV0dXJuIGZhbHNlOwogICAgcmV0dXJuIGVsZW1lbnQudmFsdWUgIT09ICcnOwogIH0KCiAgZnVuY3Rpb24gcGF5bWVu"
++            + "dE1lYW5pbmcodmFsdWUpIHsKICAgIHJldHVybiAvKD86XGIoPzphZGRccyp0b1xzKig/OmNhcnR8YmFnfGJhc2tldCl8YnV5XHMq"
++            + "bm93fGNoZWNrb3V0fHBsYWNlXHMqb3JkZXJ8cHVyY2hhc2V8cGF5KD86bWVudCk/fGJvb2tccypub3d8cmVzZXJ2ZXxzdWJzY3Jp"
++            + "YmV8Y2FuY2VsXHMqKD86b3JkZXJ8Ym9va2luZ3xzdWJzY3JpcHRpb24pfHJlZnVuZClcYnzqsrDsoJx86rWs66ekfOyepeuwlOq1"
++            + "rOuLiFxzKuuLtOq4sHzso7zrrLhccyrtmZXsoJV87JiI7JW9XHMq7ZmV7KCVfOq1rOuPhXztmZjrtoh87Leo7IaMXHMq7ZmV7KCV"
++            + "KS9pLnRlc3QodmFsdWUpOwogIH0KCiAgZnVuY3Rpb24gdW5zdXBwb3J0ZWRMaW5rTWVhbmluZyh2YWx1ZSkgewogICAgcmV0dXJu"
++            + "IC8oPzpcYig/OmFjY291bnR8cHJvZmlsZXxvcmRlcnM/fHNldHRpbmdzfHdhbGxldHxsb2dpbnxzaWduXHMqaW58YXV0aHxhZGRc"
++            + "cyp0b1xzKndpc2hsaXN0fHJlbW92ZXxkZWxldGV8bG9nb3V0fGxvZ1xzKm91dHxzaWduXHMqb3V0fHVuc3Vic2NyaWJlfGRlYWN0"
++            + "aXZhdGV8Zm9sbG93fGxpa2V8dm90ZXxyZWRlZW18Y2xhaW0pXGJ86rOE7KCVfO2UhOuhnO2VhHzso7zrrLhccyrrgrTsl6187ISk"
++            + "7KCVfOyngOqwkXzroZzqt7jsnbh866Gc6re47JWE7JuDfO2DiO2HtHzsgq3soJx86rWs64+FXHMq7ZW07KeAfOyii+yVhOyalHzt"
++            + "jJTroZzsmrApL2kudGVzdCh2YWx1ZSk7CiAgfQoKICBmdW5jdGlvbiBwYXRoQm91bmRhcnkocGF0aG5hbWUpIHsKICAgIGxldCB2"
++            + "YWx1ZSA9IHBhdGhuYW1lOwogICAgdHJ5IHsgdmFsdWUgPSBkZWNvZGVVUklDb21wb25lbnQocGF0aG5hbWUpOyB9IGNhdGNoIHsg"
++            + "Lyoga2VlcCBlbmNvZGVkIHBhdGggKi8gfQogICAgaWYgKC8oPzpefFwvKSg/OmNoZWNrb3V0fGNhcnR8YmFza2V0fHBheW1lbnR8"
++            + "cGF5fHN1YnNjcmliZXxib29raW5nfHJlc2VydmF0aW9uKSg/OlwvfCQpL2kudGVzdCh2YWx1ZSkpIHJldHVybiAnUEFZTUVOVF9P"
++            + "Ul9DT01NSVRNRU5UJzsKICAgIGlmICgvKD86XnxcLykoPzphY2NvdW50fHByb2ZpbGV8b3JkZXJzP3xzZXR0aW5nc3x3YWxsZXR8"
++            + "bG9naW58c2lnbmlufGF1dGh8bG9nb3V0fGFkZHJlc3Nlc3xzZXNzaW9uKSg/OlwvfCQpL2kudGVzdCh2YWx1ZSkpIHJldHVybiAn"
++            + "U0VOU0lUSVZFX0lOUFVUX1JFUVVJUkVEJzsKICAgIHJldHVybiBudWxsOwogIH0KCiAgZnVuY3Rpb24gcHJpdmF0ZVN1cmZhY2VT"
++            + "aWduYWwoKSB7CiAgICBjb25zdCBoZWFkaW5ncyA9IEFycmF5LmZyb20oZG9jdW1lbnQucXVlcnlTZWxlY3RvckFsbCgnaDEsW3Jv"
++            + "bGU9ImhlYWRpbmciXVthcmlhLWxldmVsPSIxIl0nKSkKICAgICAgLmZpbHRlcih2aXNpYmxlKS5zbGljZSgwLCA0KS5tYXAoYWNj"
++            + "ZXNzaWJsZU5hbWUpLmpvaW4oJyAnKTsKICAgIGNvbnN0IGNocm9tZSA9IGAke2RvY3VtZW50LnRpdGxlIHx8ICcnfSAke2hlYWRp"
++            + "bmdzfWA7CiAgICByZXR1cm4gLyg/OlxiKD86bXlccythY2NvdW50fGFjY291bnR8cHJvZmlsZXxvcmRlcnM/fG9yZGVyXHMraGlz"
++            + "dG9yeXxzaG9wcGluZ1xzK2NhcnR8eW91clxzK2NhcnR8d2FsbGV0KVxifOuCtFxzKuqzhOyglXzrp4jsnbTtjpjsnbTsp4B87ZSE"
++            + "66Gc7ZWEfOyjvOusuFxzKuuCtOyXrXzsnqXrsJTqtazri4gpL2kudGVzdChjaHJvbWUpOwogIH0KCiAgZnVuY3Rpb24gYXV0aGVu"
++            + "dGljYXRlZENocm9tZVJvb3RzKCkgewogICAgY29uc3Qgcm9vdHMgPSBbXTsKICAgIGZvciAoY29uc3QgZWxlbWVudCBvZiBkb2N1"
++            + "bWVudC5xdWVyeVNlbGVjdG9yQWxsKCdhW2hyZWZdLGJ1dHRvbixbcm9sZT0iYnV0dG9uIl0nKSkgewogICAgICBpZiAoIXZpc2li"
++            + "bGUoZWxlbWVudCkgfHwgIS8oPzpcYig/OmxvZ1xzKm91dHxzaWduXHMqb3V0KVxifOuhnOq3uOyVhOybg3woPzpefFwvKWxvZ291"
++            + "dCg/OlwvfCQpKS9pLnRlc3QoCiAgICAgICAgYCR7YWNjZXNzaWJsZU5hbWUoZWxlbWVudCl9ICR7ZWxlbWVudC5nZXRBdHRyaWJ1"
++            + "dGUoJ2hyZWYnKSB8fCAnJ31gKSkgY29udGludWU7CiAgICAgIGNvbnN0IGNvbnRhaW5lciA9IGVsZW1lbnQuY2xvc2VzdCgnaGVh"
++            + "ZGVyLFtyb2xlPSJiYW5uZXIiXSxbY2xhc3MqPSJoZWFkZXIiIGldJykgfHwgZWxlbWVudC5jbG9zZXN0KAogICAgICAgICduYXYs"
++            + "W3JvbGU9Im5hdmlnYXRpb24iXSxbY2xhc3MqPSJhY2NvdW50IiBpXSxbY2xhc3MqPSJwcm9maWxlIiBpXScsCiAgICAgICk7CiAg"
++            + "ICAgIHJvb3RzLnB1c2goY29udGFpbmVyICYmIGNvbnRhaW5lciAhPT0gZG9jdW1lbnQuYm9keSAmJiBjb250YWluZXIgIT09IGRv"
++            + "Y3VtZW50LmRvY3VtZW50RWxlbWVudAogICAgICAgID8gY29udGFpbmVyCiAgICAgICAgOiBlbGVtZW50KTsKICAgIH0KICAgIHJl"
++            + "dHVybiBbLi4ubmV3IFNldChyb290cyldOwogIH0KCiAgZnVuY3Rpb24gbGlrZWx5U2Vuc2l0aXZlUXVlcnkodmFsdWUpIHsKICAg"
++            + "IGNvbnN0IHRleHQgPSBTdHJpbmcodmFsdWUpLm5vcm1hbGl6ZSgnTkZLQycpOwogICAgaWYgKC9cYig/OnBhc3N3b3JkfHBhc3N3"
++            + "ZHxwYXNzY29kZXxvdHB8b25lWy0gXT90aW1lfGN2dnxjdmN8Y2FyZFxzKm51bWJlcnxhY2Nlc3NbXyAtXT90b2tlbnxhcGlbXyAt"
++            + "XT9rZXl8c2VjcmV0KVxiL2kudGVzdCh0ZXh0KSkgcmV0dXJuIHRydWU7CiAgICBpZiAoLyg/Ouu5hOuwgOuyiO2YuHzsnbjspp3r"
++            + "sojtmLh87J287ZqM7JqpXHMq7L2U65OcfOy5tOuTnFxzKuuyiO2YuHzrs7TslYhccyrsvZTrk5x87KO866+865Ox66GdKS8udGVz"
++            + "dCh0ZXh0KSkgcmV0dXJuIHRydWU7CiAgICBpZiAoL1xiW0EtWjAtOS5fJSstXStAW0EtWjAtOS4tXStcLltBLVpdezIsfVxiL2ku"
++            + "dGVzdCh0ZXh0KSkgcmV0dXJuIHRydWU7CiAgICByZXR1cm4gdGV4dC5yZXBsYWNlKC9bXjAtOV0vZywgJycpLmxlbmd0aCA+PSAx"
++            + "MSB8fCAvaHR0cHM/OlwvXC8vaS50ZXN0KHRleHQpOwogIH0KCiAgY29uc3QgQ09VUEFOR19BREFQVEVSID0gJ2J1aWx0aW4uY291"
++            + "cGFuZy5wdXJjaGFzZS1wcmVwYXJhdGlvbic7CiAgY29uc3QgQ09VUEFOR19NVVRBVElPTl9TVEVQUyA9IG5ldyBTZXQoWwogICAg"
++            + "J3NlbGVjdF9vcHRpb24nLCAndmVyaWZ5X29wdGlvbnMnLCAnc2V0X3F1YW50aXR5JywgJ2J1eV9ub3cnLCAnYWRkX3RvX2NhcnQn"
++            + "LCAnc3RhcnRfY2hlY2tvdXQnLAogIF0pOwogIGNvbnN0IENPVVBBTkdfUFJPRFVDVF9PUklHSU5TID0gbmV3IFNldChbJ2h0dHBz"
++            + "Oi8vY291cGFuZy5jb20nLCAnaHR0cHM6Ly93d3cuY291cGFuZy5jb20nXSk7CiAgY29uc3QgQ09VUEFOR19DQVJUX1BBR0VTID0g"
++            + "bmV3IFNldChbCiAgICAnaHR0cHM6Ly9jYXJ0LmNvdXBhbmcuY29tL2NhcnRWaWV3LnBhbmcnLAogIF0pOwogIGNvbnN0IEZJTkFM"
++            + "X0NPTU1JVE1FTlRfTkFNRSA9IC9eKD866rKw7KCc7ZWY6riwfOyjvOusuO2VmOq4sHzso7zrrLhccyrtmZXsoJV86rWs66ekXHMq"
++            + "7ZmV7KCVfHBsYWNlXHMrb3JkZXJ8cGF5KD86XHMrbm93KT8pJC9pOwoKICBmdW5jdGlvbiBleGFjdFJlY29yZCh2YWx1ZSwga2V5"
++            + "cykgewogICAgcmV0dXJuIHJlY29yZCh2YWx1ZSkgJiYgT2JqZWN0LmtleXModmFsdWUpLmxlbmd0aCA9PT0ga2V5cy5sZW5ndGgg"
++            + "JiYga2V5cy5ldmVyeSgoa2V5KSA9PiBrZXkgaW4gdmFsdWUpOwogIH0KCiAgZnVuY3Rpb24gYm91bmRlZFdvbih2YWx1ZSkgewog"
++            + "ICAgcmV0dXJuIE51bWJlci5pc1NhZmVJbnRlZ2VyKHZhbHVlKSAmJiB2YWx1ZSA+PSAxICYmIHZhbHVlIDw9IDFfMDAwXzAwMF8w"
++            + "MDBfMDAwOwogIH0KCiAgZnVuY3Rpb24gYXBwcm92ZWRMaW5lKHZhbHVlKSB7CiAgICBpZiAoIWV4YWN0UmVjb3JkKHZhbHVlLCBb"
++            + "CiAgICAgICdwcm9kdWN0SWQnLCAnaXRlbUlkJywgJ3ZlbmRvckl0ZW1JZCcsICdxdWFudGl0eScsICd1bml0UHJpY2VDZWlsaW5n"
++            + "S3J3JywgJ2xpbmVQcmljZUNlaWxpbmdLcncnLAogICAgXSkpIHJldHVybiBudWxsOwogICAgaWYgKCFbdmFsdWUucHJvZHVjdElk"
++            + "LCB2YWx1ZS5pdGVtSWQsIHZhbHVlLnZlbmRvckl0ZW1JZF0uZXZlcnkoKHBhcnQpID0+CiAgICAgIHR5cGVvZiBwYXJ0ID09PSAn"
++            + "c3RyaW5nJyAmJiAvXlsxLTldWzAtOV17MCwxOX0kLy50ZXN0KHBhcnQpKSkgcmV0dXJuIG51bGw7CiAgICBpZiAoIU51bWJlci5p"
++            + "c1NhZmVJbnRlZ2VyKHZhbHVlLnF1YW50aXR5KSB8fCB2YWx1ZS5xdWFudGl0eSA8IDEgfHwgdmFsdWUucXVhbnRpdHkgPiA5OSB8"
++            + "fAogICAgICAgICFib3VuZGVkV29uKHZhbHVlLnVuaXRQcmljZUNlaWxpbmdLcncpIHx8ICFib3VuZGVkV29uKHZhbHVlLmxpbmVQ"
++            + "cmljZUNlaWxpbmdLcncpIHx8CiAgICAgICAgdmFsdWUudW5pdFByaWNlQ2VpbGluZ0tydyAqIHZhbHVlLnF1YW50aXR5ID4gdmFs"
++            + "dWUubGluZVByaWNlQ2VpbGluZ0tydykgcmV0dXJuIG51bGw7CiAgICByZXR1cm4geyAuLi52YWx1ZSB9OwogIH0KCiAgZnVuY3Rp"
++            + "b24gYXBwcm92YWwodmFsdWUpIHsKICAgIGlmICghZXhhY3RSZWNvcmQodmFsdWUsIFsKICAgICAgJ2FwcHJvdmFsSWQnLCAnYXBw"
++            + "cm92YWxEaWdlc3QnLCAnY3VycmVuY3knLCAncmV2aXNpb24nLCAnZXhwaXJlc0F0JywgJ3RvdGFsUHJpY2VDZWlsaW5nS3J3JywK"
++            + "ICAgIF0pIHx8ICFpZCh2YWx1ZS5hcHByb3ZhbElkKSB8fCAhL15zaGEyNTY6W2EtZjAtOV17NjR9JC8udGVzdCh2YWx1ZS5hcHBy"
++            + "b3ZhbERpZ2VzdCkgfHwKICAgICAgICB2YWx1ZS5jdXJyZW5jeSAhPT0gJ0tSVycgfHwgIU51bWJlci5pc1NhZmVJbnRlZ2VyKHZh"
++            + "bHVlLnJldmlzaW9uKSB8fCB2YWx1ZS5yZXZpc2lvbiA8IDEgfHwKICAgICAgICAhYm91bmRlZFdvbih2YWx1ZS50b3RhbFByaWNl"
++            + "Q2VpbGluZ0tydykpIHJldHVybiBudWxsOwogICAgY29uc3QgZXhwaXJ5ID0gRGF0ZS5wYXJzZSh2YWx1ZS5leHBpcmVzQXQpOwog"
++            + "ICAgaWYgKCFOdW1iZXIuaXNGaW5pdGUoZXhwaXJ5KSB8fCBuZXcgRGF0ZShleHBpcnkpLnRvSVNPU3RyaW5nKCkgIT09IHZhbHVl"
++            + "LmV4cGlyZXNBdCB8fAogICAgICAgIGV4cGlyeSA8PSBEYXRlLm5vdygpIHx8IGV4cGlyeSAtIERhdGUubm93KCkgPiAxMCAqIDYw"
++            + "XzAwMCkgcmV0dXJuIG51bGw7CiAgICByZXR1cm4geyAuLi52YWx1ZSB9OwogIH0KCiAgZnVuY3Rpb24gc2FtZUpzb24obGVmdCwg"
++            + "cmlnaHQpIHsKICAgIHJldHVybiBKU09OLnN0cmluZ2lmeShsZWZ0KSA9PT0gSlNPTi5zdHJpbmdpZnkocmlnaHQpOwogIH0KCiAg"
++            + "ZnVuY3Rpb24gYXBwcm92ZWRQbGFuKHZhbHVlLCBhY3Rpb25BcHByb3ZhbCkgewogICAgaWYgKCFleGFjdFJlY29yZCh2YWx1ZSwg"
++            + "WydtZXJjaGFudElkJywgJ3JlY2lwZVZlcnNpb24nLCAnbW9kZScsICdyb3V0ZScsICdhcHByb3ZhbCcsICdpdGVtcyddKSB8fAog"
++            + "ICAgICAgIHZhbHVlLm1lcmNoYW50SWQgIT09ICdDT1VQQU5HJyB8fCB2YWx1ZS5yZWNpcGVWZXJzaW9uICE9PSAnMScgfHwKICAg"
++            + "ICAgICAhWydzaW5nbGUnLCAnbXVsdGknXS5pbmNsdWRlcyh2YWx1ZS5tb2RlKSB8fAogICAgICAgIHZhbHVlLnJvdXRlICE9PSAo"
++            + "dmFsdWUubW9kZSA9PT0gJ3NpbmdsZScgPyAnc2luZ2xlX2J1eV9ub3cnIDogJ211bHRpX2NhcnRfY2hlY2tvdXQnKSB8fAogICAg"
++            + "ICAgICFzYW1lSnNvbih2YWx1ZS5hcHByb3ZhbCwgYWN0aW9uQXBwcm92YWwpIHx8ICFBcnJheS5pc0FycmF5KHZhbHVlLml0ZW1z"
++            + "KSB8fAogICAgICAgIHZhbHVlLml0ZW1zLmxlbmd0aCA8IDEgfHwgdmFsdWUuaXRlbXMubGVuZ3RoID4gMjAgfHwKICAgICAgICAo"
++            + "dmFsdWUubW9kZSA9PT0gJ3NpbmdsZScgPyB2YWx1ZS5pdGVtcy5sZW5ndGggIT09IDEgOiB2YWx1ZS5pdGVtcy5sZW5ndGggPCAy"
++            + "KSkgcmV0dXJuIG51bGw7CiAgICBjb25zdCBsaW5lcyA9IFtdOwogICAgZm9yIChjb25zdCBpdGVtIG9mIHZhbHVlLml0ZW1zKSB7"
++            + "CiAgICAgIGlmICghZXhhY3RSZWNvcmQoaXRlbSwgWwogICAgICAgICdxdWVyeScsICdvZmZlcklkZW50aXR5JywgJ3F1YW50aXR5"
++            + "JywgJ3VuaXRQcmljZUNlaWxpbmdLcncnLCAnbGluZVByaWNlQ2VpbGluZ0tydycsICdwcm9kdWN0VXJsJywgJ29wdGlvbnMnLAog"
++            + "ICAgICBdKSB8fCAhcmVjb3JkKGl0ZW0ub2ZmZXJJZGVudGl0eSkpIHJldHVybiBudWxsOwogICAgICBjb25zdCBsaW5lID0gYXBw"
++            + "cm92ZWRMaW5lKHsKICAgICAgICAuLi5pdGVtLm9mZmVySWRlbnRpdHksCiAgICAgICAgcXVhbnRpdHk6IGl0ZW0ucXVhbnRpdHks"
++            + "CiAgICAgICAgdW5pdFByaWNlQ2VpbGluZ0tydzogaXRlbS51bml0UHJpY2VDZWlsaW5nS3J3LAogICAgICAgIGxpbmVQcmljZUNl"
++            + "aWxpbmdLcnc6IGl0ZW0ubGluZVByaWNlQ2VpbGluZ0tydywKICAgICAgfSk7CiAgICAgIGlmICghbGluZSB8fCB0eXBlb2YgaXRl"
++            + "bS5wcm9kdWN0VXJsICE9PSAnc3RyaW5nJyB8fCB0eXBlb2YgaXRlbS5xdWVyeSAhPT0gJ3N0cmluZycgfHwgIXJlY29yZChpdGVt"
++            + "Lm9wdGlvbnMpKSByZXR1cm4gbnVsbDsKICAgICAgbGluZXMucHVzaChsaW5lKTsKICAgIH0KICAgIGlmIChuZXcgU2V0KGxpbmVz"
++            + "Lm1hcChsaW5lS2V5KSkuc2l6ZSAhPT0gbGluZXMubGVuZ3RoKSByZXR1cm4gbnVsbDsKICAgIHJldHVybiB7IG1vZGU6IHZhbHVl"
++            + "Lm1vZGUsIHJvdXRlOiB2YWx1ZS5yb3V0ZSwgbGluZXMgfTsKICB9CgogIGZ1bmN0aW9uIG5vcm1hbGl6ZWRBY2Nlc3NpYmxlTmFt"
++            + "ZShlbGVtZW50KSB7CiAgICByZXR1cm4gYWNjZXNzaWJsZU5hbWUoZWxlbWVudCkubm9ybWFsaXplKCdORktDJykucmVwbGFjZSgv"
++            + "XHMrL2csICcgJykudHJpbSgpOwogIH0KCiAgZnVuY3Rpb24gc2VtYW50aWNSb2xlKGVsZW1lbnQpIHsKICAgIGNvbnN0IHJvbGUg"
++            + "PSAoZWxlbWVudC5nZXRBdHRyaWJ1dGUoJ3JvbGUnKSB8fCAnJykudG9Mb3dlckNhc2UoKTsKICAgIGlmIChyb2xlKSByZXR1cm4g"
++            + "cm9sZTsKICAgIGlmIChlbGVtZW50LnRhZ05hbWUgPT09ICdBJykgcmV0dXJuICdsaW5rJzsKICAgIGlmIChlbGVtZW50Lm1hdGNo"
++            + "ZXMoJ2J1dHRvbixpbnB1dFt0eXBlPSJidXR0b24iXSxpbnB1dFt0eXBlPSJzdWJtaXQiXScpKSByZXR1cm4gJ2J1dHRvbic7CiAg"
++            + "ICByZXR1cm4gJyc7CiAgfQoKICBmdW5jdGlvbiBlbmFibGVkKGVsZW1lbnQpIHsKICAgIHJldHVybiAhZWxlbWVudC5kaXNhYmxl"
++            + "ZCAmJiBlbGVtZW50LmdldEF0dHJpYnV0ZSgnYXJpYS1kaXNhYmxlZCcpICE9PSAndHJ1ZSc7CiAgfQoKICBmdW5jdGlvbiB3b25G"
++            + "cm9tVGV4dCh2YWx1ZSkgewogICAgY29uc3QgdGV4dCA9IGNsZWFuKHZhbHVlLCAxMjApLm5vcm1hbGl6ZSgnTkZLQycpOwogICAg"
++            + "Y29uc3QgbWF0Y2ggPSB0ZXh0Lm1hdGNoKC8oPzpefFteMC05XSkoWzEtOV1bMC05XXswLDJ9KD86LFswLTldezN9KSp8WzEtOV1b"
++            + "MC05XXswLDEyfSkoPzpccyrsm5B8XHMqJCkvKTsKICAgIGlmICghbWF0Y2gpIHJldHVybiBudWxsOwogICAgY29uc3QgYW1vdW50"
++            + "ID0gTnVtYmVyKG1hdGNoWzFdLnJlcGxhY2UoLywvZywgJycpKTsKICAgIHJldHVybiBib3VuZGVkV29uKGFtb3VudCkgPyBhbW91"
++            + "bnQgOiBudWxsOwogIH0KCiAgZnVuY3Rpb24gZXhhY3RVbml0UHJpY2Uoc2NvcGUpIHsKICAgIGNvbnN0IHZhbHVlcyA9IG5ldyBT"
++            + "ZXQoKTsKICAgIGNvbnN0IHNlbGVjdG9ycyA9IFsKICAgICAgJ1tkYXRhLXZpdGxhbmUtdW5pdC1wcmljZS1rcnddJywKICAgICAg"
++            + "J21ldGFbcHJvcGVydHk9InByb2R1Y3Q6cHJpY2U6YW1vdW50Il0nLAogICAgICAnW2l0ZW1wcm9wPSJwcmljZSJdJywKICAgICAg"
++            + "Jy5wcm9kLXNhbGUtcHJpY2UgLnRvdGFsLXByaWNlJywKICAgICAgJy50b3RhbC1wcmljZSA+IHN0cm9uZycsCiAgICBdOwogICAg"
++            + "Zm9yIChjb25zdCBlbGVtZW50IG9mIHNjb3BlLnF1ZXJ5U2VsZWN0b3JBbGwoc2VsZWN0b3JzLmpvaW4oJywnKSkpIHsKICAgICAg"
++            + "aWYgKGVsZW1lbnQudGFnTmFtZSAhPT0gJ01FVEEnICYmICF2aXNpYmxlKGVsZW1lbnQpKSBjb250aW51ZTsKICAgICAgY29uc3Qg"
++            + "cmF3ID0gZWxlbWVudC5nZXRBdHRyaWJ1dGUoJ2RhdGEtdml0bGFuZS11bml0LXByaWNlLWtydycpIHx8IGVsZW1lbnQuZ2V0QXR0"
++            + "cmlidXRlKCdjb250ZW50JykgfHwKICAgICAgICBlbGVtZW50LmdldEF0dHJpYnV0ZSgndmFsdWUnKSB8fCBlbGVtZW50LnRleHRD"
++            + "b250ZW50OwogICAgICBjb25zdCBhbW91bnQgPSAvXlxzKlsxLTldWzAtOV17MCwxMn1ccyokLy50ZXN0KFN0cmluZyhyYXcpKSA/"
++            + "IE51bWJlcihTdHJpbmcocmF3KS50cmltKCkpIDogd29uRnJvbVRleHQocmF3KTsKICAgICAgaWYgKGJvdW5kZWRXb24oYW1vdW50"
++            + "KSkgdmFsdWVzLmFkZChhbW91bnQpOwogICAgfQogICAgcmV0dXJuIHZhbHVlcy5zaXplID09PSAxID8gWy4uLnZhbHVlc11bMF0g"
++            + "OiBudWxsOwogIH0KCiAgZnVuY3Rpb24gcXVhbnRpdHlJbihzY29wZSwgZXhwZWN0ZWQpIHsKICAgIGNvbnN0IGZpZWxkcyA9IEFy"
++            + "cmF5LmZyb20oc2NvcGUucXVlcnlTZWxlY3RvckFsbCgKICAgICAgJ2lucHV0W3R5cGU9Im51bWJlciJdLGlucHV0W25hbWUqPSJx"
++            + "dWFudGl0eSIgaV0sc2VsZWN0W25hbWUqPSJxdWFudGl0eSIgaV0sW2RhdGEtdml0bGFuZS1xdWFudGl0eV0nLAogICAgKSkuZmls"
++            + "dGVyKChlbGVtZW50KSA9PiB2aXNpYmxlKGVsZW1lbnQpKTsKICAgIGNvbnN0IHZhbHVlcyA9IG5ldyBTZXQoZmllbGRzLm1hcCgo"
++            + "ZWxlbWVudCkgPT4gTnVtYmVyKAogICAgICBlbGVtZW50LmdldEF0dHJpYnV0ZSgnZGF0YS12aXRsYW5lLXF1YW50aXR5JykgfHwg"
++            + "ZWxlbWVudC52YWx1ZSB8fCBlbGVtZW50LmdldEF0dHJpYnV0ZSgndmFsdWUnKSwKICAgICkpLmZpbHRlcigodmFsdWUpID0+IE51"
++            + "bWJlci5pc1NhZmVJbnRlZ2VyKHZhbHVlKSAmJiB2YWx1ZSA+PSAxICYmIHZhbHVlIDw9IDk5KSk7CiAgICBpZiAodmFsdWVzLnNp"
++            + "emUgPT09IDApIHJldHVybiBleHBlY3RlZCA9PT0gMTsKICAgIHJldHVybiB2YWx1ZXMuc2l6ZSA9PT0gMSAmJiB2YWx1ZXMuaGFz"
++            + "KGV4cGVjdGVkKTsKICB9CgogIGZ1bmN0aW9uIHVucmVzb2x2ZWRPcHRpb25zKHNjb3BlKSB7CiAgICByZXR1cm4gQXJyYXkuZnJv"
++            + "bShzY29wZS5xdWVyeVNlbGVjdG9yQWxsKCdzZWxlY3QnKSkuc29tZSgoZWxlbWVudCkgPT4gdmlzaWJsZShlbGVtZW50KSAmJiBl"
++            + "bmFibGVkKGVsZW1lbnQpICYmCiAgICAgICghZWxlbWVudC52YWx1ZSB8fCAvXig/OuyEoO2DnXzsmLXshZhccyrshKDtg518Y2hv"
++            + "b3NlfHNlbGVjdCkkL2kudGVzdChjbGVhbihlbGVtZW50LnNlbGVjdGVkT3B0aW9ucz8uWzBdPy50ZXh0Q29udGVudCwgODApKSkp"
++            + "OwogIH0KCiAgZnVuY3Rpb24gYXBwcm92ZWRPcHRpb25zTWF0Y2goc2NvcGUsIG9wdGlvbnMpIHsKICAgIGlmICghcmVjb3JkKG9w"
++            + "dGlvbnMpKSByZXR1cm4gZmFsc2U7CiAgICBpZiAob3B0aW9ucy5raW5kID09PSAnbm9uZScpIHsKICAgICAgcmV0dXJuICFBcnJh"
++            + "eS5mcm9tKHNjb3BlLnF1ZXJ5U2VsZWN0b3JBbGwoCiAgICAgICAgJ3NlbGVjdCxpbnB1dFt0eXBlPSJyYWRpbyJdLFtyb2xlPSJy"
++            + "YWRpbyJdLFtyb2xlPSJvcHRpb24iXSxbZGF0YS1vcHRpb24tZ3JvdXBdIGJ1dHRvbixbZGF0YS1vcHRpb24tZ3JvdXBdIFtyb2xl"
++            + "PSJidXR0b24iXScsCiAgICAgICkpLnNvbWUoKGVsZW1lbnQpID0+IHZpc2libGUoZWxlbWVudCkgJiYgZW5hYmxlZChlbGVtZW50"
++            + "KSk7CiAgICB9CiAgICBpZiAob3B0aW9ucy5raW5kICE9PSAnY2hvaWNlcycgfHwgIUFycmF5LmlzQXJyYXkob3B0aW9ucy5jaG9p"
++            + "Y2VzKSB8fCB1bnJlc29sdmVkT3B0aW9ucyhzY29wZSkpIHJldHVybiBmYWxzZTsKICAgIGNvbnN0IG9wdGlvbkNvbnRyb2xzID0g"
++            + "QXJyYXkuZnJvbShzY29wZS5xdWVyeVNlbGVjdG9yQWxsKAogICAgICAnc2VsZWN0LGlucHV0W3R5cGU9InJhZGlvIl0sW3JvbGU9"
++            + "InJhZGlvIl0sW3JvbGU9Im9wdGlvbiJdLFtkYXRhLW9wdGlvbi1ncm91cF0gYnV0dG9uLFtkYXRhLW9wdGlvbi1ncm91cF0gW3Jv"
++            + "bGU9ImJ1dHRvbiJdJywKICAgICkpLmZpbHRlcigoZWxlbWVudCkgPT4gdmlzaWJsZShlbGVtZW50KSAmJiBlbmFibGVkKGVsZW1l"
++            + "bnQpKTsKICAgIGNvbnN0IGdyb3VwTmFtZU9mID0gKGVsZW1lbnQpID0+IHsKICAgICAgaWYgKGVsZW1lbnQgaW5zdGFuY2VvZiBI"
++            + "VE1MU2VsZWN0RWxlbWVudCkgcmV0dXJuIG5vcm1hbGl6ZWRBY2Nlc3NpYmxlTmFtZShlbGVtZW50KTsKICAgICAgY29uc3QgZ3Jv"
++            + "dXAgPSBlbGVtZW50LmNsb3Nlc3QoJ2ZpZWxkc2V0LFtyb2xlPSJncm91cCJdLFtyb2xlPSJyYWRpb2dyb3VwIl0sW2RhdGEtb3B0"
++            + "aW9uLWdyb3VwXScpOwogICAgICBjb25zdCBsYWJlbCA9IGdyb3VwPy5xdWVyeVNlbGVjdG9yKCdsZWdlbmQsW2RhdGEtb3B0aW9u"
++            + "LWdyb3VwLWxhYmVsXSxbcm9sZT0iaGVhZGluZyJdJyk7CiAgICAgIHJldHVybiBjbGVhbihsYWJlbD8udGV4dENvbnRlbnQgfHwg"
++            + "Z3JvdXA/LmdldEF0dHJpYnV0ZSgnYXJpYS1sYWJlbCcpIHx8ICcnLCAxMjApCiAgICAgICAgLm5vcm1hbGl6ZSgnTkZLQycpLnJl"
++            + "cGxhY2UoL1xzKy9nLCAnICcpLnRyaW0oKTsKICAgIH07CiAgICBjb25zdCBvYnNlcnZlZEdyb3VwcyA9IG5ldyBTZXQob3B0aW9u"
++            + "Q29udHJvbHMubWFwKGdyb3VwTmFtZU9mKSk7CiAgICBjb25zdCBhcHByb3ZlZEdyb3VwcyA9IG5ldyBTZXQob3B0aW9ucy5jaG9p"
++            + "Y2VzLm1hcCgoeyBncm91cE5hbWUgfSkgPT4KICAgICAgU3RyaW5nKGdyb3VwTmFtZSkubm9ybWFsaXplKCdORktDJykucmVwbGFj"
++            + "ZSgvXHMrL2csICcgJykudHJpbSgpKSk7CiAgICBpZiAob2JzZXJ2ZWRHcm91cHMuaGFzKCcnKSB8fCBvYnNlcnZlZEdyb3Vwcy5z"
++            + "aXplICE9PSBhcHByb3ZlZEdyb3Vwcy5zaXplIHx8CiAgICAgICAgWy4uLm9ic2VydmVkR3JvdXBzXS5zb21lKChncm91cCkgPT4g"
++            + "IWFwcHJvdmVkR3JvdXBzLmhhcyhncm91cCkpKSByZXR1cm4gZmFsc2U7CiAgICByZXR1cm4gb3B0aW9ucy5jaG9pY2VzLmV2ZXJ5"
++            + "KCh7IGdyb3VwTmFtZSwgdmFsdWVOYW1lIH0pID0+IHsKICAgICAgY29uc3QgZXhwZWN0ZWRHcm91cCA9IFN0cmluZyhncm91cE5h"
++            + "bWUpLm5vcm1hbGl6ZSgnTkZLQycpLnJlcGxhY2UoL1xzKy9nLCAnICcpLnRyaW0oKTsKICAgICAgY29uc3QgZXhwZWN0ZWRWYWx1"
++            + "ZSA9IFN0cmluZyh2YWx1ZU5hbWUpLm5vcm1hbGl6ZSgnTkZLQycpLnJlcGxhY2UoL1xzKy9nLCAnICcpLnRyaW0oKTsKICAgICAg"
++            + "Y29uc3Qgc2VsZWN0ZWQgPSBbXTsKICAgICAgZm9yIChjb25zdCBlbGVtZW50IG9mIHNjb3BlLnF1ZXJ5U2VsZWN0b3JBbGwoCiAg"
++            + "ICAgICAgJ3NlbGVjdCxpbnB1dFt0eXBlPSJyYWRpbyJdLGJ1dHRvbixbcm9sZT0icmFkaW8iXSxbcm9sZT0ib3B0aW9uIl0sW3Jv"
++            + "bGU9ImJ1dHRvbiJdJywKICAgICAgKSkgewogICAgICAgIGlmICghdmlzaWJsZShlbGVtZW50KSB8fCAhZW5hYmxlZChlbGVtZW50"
++            + "KSkgY29udGludWU7CiAgICAgICAgaWYgKGVsZW1lbnQgaW5zdGFuY2VvZiBIVE1MU2VsZWN0RWxlbWVudCkgewogICAgICAgICAg"
++            + "Y29uc3QgY2hvc2VuID0gY2xlYW4oZWxlbWVudC5zZWxlY3RlZE9wdGlvbnM/LlswXT8udGV4dENvbnRlbnQsIDIwMCkubm9ybWFs"
++            + "aXplKCdORktDJykucmVwbGFjZSgvXHMrL2csICcgJykudHJpbSgpOwogICAgICAgICAgaWYgKG5vcm1hbGl6ZWRBY2Nlc3NpYmxl"
++            + "TmFtZShlbGVtZW50KSA9PT0gZXhwZWN0ZWRHcm91cCAmJiBjaG9zZW4gPT09IGV4cGVjdGVkVmFsdWUpIHNlbGVjdGVkLnB1c2go"
++            + "ZWxlbWVudCk7CiAgICAgICAgICBjb250aW51ZTsKICAgICAgICB9CiAgICAgICAgY29uc3QgZ3JvdXAgPSBlbGVtZW50LmNsb3Nl"
++            + "c3QoJ2ZpZWxkc2V0LFtyb2xlPSJncm91cCJdLFtyb2xlPSJyYWRpb2dyb3VwIl0sW2RhdGEtb3B0aW9uLWdyb3VwXScpOwogICAg"
++            + "ICAgIGNvbnN0IGxhYmVsID0gZ3JvdXA/LnF1ZXJ5U2VsZWN0b3IoJ2xlZ2VuZCxbZGF0YS1vcHRpb24tZ3JvdXAtbGFiZWxdLFty"
++            + "b2xlPSJoZWFkaW5nIl0nKTsKICAgICAgICBjb25zdCBhY3R1YWxHcm91cCA9IGNsZWFuKGxhYmVsPy50ZXh0Q29udGVudCB8fCBn"
++            + "cm91cD8uZ2V0QXR0cmlidXRlKCdhcmlhLWxhYmVsJykgfHwgJycsIDEyMCkKICAgICAgICAgIC5ub3JtYWxpemUoJ05GS0MnKS5y"
++            + "ZXBsYWNlKC9ccysvZywgJyAnKS50cmltKCk7CiAgICAgICAgY29uc3QgaXNTZWxlY3RlZCA9IGVsZW1lbnQuY2hlY2tlZCA9PT0g"
++            + "dHJ1ZSB8fCBlbGVtZW50LmdldEF0dHJpYnV0ZSgnYXJpYS1jaGVja2VkJykgPT09ICd0cnVlJyB8fAogICAgICAgICAgZWxlbWVu"
++            + "dC5nZXRBdHRyaWJ1dGUoJ2FyaWEtc2VsZWN0ZWQnKSA9PT0gJ3RydWUnIHx8IGVsZW1lbnQuY2xhc3NMaXN0LmNvbnRhaW5zKCdz"
++            + "ZWxlY3RlZCcpOwogICAgICAgIGlmIChhY3R1YWxHcm91cCA9PT0gZXhwZWN0ZWRHcm91cCAmJiBub3JtYWxpemVkQWNjZXNzaWJs"
++            + "ZU5hbWUoZWxlbWVudCkgPT09IGV4cGVjdGVkVmFsdWUgJiYgaXNTZWxlY3RlZCkgewogICAgICAgICAgc2VsZWN0ZWQucHVzaChl"
++            + "bGVtZW50KTsKICAgICAgICB9CiAgICAgIH0KICAgICAgcmV0dXJuIHNlbGVjdGVkLmxlbmd0aCA9PT0gMTsKICAgIH0pOwogIH0K"
++            + "CiAgZnVuY3Rpb24gZXhhY3RJbnRlcmFjdGl2ZShzY29wZSwgbmFtZXMsIHBhdHRlcm5zID0gW10pIHsKICAgIGNvbnN0IGNhbmRp"
++            + "ZGF0ZXMgPSBBcnJheS5mcm9tKHNjb3BlLnF1ZXJ5U2VsZWN0b3JBbGwoCiAgICAgICdidXR0b24sYVtocmVmXSxbcm9sZT0iYnV0"
++            + "dG9uIl0sW3JvbGU9ImxpbmsiXSxpbnB1dFt0eXBlPSJidXR0b24iXSxpbnB1dFt0eXBlPSJzdWJtaXQiXScsCiAgICApKS5maWx0"
++            + "ZXIoKGVsZW1lbnQpID0+IHZpc2libGUoZWxlbWVudCkgJiYgZW5hYmxlZChlbGVtZW50KSAmJiBbJ2J1dHRvbicsICdsaW5rJ10u"
++            + "aW5jbHVkZXMoc2VtYW50aWNSb2xlKGVsZW1lbnQpKSk7CiAgICByZXR1cm4gY2FuZGlkYXRlcy5maWx0ZXIoKGVsZW1lbnQpID0+"
++            + "IHsKICAgICAgY29uc3QgbmFtZSA9IG5vcm1hbGl6ZWRBY2Nlc3NpYmxlTmFtZShlbGVtZW50KTsKICAgICAgcmV0dXJuICFGSU5B"
++            + "TF9DT01NSVRNRU5UX05BTUUudGVzdChuYW1lKSAmJiAobmFtZXMuaW5jbHVkZXMobmFtZSkgfHwgcGF0dGVybnMuc29tZSgocGF0"
++            + "dGVybikgPT4gcGF0dGVybi50ZXN0KG5hbWUpKSk7CiAgICB9KTsKICB9CgogIGZ1bmN0aW9uIHByb2R1Y3RMb2NhdGlvbk1hdGNo"
++            + "ZXMobGluZSwgYmluZGluZ3MpIHsKICAgIGlmICghQ09VUEFOR19QUk9EVUNUX09SSUdJTlMuaGFzKGxvY2F0aW9uLm9yaWdpbikg"
++            + "fHwgbG9jYXRpb24ub3JpZ2luICE9PSBiaW5kaW5ncy5leHBlY3RlZE9yaWdpbiB8fAogICAgICAgIGxvY2F0aW9uLnBhdGhuYW1l"
++            + "ICE9PSBiaW5kaW5ncy5leHBlY3RlZFBhdGgpIHJldHVybiBmYWxzZTsKICAgIGlmICghbmV3IFJlZ0V4cChgXi92cC9wcm9kdWN0"
++            + "cy8ke2xpbmUucHJvZHVjdElkfS8/JGApLnRlc3QobG9jYXRpb24ucGF0aG5hbWUpKSByZXR1cm4gZmFsc2U7CiAgICBjb25zdCBw"
++            + "YXJhbXMgPSBuZXcgVVJMKGxvY2F0aW9uLmhyZWYpLnNlYXJjaFBhcmFtczsKICAgIGNvbnN0IGl0ZW1JZHMgPSBwYXJhbXMuZ2V0"
++            + "QWxsKCdpdGVtSWQnKTsKICAgIGNvbnN0IHZlbmRvckl0ZW1JZHMgPSBwYXJhbXMuZ2V0QWxsKCd2ZW5kb3JJdGVtSWQnKTsKICAg"
++            + "IHJldHVybiBpdGVtSWRzLmxlbmd0aCA9PT0gMSAmJiB2ZW5kb3JJdGVtSWRzLmxlbmd0aCA9PT0gMSAmJgogICAgICBpdGVtSWRz"
++            + "WzBdID09PSBsaW5lLml0ZW1JZCAmJiB2ZW5kb3JJdGVtSWRzWzBdID09PSBsaW5lLnZlbmRvckl0ZW1JZDsKICB9CgogIGZ1bmN0"
++            + "aW9uIHByb2R1Y3RQcmVwYXJhdGlvbihiaW5kaW5ncywgc3RlcElkKSB7CiAgICBjb25zdCBiYXNlS2V5cyA9IFsKICAgICAgJ2Fw"
++            + "cHJvdmVkUHJlcGFyYXRpb24nLCAnYXBwcm92YWwnLCAndGFyZ2V0TGluZUluZGV4JywgJ3Byb2R1Y3RJZCcsICdpdGVtSWQnLCAn"
++            + "dmVuZG9ySXRlbUlkJywKICAgICAgJ3F1YW50aXR5JywgJ3VuaXRQcmljZUNlaWxpbmdLcncnLCAnbGluZVByaWNlQ2VpbGluZ0ty"
++            + "dycsICdleHBlY3RlZE9yaWdpbicsICdleHBlY3RlZFBhdGgnLAogICAgXTsKICAgIGNvbnN0IHJlcXVpcmVkID0gc3RlcElkID09"
++            + "PSAnc2VsZWN0X29wdGlvbicKICAgICAgPyBbLi4uYmFzZUtleXMsICd0YXJnZXRPcHRpb25JbmRleCcsICdncm91cE5hbWUnLCAn"
++            + "dmFsdWVOYW1lJ10KICAgICAgOiBiYXNlS2V5czsKICAgIGlmICghZXhhY3RSZWNvcmQoYmluZGluZ3MsIHJlcXVpcmVkKSkgcmV0"
++            + "dXJuIHsgY29kZTogJ1BPTElDWV9ERU5JRUQnIH07CiAgICBjb25zdCBhdXRob3JpemVkID0gYXBwcm92YWwoYmluZGluZ3MuYXBw"
++            + "cm92YWwpOwogICAgY29uc3QgbGluZSA9IGFwcHJvdmVkTGluZSh7CiAgICAgIHByb2R1Y3RJZDogYmluZGluZ3MucHJvZHVjdElk"
++            + "LAogICAgICBpdGVtSWQ6IGJpbmRpbmdzLml0ZW1JZCwKICAgICAgdmVuZG9ySXRlbUlkOiBiaW5kaW5ncy52ZW5kb3JJdGVtSWQs"
++            + "CiAgICAgIHF1YW50aXR5OiBiaW5kaW5ncy5xdWFudGl0eSwKICAgICAgdW5pdFByaWNlQ2VpbGluZ0tydzogYmluZGluZ3MudW5p"
++            + "dFByaWNlQ2VpbGluZ0tydywKICAgICAgbGluZVByaWNlQ2VpbGluZ0tydzogYmluZGluZ3MubGluZVByaWNlQ2VpbGluZ0tydywK"
++            + "ICAgIH0pOwogICAgY29uc3QgcGxhbiA9IGF1dGhvcml6ZWQgJiYgYXBwcm92ZWRQbGFuKGJpbmRpbmdzLmFwcHJvdmVkUHJlcGFy"
++            + "YXRpb24sIGJpbmRpbmdzLmFwcHJvdmFsKTsKICAgIGlmICghYXV0aG9yaXplZCB8fCAhbGluZSB8fCAhcGxhbiB8fCAhTnVtYmVy"
++            + "LmlzU2FmZUludGVnZXIoYmluZGluZ3MudGFyZ2V0TGluZUluZGV4KSB8fAogICAgICAgIGJpbmRpbmdzLnRhcmdldExpbmVJbmRl"
++            + "eCA8IDAgfHwgYmluZGluZ3MudGFyZ2V0TGluZUluZGV4ID49IHBsYW4ubGluZXMubGVuZ3RoIHx8CiAgICAgICAgIXNhbWVKc29u"
++            + "KHBsYW4ubGluZXNbYmluZGluZ3MudGFyZ2V0TGluZUluZGV4XSwgbGluZSkgfHwKICAgICAgICAoc3RlcElkID09PSAnYnV5X25v"
++            + "dycgJiYgcGxhbi5tb2RlICE9PSAnc2luZ2xlJykgfHwKICAgICAgICAoc3RlcElkID09PSAnYWRkX3RvX2NhcnQnICYmIHBsYW4u"
++            + "bW9kZSAhPT0gJ211bHRpJykgfHwKICAgICAgICAhcHJvZHVjdExvY2F0aW9uTWF0Y2hlcyhsaW5lLCBiaW5kaW5ncykpIHJldHVy"
++            + "biB7IGNvZGU6ICdBUFBST1ZBTF9QQUdFX01JU01BVENIJyB9OwogICAgY29uc3Qgc2NvcGUgPSBkb2N1bWVudC5xdWVyeVNlbGVj"
++            + "dG9yKCdtYWluLFtpdGVtdHlwZSo9IlByb2R1Y3QiXSwjY29udGVudHMnKTsKICAgIGlmICghc2NvcGUgfHwgIXZpc2libGUoc2Nv"
++            + "cGUpKSByZXR1cm4geyBjb2RlOiAnUFJPRFVDVF9TVEFURV9NSVNNQVRDSCcgfTsKICAgIGNvbnN0IGFwcHJvdmVkSXRlbSA9IGJp"
++            + "bmRpbmdzLmFwcHJvdmVkUHJlcGFyYXRpb24uaXRlbXNbYmluZGluZ3MudGFyZ2V0TGluZUluZGV4XTsKCiAgICBpZiAoc3RlcElk"
++            + "ID09PSAnc2VsZWN0X29wdGlvbicpIHsKICAgICAgaWYgKCFOdW1iZXIuaXNTYWZlSW50ZWdlcihiaW5kaW5ncy50YXJnZXRPcHRp"
++            + "b25JbmRleCkgfHwgYmluZGluZ3MudGFyZ2V0T3B0aW9uSW5kZXggPCAwIHx8CiAgICAgICAgICB0eXBlb2YgYmluZGluZ3MuZ3Jv"
++            + "dXBOYW1lICE9PSAnc3RyaW5nJyB8fCB0eXBlb2YgYmluZGluZ3MudmFsdWVOYW1lICE9PSAnc3RyaW5nJykgewogICAgICAgIHJl"
++            + "dHVybiB7IGNvZGU6ICdQT0xJQ1lfREVOSUVEJyB9OwogICAgICB9CiAgICAgIGNvbnN0IGV4cGVjdGVkR3JvdXAgPSBiaW5kaW5n"
++            + "cy5ncm91cE5hbWUubm9ybWFsaXplKCdORktDJykucmVwbGFjZSgvXHMrL2csICcgJykudHJpbSgpOwogICAgICBjb25zdCBleHBl"
++            + "Y3RlZFZhbHVlID0gYmluZGluZ3MudmFsdWVOYW1lLm5vcm1hbGl6ZSgnTkZLQycpLnJlcGxhY2UoL1xzKy9nLCAnICcpLnRyaW0o"
++            + "KTsKICAgICAgY29uc3QgbWF0Y2hlcyA9IFtdOwogICAgICBmb3IgKGNvbnN0IGVsZW1lbnQgb2Ygc2NvcGUucXVlcnlTZWxlY3Rv"
++            + "ckFsbCgKICAgICAgICAnc2VsZWN0LGlucHV0W3R5cGU9InJhZGlvIl0sYnV0dG9uLFtyb2xlPSJyYWRpbyJdLFtyb2xlPSJvcHRp"
++            + "b24iXSxbcm9sZT0iYnV0dG9uIl0nLAogICAgICApKSB7CiAgICAgICAgaWYgKCF2aXNpYmxlKGVsZW1lbnQpIHx8ICFlbmFibGVk"
++            + "KGVsZW1lbnQpKSBjb250aW51ZTsKICAgICAgICBpZiAoZWxlbWVudCBpbnN0YW5jZW9mIEhUTUxTZWxlY3RFbGVtZW50KSB7CiAg"
++            + "ICAgICAgICBjb25zdCBncm91cCA9IG5vcm1hbGl6ZWRBY2Nlc3NpYmxlTmFtZShlbGVtZW50KTsKICAgICAgICAgIGNvbnN0IG9w"
++            + "dGlvbnMgPSBBcnJheS5mcm9tKGVsZW1lbnQub3B0aW9ucykuZmlsdGVyKChvcHRpb24pID0+CiAgICAgICAgICAgIGNsZWFuKG9w"
++            + "dGlvbi50ZXh0Q29udGVudCwgMjAwKS5ub3JtYWxpemUoJ05GS0MnKS5yZXBsYWNlKC9ccysvZywgJyAnKS50cmltKCkgPT09IGV4"
++            + "cGVjdGVkVmFsdWUgJiYgIW9wdGlvbi5kaXNhYmxlZCk7CiAgICAgICAgICBpZiAoZ3JvdXAgPT09IGV4cGVjdGVkR3JvdXAgJiYg"
++            + "b3B0aW9ucy5sZW5ndGggPT09IDEpIG1hdGNoZXMucHVzaCh7IHRhcmdldDogZWxlbWVudCwgb3B0aW9uOiBvcHRpb25zWzBdIH0p"
++            + "OwogICAgICAgICAgY29udGludWU7CiAgICAgICAgfQogICAgICAgIGNvbnN0IGdyb3VwID0gZWxlbWVudC5jbG9zZXN0KCdmaWVs"
++            + "ZHNldCxbcm9sZT0iZ3JvdXAiXSxbcm9sZT0icmFkaW9ncm91cCJdLFtkYXRhLW9wdGlvbi1ncm91cF0nKTsKICAgICAgICBjb25z"
++            + "dCBsYWJlbCA9IGdyb3VwPy5xdWVyeVNlbGVjdG9yKCdsZWdlbmQsW2RhdGEtb3B0aW9uLWdyb3VwLWxhYmVsXSxbcm9sZT0iaGVh"
++            + "ZGluZyJdJyk7CiAgICAgICAgY29uc3QgZ3JvdXBOYW1lID0gY2xlYW4obGFiZWw/LnRleHRDb250ZW50IHx8IGdyb3VwPy5nZXRB"
++            + "dHRyaWJ1dGUoJ2FyaWEtbGFiZWwnKSB8fCAnJywgMTIwKQogICAgICAgICAgLm5vcm1hbGl6ZSgnTkZLQycpLnJlcGxhY2UoL1xz"
++            + "Ky9nLCAnICcpLnRyaW0oKTsKICAgICAgICBpZiAobm9ybWFsaXplZEFjY2Vzc2libGVOYW1lKGVsZW1lbnQpID09PSBleHBlY3Rl"
++            + "ZFZhbHVlICYmIGdyb3VwTmFtZSA9PT0gZXhwZWN0ZWRHcm91cCkgewogICAgICAgICAgbWF0Y2hlcy5wdXNoKHsgdGFyZ2V0OiBl"
++            + "bGVtZW50LCBvcHRpb246IG51bGwgfSk7CiAgICAgICAgfQogICAgICB9CiAgICAgIGlmIChtYXRjaGVzLmxlbmd0aCAhPT0gMSkg"
++            + "cmV0dXJuIHsgY29kZTogbWF0Y2hlcy5sZW5ndGggPyAnQ09OVFJPTF9BTUJJR1VPVVMnIDogJ0NPTlRST0xfTk9UX0ZPVU5EJyB9"
++            + "OwogICAgICByZXR1cm4geyAuLi5tYXRjaGVzWzBdLCBhdXRob3JpemVkLCBsaW5lczogW2xpbmVdLCBjb2RlOiAnUkVBRFknIH07"
++            + "CiAgICB9CgogICAgaWYgKHN0ZXBJZCA9PT0gJ3NldF9xdWFudGl0eScpIHsKICAgICAgY29uc3QgZmllbGRzID0gQXJyYXkuZnJv"
++            + "bShzY29wZS5xdWVyeVNlbGVjdG9yQWxsKAogICAgICAgICdpbnB1dFt0eXBlPSJudW1iZXIiXSxpbnB1dFtpbnB1dG1vZGU9Im51"
++            + "bWVyaWMiXSxpbnB1dFtuYW1lKj0icXVhbnRpdHkiIGldLGlucHV0W2lkKj0icXVhbnRpdHkiIGldJywKICAgICAgKSkuZmlsdGVy"
++            + "KChlbGVtZW50KSA9PiB2aXNpYmxlKGVsZW1lbnQpICYmIGVuYWJsZWQoZWxlbWVudCkpOwogICAgICBpZiAoZmllbGRzLmxlbmd0"
++            + "aCAhPT0gMSkgcmV0dXJuIHsgY29kZTogZmllbGRzLmxlbmd0aCA/ICdDT05UUk9MX0FNQklHVU9VUycgOiAnQ09OVFJPTF9OT1Rf"
++            + "Rk9VTkQnIH07CiAgICAgIHJldHVybiB7IHRhcmdldDogZmllbGRzWzBdLCBkZXNpcmVkUXVhbnRpdHk6IGxpbmUucXVhbnRpdHks"
++            + "IGF1dGhvcml6ZWQsIGxpbmVzOiBbbGluZV0sIGNvZGU6ICdSRUFEWScgfTsKICAgIH0KCiAgICBpZiAoc3RlcElkID09PSAndmVy"
++            + "aWZ5X29wdGlvbnMnKSB7CiAgICAgIGlmICghYXBwcm92ZWRPcHRpb25zTWF0Y2goc2NvcGUsIGFwcHJvdmVkSXRlbS5vcHRpb25z"
++            + "KSkgcmV0dXJuIHsgY29kZTogJ1BST0RVQ1RfU1RBVEVfTUlTTUFUQ0gnIH07CiAgICAgIGNvbnN0IHByaWNlID0gZXhhY3RVbml0"
++            + "UHJpY2Uoc2NvcGUpOwogICAgICBpZiAoIXByaWNlIHx8IHByaWNlID4gbGluZS51bml0UHJpY2VDZWlsaW5nS3J3IHx8IHByaWNl"
++            + "ICogbGluZS5xdWFudGl0eSA+IGxpbmUubGluZVByaWNlQ2VpbGluZ0tydyB8fAogICAgICAgICAgcHJpY2UgKiBsaW5lLnF1YW50"
++            + "aXR5ID4gYXV0aG9yaXplZC50b3RhbFByaWNlQ2VpbGluZ0tydykgcmV0dXJuIHsgY29kZTogJ1BSSUNFX0NFSUxJTkdfRVhDRUVE"
++            + "RUQnIH07CiAgICAgIHJldHVybiB7IHZlcmlmeU9ubHk6IHRydWUsIGF1dGhvcml6ZWQsIGxpbmVzOiBbbGluZV0sIHByaWNlLCBj"
++            + "b2RlOiAnUkVBRFknIH07CiAgICB9CgogICAgaWYgKCFhcHByb3ZlZE9wdGlvbnNNYXRjaChzY29wZSwgYXBwcm92ZWRJdGVtLm9w"
++            + "dGlvbnMpIHx8ICFxdWFudGl0eUluKHNjb3BlLCBsaW5lLnF1YW50aXR5KSkgewogICAgICByZXR1cm4geyBjb2RlOiAnUFJPRFVD"
++            + "VF9TVEFURV9NSVNNQVRDSCcgfTsKICAgIH0KICAgIGNvbnN0IHByaWNlID0gZXhhY3RVbml0UHJpY2Uoc2NvcGUpOwogICAgaWYg"
++            + "KCFwcmljZSB8fCBwcmljZSA+IGxpbmUudW5pdFByaWNlQ2VpbGluZ0tydyB8fCBwcmljZSAqIGxpbmUucXVhbnRpdHkgPiBsaW5l"
++            + "LmxpbmVQcmljZUNlaWxpbmdLcncgfHwKICAgICAgICBwcmljZSAqIGxpbmUucXVhbnRpdHkgPiBhdXRob3JpemVkLnRvdGFsUHJp"
++            + "Y2VDZWlsaW5nS3J3KSByZXR1cm4geyBjb2RlOiAnUFJJQ0VfQ0VJTElOR19FWENFRURFRCcgfTsKICAgIGNvbnN0IG5hbWVzID0g"
++            + "c3RlcElkID09PSAnYnV5X25vdycgPyBbJ+uwlOuhnOq1rOunpCcsICfrsJTroZwg6rWs66ekJ10gOiBbJ+yepeuwlOq1rOuLiCDr"
++            + "i7TquLAnXTsKICAgIGNvbnN0IG1hdGNoZXMgPSBleGFjdEludGVyYWN0aXZlKHNjb3BlLCBuYW1lcyk7CiAgICBpZiAobWF0Y2hl"
++            + "cy5sZW5ndGggIT09IDEpIHJldHVybiB7IGNvZGU6IG1hdGNoZXMubGVuZ3RoID8gJ0NPTlRST0xfQU1CSUdVT1VTJyA6ICdDT05U"
++            + "Uk9MX05PVF9GT1VORCcgfTsKICAgIHJldHVybiB7IHRhcmdldDogbWF0Y2hlc1swXSwgYXV0aG9yaXplZCwgbGluZXM6IFtsaW5l"
++            + "XSwgcHJpY2UsIGNvZGU6ICdSRUFEWScgfTsKICB9CgogIGZ1bmN0aW9uIGlkZW50aXR5RnJvbVByb2R1Y3RMaW5rKGVsZW1lbnQp"
++            + "IHsKICAgIGxldCB1cmw7CiAgICB0cnkgeyB1cmwgPSBuZXcgVVJMKGVsZW1lbnQuaHJlZiwgbG9jYXRpb24uaHJlZik7IH0gY2F0"
++            + "Y2ggeyByZXR1cm4gbnVsbDsgfQogICAgY29uc3QgbWF0Y2ggPSB1cmwucGF0aG5hbWUubWF0Y2goL15cL3ZwXC9wcm9kdWN0c1wv"
++            + "KFsxLTldWzAtOV0qKVwvPyQvKTsKICAgIGNvbnN0IGl0ZW1JZHMgPSB1cmwuc2VhcmNoUGFyYW1zLmdldEFsbCgnaXRlbUlkJyk7"
++            + "CiAgICBjb25zdCB2ZW5kb3JJdGVtSWRzID0gdXJsLnNlYXJjaFBhcmFtcy5nZXRBbGwoJ3ZlbmRvckl0ZW1JZCcpOwogICAgaWYg"
++            + "KCFtYXRjaCB8fCBpdGVtSWRzLmxlbmd0aCAhPT0gMSB8fCB2ZW5kb3JJdGVtSWRzLmxlbmd0aCAhPT0gMSB8fAogICAgICAgICEv"
++            + "XlsxLTldWzAtOV17MCwxOX0kLy50ZXN0KGl0ZW1JZHNbMF0pIHx8ICEvXlsxLTldWzAtOV17MCwxOX0kLy50ZXN0KHZlbmRvckl0"
++            + "ZW1JZHNbMF0pKSByZXR1cm4gbnVsbDsKICAgIHJldHVybiB7IHByb2R1Y3RJZDogbWF0Y2hbMV0sIGl0ZW1JZDogaXRlbUlkc1sw"
++            + "XSwgdmVuZG9ySXRlbUlkOiB2ZW5kb3JJdGVtSWRzWzBdIH07CiAgfQoKICBmdW5jdGlvbiBjYXJ0TGluZVJvb3QobGluaykgewog"
++            + "ICAgcmV0dXJuIGxpbmsuY2xvc2VzdCgnW2RhdGEtdml0bGFuZS1jYXJ0LWxpbmVdLGxpLGFydGljbGUsdHIsW3JvbGU9InJvdyJd"
++            + "LFtjbGFzcyo9ImNhcnQtdW5pdC1pdGVtIiBpXSxbY2xhc3MqPSJjYXJ0LWl0ZW0iIGldJyk7CiAgfQoKICBmdW5jdGlvbiBsaW5l"
++            + "S2V5KGxpbmUpIHsKICAgIHJldHVybiBgJHtsaW5lLnByb2R1Y3RJZH06JHtsaW5lLml0ZW1JZH06JHtsaW5lLnZlbmRvckl0ZW1J"
++            + "ZH1gOwogIH0KCiAgZnVuY3Rpb24gc2VsZWN0ZWRDYXJ0TGluZXMoc2NvcGUpIHsKICAgIGNvbnN0IGZvdW5kID0gbmV3IE1hcCgp"
++            + "OwogICAgY29uc3Qgc2VlblJvb3RzID0gbmV3IFNldCgpOwogICAgbGV0IG1hbGZvcm1lZFNlbGVjdGVkTGluZSA9IGZhbHNlOwog"
++            + "ICAgZm9yIChjb25zdCBsaW5rIG9mIHNjb3BlLnF1ZXJ5U2VsZWN0b3JBbGwoJ2FbaHJlZio9Ii92cC9wcm9kdWN0cy8iXScpKSB7"
++            + "CiAgICAgIGNvbnN0IHJvb3QgPSBjYXJ0TGluZVJvb3QobGluayk7CiAgICAgIGlmICghcm9vdCB8fCBzZWVuUm9vdHMuaGFzKHJv"
++            + "b3QpKSBjb250aW51ZTsKICAgICAgc2VlblJvb3RzLmFkZChyb290KTsKICAgICAgY29uc3QgY2hlY2tib3hlcyA9IEFycmF5LmZy"
++            + "b20ocm9vdC5xdWVyeVNlbGVjdG9yQWxsKCdpbnB1dFt0eXBlPSJjaGVja2JveCJdLFtyb2xlPSJjaGVja2JveCJdJykpLmZpbHRl"
++            + "cih2aXNpYmxlKTsKICAgICAgY29uc3Qgc2VsZWN0ZWQgPSBjaGVja2JveGVzLnNvbWUoKGJveCkgPT4gYm94LmNoZWNrZWQgPT09"
++            + "IHRydWUgfHwgYm94LmdldEF0dHJpYnV0ZSgnYXJpYS1jaGVja2VkJykgPT09ICd0cnVlJyk7CiAgICAgIGlmICghc2VsZWN0ZWQp"
++            + "IGNvbnRpbnVlOwogICAgICBjb25zdCBpZGVudGl0eSA9IGlkZW50aXR5RnJvbVByb2R1Y3RMaW5rKGxpbmspOwogICAgICBpZiAo"
++            + "IWlkZW50aXR5KSB7IG1hbGZvcm1lZFNlbGVjdGVkTGluZSA9IHRydWU7IGNvbnRpbnVlOyB9CiAgICAgIGNvbnN0IHF1YW50aXR5"
++            + "RmllbGRzID0gQXJyYXkuZnJvbShyb290LnF1ZXJ5U2VsZWN0b3JBbGwoCiAgICAgICAgJ2lucHV0W3R5cGU9Im51bWJlciJdLGlu"
++            + "cHV0W25hbWUqPSJxdWFudGl0eSIgaV0sc2VsZWN0W25hbWUqPSJxdWFudGl0eSIgaV0sW2RhdGEtdml0bGFuZS1xdWFudGl0eV0n"
++            + "LAogICAgICApKS5maWx0ZXIodmlzaWJsZSk7CiAgICAgIGNvbnN0IHF1YW50aXRpZXMgPSBuZXcgU2V0KHF1YW50aXR5RmllbGRz"
++            + "Lm1hcCgoZmllbGQpID0+IE51bWJlcigKICAgICAgICBmaWVsZC5nZXRBdHRyaWJ1dGUoJ2RhdGEtdml0bGFuZS1xdWFudGl0eScp"
++            + "IHx8IGZpZWxkLnZhbHVlIHx8IGZpZWxkLmdldEF0dHJpYnV0ZSgndmFsdWUnKSwKICAgICAgKSkuZmlsdGVyKCh2YWx1ZSkgPT4g"
++            + "TnVtYmVyLmlzU2FmZUludGVnZXIodmFsdWUpICYmIHZhbHVlID49IDEgJiYgdmFsdWUgPD0gOTkpKTsKICAgICAgY29uc3QgcXVh"
++            + "bnRpdHkgPSBxdWFudGl0aWVzLnNpemUgPT09IDEgPyBbLi4ucXVhbnRpdGllc11bMF0gOiBudWxsOwogICAgICBjb25zdCB1bml0"
++            + "UHJpY2UgPSBleGFjdFVuaXRQcmljZShyb290KTsKICAgICAgaWYgKCFxdWFudGl0eSB8fCAhdW5pdFByaWNlIHx8IGZvdW5kLmhh"
++            + "cyhsaW5lS2V5KGlkZW50aXR5KSkpIG1hbGZvcm1lZFNlbGVjdGVkTGluZSA9IHRydWU7CiAgICAgIGVsc2UgZm91bmQuc2V0KGxp"
++            + "bmVLZXkoaWRlbnRpdHkpLCB7IHJvb3QsIGlkZW50aXR5LCBxdWFudGl0eSwgdW5pdFByaWNlIH0pOwogICAgfQogICAgcmV0dXJu"
++            + "IHsgZm91bmQsIG1hbGZvcm1lZFNlbGVjdGVkTGluZSB9OwogIH0KCiAgZnVuY3Rpb24gY2FydFByZXBhcmF0aW9uKGJpbmRpbmdz"
++            + "KSB7CiAgICBpZiAoIWV4YWN0UmVjb3JkKGJpbmRpbmdzLCBbJ2FwcHJvdmVkUHJlcGFyYXRpb24nLCAnYXBwcm92YWwnLCAnYXBw"
++            + "cm92ZWRMaW5lcycsICdleHBlY3RlZE9yaWdpbicsICdleHBlY3RlZFBhdGgnXSkgfHwKICAgICAgICAhQXJyYXkuaXNBcnJheShi"
++            + "aW5kaW5ncy5hcHByb3ZlZExpbmVzKSB8fCBiaW5kaW5ncy5hcHByb3ZlZExpbmVzLmxlbmd0aCA8IDIgfHwgYmluZGluZ3MuYXBw"
++            + "cm92ZWRMaW5lcy5sZW5ndGggPiAyMCkgewogICAgICByZXR1cm4geyBjb2RlOiAnUE9MSUNZX0RFTklFRCcgfTsKICAgIH0KICAg"
++            + "IGNvbnN0IGF1dGhvcml6ZWQgPSBhcHByb3ZhbChiaW5kaW5ncy5hcHByb3ZhbCk7CiAgICBjb25zdCBsaW5lcyA9IGJpbmRpbmdz"
++            + "LmFwcHJvdmVkTGluZXMubWFwKGFwcHJvdmVkTGluZSk7CiAgICBjb25zdCBwbGFuID0gYXV0aG9yaXplZCAmJiBhcHByb3ZlZFBs"
++            + "YW4oYmluZGluZ3MuYXBwcm92ZWRQcmVwYXJhdGlvbiwgYmluZGluZ3MuYXBwcm92YWwpOwogICAgaWYgKCFhdXRob3JpemVkIHx8"
++            + "ICFwbGFuIHx8IHBsYW4ubW9kZSAhPT0gJ211bHRpJyB8fCBsaW5lcy5zb21lKChsaW5lKSA9PiAhbGluZSkgfHwKICAgICAgICAh"
++            + "c2FtZUpzb24ocGxhbi5saW5lcywgbGluZXMpIHx8IG5ldyBTZXQobGluZXMubWFwKGxpbmVLZXkpKS5zaXplICE9PSBsaW5lcy5s"
++            + "ZW5ndGggfHwKICAgICAgICBsb2NhdGlvbi5vcmlnaW4gIT09IGJpbmRpbmdzLmV4cGVjdGVkT3JpZ2luIHx8IGxvY2F0aW9uLnBh"
++            + "dGhuYW1lICE9PSBiaW5kaW5ncy5leHBlY3RlZFBhdGggfHwKICAgICAgICAhQ09VUEFOR19DQVJUX1BBR0VTLmhhcyhgJHtsb2Nh"
++            + "dGlvbi5vcmlnaW59JHtsb2NhdGlvbi5wYXRobmFtZX1gKSkgcmV0dXJuIHsgY29kZTogJ0FQUFJPVkFMX1BBR0VfTUlTTUFUQ0gn"
++            + "IH07CiAgICBjb25zdCBzY29wZSA9IEFycmF5LmZyb20oZG9jdW1lbnQucXVlcnlTZWxlY3RvckFsbCgnbWFpbixbZGF0YS12aXRs"
++            + "YW5lLWNhcnRdLCNjYXJ0Q29udGVudCxbY2xhc3MqPSJjYXJ0IiBpXScpKQogICAgICAuZmluZCgoY2FuZGlkYXRlKSA9PiB2aXNp"
++            + "YmxlKGNhbmRpZGF0ZSkgJiYgY2FuZGlkYXRlLnF1ZXJ5U2VsZWN0b3IoJ2FbaHJlZio9Ii92cC9wcm9kdWN0cy8iXScpKTsKICAg"
++            + "IGlmICghc2NvcGUgfHwgIXZpc2libGUoc2NvcGUpKSByZXR1cm4geyBjb2RlOiAnQ0FSVF9TVEFURV9NSVNNQVRDSCcgfTsKICAg"
++            + "IGNvbnN0IG9ic2VydmVkID0gc2VsZWN0ZWRDYXJ0TGluZXMoc2NvcGUpOwogICAgaWYgKG9ic2VydmVkLm1hbGZvcm1lZFNlbGVj"
++            + "dGVkTGluZSB8fCBvYnNlcnZlZC5mb3VuZC5zaXplICE9PSBsaW5lcy5sZW5ndGgpIHJldHVybiB7IGNvZGU6ICdDQVJUX1NFTEVD"
++            + "VElPTl9NSVNNQVRDSCcgfTsKICAgIGxldCB0b3RhbCA9IDA7CiAgICBjb25zdCByb290cyA9IFtdOwogICAgZm9yIChjb25zdCBs"
++            + "aW5lIG9mIGxpbmVzKSB7CiAgICAgIGNvbnN0IGN1cnJlbnQgPSBvYnNlcnZlZC5mb3VuZC5nZXQobGluZUtleShsaW5lKSk7CiAg"
++            + "ICAgIGlmICghY3VycmVudCB8fCBjdXJyZW50LnF1YW50aXR5ICE9PSBsaW5lLnF1YW50aXR5IHx8IGN1cnJlbnQudW5pdFByaWNl"
++            + "ID4gbGluZS51bml0UHJpY2VDZWlsaW5nS3J3IHx8CiAgICAgICAgICBjdXJyZW50LnVuaXRQcmljZSAqIGN1cnJlbnQucXVhbnRp"
++            + "dHkgPiBsaW5lLmxpbmVQcmljZUNlaWxpbmdLcncpIHJldHVybiB7IGNvZGU6ICdDQVJUX1NFTEVDVElPTl9NSVNNQVRDSCcgfTsK"
++            + "ICAgICAgdG90YWwgKz0gY3VycmVudC51bml0UHJpY2UgKiBjdXJyZW50LnF1YW50aXR5OwogICAgICByb290cy5wdXNoKGN1cnJl"
++            + "bnQucm9vdCk7CiAgICB9CiAgICBpZiAodG90YWwgPiBhdXRob3JpemVkLnRvdGFsUHJpY2VDZWlsaW5nS3J3KSByZXR1cm4geyBj"
++            + "b2RlOiAnUFJJQ0VfQ0VJTElOR19FWENFRURFRCcgfTsKICAgIGNvbnN0IG1hdGNoZXMgPSBleGFjdEludGVyYWN0aXZlKHNjb3Bl"
++            + "LCBbJ+q1rOunpO2VmOq4sCcsICfshKDtg53sg4Htkogg6rWs66ek7ZWY6riwJywgJ+yEoO2DnSDsg4Htkogg6rWs66ek7ZWY6riw"
++            + "J10sIFsKICAgICAgL15bMS05XVswLTldKuqwnCDsg4Htkogg6rWs66ek7ZWY6riwJC8sCiAgICAgIC9e6rWs66ek7ZWY6riwXHMq"
++            + "XChbMS05XVswLTldKig/OuqwnCk/XCkkLywKICAgIF0pLmZpbHRlcigodGFyZ2V0KSA9PiByb290cy5ldmVyeSgocm9vdCkgPT4g"
++            + "c2NvcGUuY29udGFpbnMocm9vdCkpICYmIHNjb3BlLmNvbnRhaW5zKHRhcmdldCkpOwogICAgaWYgKG1hdGNoZXMubGVuZ3RoICE9"
++            + "PSAxKSByZXR1cm4geyBjb2RlOiBtYXRjaGVzLmxlbmd0aCA/ICdDT05UUk9MX0FNQklHVU9VUycgOiAnQ09OVFJPTF9OT1RfRk9V"
++            + "TkQnIH07CiAgICByZXR1cm4geyB0YXJnZXQ6IG1hdGNoZXNbMF0sIGF1dGhvcml6ZWQsIGxpbmVzLCBwcmljZTogdG90YWwsIGNv"
++            + "ZGU6ICdSRUFEWScgfTsKICB9CgogIGZ1bmN0aW9uIGNvdXBhbmdQcmVwYXJhdGlvbihhY3Rpb24pIHsKICAgIGlmIChhY3Rpb24u"
++            + "YWRhcHRlcklkICE9PSBDT1VQQU5HX0FEQVBURVIgfHwgYWN0aW9uLnJlY2lwZVZlcnNpb24gIT09ICcxJyB8fAogICAgICAgICFD"
++            + "T1VQQU5HX01VVEFUSU9OX1NURVBTLmhhcyhhY3Rpb24uc3RlcElkKSB8fCAhcmVjb3JkKGFjdGlvbi5iaW5kaW5ncykpIHJldHVy"
++            + "biB7IGNvZGU6ICdQT0xJQ1lfREVOSUVEJyB9OwogICAgcmV0dXJuIGFjdGlvbi5zdGVwSWQgPT09ICdzdGFydF9jaGVja291dCcK"
++            + "ICAgICAgPyBjYXJ0UHJlcGFyYXRpb24oYWN0aW9uLmJpbmRpbmdzKQogICAgICA6IHByb2R1Y3RQcmVwYXJhdGlvbihhY3Rpb24u"
++            + "YmluZGluZ3MsIGFjdGlvbi5zdGVwSWQpOwogIH0KCiAgZnVuY3Rpb24gbmF0aXZlTWV0YWRhdGEocmF3KSB7CiAgICBpZiAoIXJl"
++            + "Y29yZChyYXcpIHx8ICFpZChyYXcudGFiSWQpIHx8ICFpZChyYXcuZnJhbWVJZCkgfHwgIU51bWJlci5pc1NhZmVJbnRlZ2VyKHJh"
++            + "dy5kb2N1bWVudEVwb2NoKSB8fAogICAgICAgIHJhdy5kb2N1bWVudEVwb2NoIDwgMCB8fCByYXcuZm9yZWdyb3VuZCAhPT0gdHJ1"
++            + "ZSB8fCB0eXBlb2YgcmF3LnRvcE9yaWdpbiAhPT0gJ3N0cmluZycgfHwKICAgICAgICB0eXBlb2YgcmF3LmZyYW1lT3JpZ2luICE9"
++            + "PSAnc3RyaW5nJyB8fCB0eXBlb2YgcmF3LnBhdGhuYW1lICE9PSAnc3RyaW5nJyB8fAogICAgICAgIHR5cGVvZiByYXcucXVlcnlP"
++            + "ckZyYWdtZW50UHJlc2VudCAhPT0gJ2Jvb2xlYW4nIHx8IHNlbGYgIT09IHRvcCkgdGhyb3cgbmV3IEVycm9yKCdpbnZhbGlkX25h"
++            + "dGl2ZV9tZXRhZGF0YScpOwogICAgbGV0IHRvcE9yaWdpbjsKICAgIGxldCBmcmFtZU9yaWdpbjsKICAgIHRyeSB7CiAgICAgIHRv"
++            + "cE9yaWdpbiA9IHB1YmxpY09yaWdpbihyYXcudG9wT3JpZ2luKTsKICAgICAgZnJhbWVPcmlnaW4gPSBwdWJsaWNPcmlnaW4ocmF3"
++            + "LmZyYW1lT3JpZ2luKTsKICAgIH0gY2F0Y2ggeyB0aHJvdyBuZXcgRXJyb3IoJ2ludmFsaWRfbmF0aXZlX21ldGFkYXRhJyk7IH0K"
++            + "ICAgIGlmICh0b3BPcmlnaW4gIT09IGxvY2F0aW9uLm9yaWdpbiB8fCBmcmFtZU9yaWdpbiAhPT0gbG9jYXRpb24ub3JpZ2luIHx8"
++            + "IHRvcE9yaWdpbiAhPT0gZnJhbWVPcmlnaW4gfHwKICAgICAgICByYXcucGF0aG5hbWUgIT09IGxvY2F0aW9uLnBhdGhuYW1lIHx8"
++            + "CiAgICAgICAgcmF3LnF1ZXJ5T3JGcmFnbWVudFByZXNlbnQgIT09IEJvb2xlYW4obG9jYXRpb24uc2VhcmNoIHx8IGxvY2F0aW9u"
++            + "Lmhhc2gpKSB7CiAgICAgIHRocm93IG5ldyBFcnJvcignbmF0aXZlX29yaWdpbl9taXNtYXRjaCcpOwogICAgfQogICAgcmV0dXJu"
++            + "IHsKICAgICAgdGFiSWQ6IHJhdy50YWJJZCwKICAgICAgZnJhbWVJZDogcmF3LmZyYW1lSWQsCiAgICAgIGRvY3VtZW50RXBvY2g6"
++            + "IHJhdy5kb2N1bWVudEVwb2NoLAogICAgICB0b3BPcmlnaW4sCiAgICAgIGZyYW1lT3JpZ2luLAogICAgICBwYXRobmFtZTogcmF3"
++            + "LnBhdGhuYW1lLAogICAgICBxdWVyeU9yRnJhZ21lbnRQcmVzZW50OiByYXcucXVlcnlPckZyYWdtZW50UHJlc2VudCwKICAgICAg"
++            + "Zm9yZWdyb3VuZDogdHJ1ZSwKICAgIH07CiAgfQoKICBmdW5jdGlvbiBzYWZlU2VhcmNoKGVsZW1lbnQpIHsKICAgIGlmIChlbGVt"
++            + "ZW50LnRhZ05hbWUgIT09ICdJTlBVVCcgfHwgIXZpc2libGUoZWxlbWVudCkgfHwgZWxlbWVudC5kaXNhYmxlZCB8fCBlbGVtZW50"
++            + "LnJlYWRPbmx5IHx8IGVsZW1lbnQudmFsdWUgIT09ICcnKSByZXR1cm4gZmFsc2U7CiAgICBpZiAoIShlbGVtZW50LnR5cGUgPT09"
++            + "ICdzZWFyY2gnIHx8IGVsZW1lbnQuZ2V0QXR0cmlidXRlKCdyb2xlJykgPT09ICdzZWFyY2hib3gnKSkgcmV0dXJuIGZhbHNlOwog"
++            + "ICAgaWYgKHNlbnNpdGl2ZUlucHV0KGVsZW1lbnQpKSByZXR1cm4gZmFsc2U7CiAgICBjb25zdCBmb3JtID0gZWxlbWVudC5mb3Jt"
++            + "OwogICAgaWYgKCFmb3JtIHx8IFN0cmluZyhmb3JtLm1ldGhvZCB8fCAnZ2V0JykudG9Mb3dlckNhc2UoKSAhPT0gJ2dldCcpIHJl"
++            + "dHVybiBmYWxzZTsKICAgIHRyeSB7CiAgICAgIGlmIChuZXcgVVJMKHB1YmxpY1VybChmb3JtLmFjdGlvbiB8fCBsb2NhdGlvbi5o"
++            + "cmVmKSkub3JpZ2luICE9PSBsb2NhdGlvbi5vcmlnaW4pIHJldHVybiBmYWxzZTsKICAgIH0gY2F0Y2ggeyByZXR1cm4gZmFsc2U7"
++            + "IH0KICAgIGNvbnN0IGVkaXRhYmxlID0gQXJyYXkuZnJvbShmb3JtLnF1ZXJ5U2VsZWN0b3JBbGwoJ2lucHV0LHRleHRhcmVhLHNl"
++            + "bGVjdCcpKS5maWx0ZXIoKGl0ZW0pID0+CiAgICAgICFbJ2hpZGRlbicsICdzdWJtaXQnLCAnYnV0dG9uJywgJ3Jlc2V0JywgJ2lt"
++            + "YWdlJ10uaW5jbHVkZXMoaXRlbS50eXBlKSk7CiAgICByZXR1cm4gZWRpdGFibGUubGVuZ3RoID09PSAxICYmIGVkaXRhYmxlWzBd"
++            + "ID09PSBlbGVtZW50OwogIH0KCiAgZnVuY3Rpb24gY2FuZGlkYXRlSW5mbyhlbGVtZW50LCBpbmRleCkgewogICAgY29uc3QgY2Fu"
++            + "ZGlkYXRlUmVmID0gYGNhbmRpZGF0ZV8ke2luZGV4fWA7CiAgICBjb25zdCBub2RlUmVmID0gYG5vZGVfJHtpbmRleH1gOwogICAg"
++            + "aWYgKGVsZW1lbnQudGFnTmFtZSA9PT0gJ0EnKSB7CiAgICAgIGlmIChlbGVtZW50Lmhhc0F0dHJpYnV0ZSgnZG93bmxvYWQnKSB8"
++            + "fCBlbGVtZW50Lmhhc0F0dHJpYnV0ZSgnb25jbGljaycpKSByZXR1cm4gbnVsbDsKICAgICAgY29uc3QgbmFtZSA9IGFjY2Vzc2li"
++            + "bGVOYW1lKGVsZW1lbnQpOwogICAgICBjb25zdCBocmVmID0gcHVibGljVXJsKGVsZW1lbnQuaHJlZik7CiAgICAgIGlmIChuZXcg"
++            + "VVJMKGhyZWYpLm9yaWdpbiAhPT0gbG9jYXRpb24ub3JpZ2luKSByZXR1cm4geyBvbWl0UmVhc29uOiAnVU5TVVBQT1JURURfSU5U"
++            + "RVJBQ1RJT04nIH07CiAgICAgIGNvbnN0IGJvdW5kYXJ5ID0gcGF0aEJvdW5kYXJ5KG5ldyBVUkwoaHJlZikucGF0aG5hbWUpOwog"
++            + "ICAgICBpZiAoYm91bmRhcnkpIHJldHVybiB7IG9taXRSZWFzb246IGJvdW5kYXJ5ID09PSAnUEFZTUVOVF9PUl9DT01NSVRNRU5U"
++            + "JyA/IGJvdW5kYXJ5IDogJ1VOU1VQUE9SVEVEX0lOVEVSQUNUSU9OJyB9OwogICAgICBpZiAocGF5bWVudE1lYW5pbmcoYCR7bmFt"
++            + "ZX0gJHtuZXcgVVJMKGhyZWYpLnBhdGhuYW1lfWApKSByZXR1cm4geyBvbWl0UmVhc29uOiAnUEFZTUVOVF9PUl9DT01NSVRNRU5U"
++            + "JyB9OwogICAgICBpZiAodW5zdXBwb3J0ZWRMaW5rTWVhbmluZyhgJHtuYW1lfSAke25ldyBVUkwoaHJlZikucGF0aG5hbWV9YCkp"
++            + "IHJldHVybiB7IG9taXRSZWFzb246ICdVTlNVUFBPUlRFRF9JTlRFUkFDVElPTicgfTsKICAgICAgcmV0dXJuIHsgY2FuZGlkYXRl"
++            + "UmVmLCBub2RlUmVmLCBraW5kOiAnc2FmZV9saW5rJywgcm9sZTogJ2xpbmsnLCBuYW1lLCBocmVmIH07CiAgICB9CiAgICBpZiAo"
++            + "c2FmZVNlYXJjaChlbGVtZW50KSkgewogICAgICByZXR1cm4geyBjYW5kaWRhdGVSZWYsIG5vZGVSZWYsIGtpbmQ6ICdwdWJsaWNf"
++            + "c2VhcmNoJywgcm9sZTogJ3NlYXJjaGJveCcsIG5hbWU6IGFjY2Vzc2libGVOYW1lKGVsZW1lbnQpIHx8ICdTZWFyY2gnIH07CiAg"
++            + "ICB9CiAgICByZXR1cm4gbnVsbDsKICB9CgogIGZ1bmN0aW9uIGN1cnJlbnRDYW5kaWRhdGUoZWxlbWVudCwgcHJldmlvdXMpIHsK"
++            + "ICAgIHRyeSB7CiAgICAgIGNvbnN0IGRlc2NyaWJlZCA9IGNhbmRpZGF0ZUluZm8oZWxlbWVudCwgTnVtYmVyKHByZXZpb3VzLmNh"
++            + "bmRpZGF0ZVJlZi5zbGljZSgnY2FuZGlkYXRlXycubGVuZ3RoKSkpOwogICAgICByZXR1cm4gZGVzY3JpYmVkICYmICFkZXNjcmli"
++            + "ZWQub21pdFJlYXNvbiA/IGRlc2NyaWJlZCA6IG51bGw7CiAgICB9IGNhdGNoIHsgcmV0dXJuIG51bGw7IH0KICB9CgogIGZ1bmN0"
++            + "aW9uIHNuYXBzaG90KHJhd01ldGFkYXRhKSB7CiAgICBjb25zdCBtZXRhZGF0YSA9IG5hdGl2ZU1ldGFkYXRhKHJhd01ldGFkYXRh"
++            + "KTsKICAgIGNvbnN0IGhhbmRvZmZSZWFzb25zID0gbmV3IFNldCgpOwogICAgY29uc3QgZXhjbHVkZWRSZWFzb25zID0gbmV3IFNl"
++            + "dCgpOwogICAgY29uc3QgZXhjbHVkZWRSb290cyA9IFtdOwogICAgbGV0IGJsb2NrQ29sbGVjdGlvbiA9IGZhbHNlOwogICAgY29u"
++            + "c3QgY3VycmVudFBhdGhCb3VuZGFyeSA9IHBhdGhCb3VuZGFyeShsb2NhdGlvbi5wYXRobmFtZSk7CiAgICBpZiAoY3VycmVudFBh"
++            + "dGhCb3VuZGFyeSkgewogICAgICBoYW5kb2ZmUmVhc29ucy5hZGQoY3VycmVudFBhdGhCb3VuZGFyeSk7CiAgICAgIGJsb2NrQ29s"
++            + "bGVjdGlvbiA9IHRydWU7CiAgICB9CiAgICBpZiAocHJpdmF0ZVN1cmZhY2VTaWduYWwoKSkgewogICAgICBoYW5kb2ZmUmVhc29u"
++            + "cy5hZGQoJ1NFTlNJVElWRV9JTlBVVF9SRVFVSVJFRCcpOwogICAgICBibG9ja0NvbGxlY3Rpb24gPSB0cnVlOwogICAgfQoKICAg"
++            + "IGZvciAoY29uc3Qgcm9vdCBvZiBhdXRoZW50aWNhdGVkQ2hyb21lUm9vdHMoKSkgewogICAgICBleGNsdWRlZFJlYXNvbnMuYWRk"
++            + "KCdVTlNVUFBPUlRFRF9JTlRFUkFDVElPTicpOwogICAgICBleGNsdWRlZFJvb3RzLnB1c2gocm9vdCk7CiAgICB9CgogICAgZm9y"
++            + "IChjb25zdCBlbGVtZW50IG9mIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoJ2lucHV0LHRleHRhcmVhLHNlbGVjdCxidXR0b24s"
++            + "W3JvbGU9ImJ1dHRvbiJdLGZvcm0saWZyYW1lLFtjb250ZW50ZWRpdGFibGVdLFtyb2xlPSJ0ZXh0Ym94Il0nKSkgewogICAgICBp"
++            + "ZiAoIXZpc2libGUoZWxlbWVudCkpIGNvbnRpbnVlOwogICAgICBpZiAoZXhjbHVkZWRSb290cy5zb21lKChyb290KSA9PiByb290"
++            + "ID09PSBlbGVtZW50IHx8IHJvb3QuY29udGFpbnMoZWxlbWVudCkpKSBjb250aW51ZTsKICAgICAgaWYgKGVsZW1lbnQudGFnTmFt"
++            + "ZSA9PT0gJ0lGUkFNRScpIHsKICAgICAgICB0cnkgewogICAgICAgICAgaWYgKG5ldyBVUkwoZWxlbWVudC5zcmMgfHwgbG9jYXRp"
++            + "b24uaHJlZiwgbG9jYXRpb24uaHJlZikub3JpZ2luICE9PSBsb2NhdGlvbi5vcmlnaW4pIHsKICAgICAgICAgICAgZXhjbHVkZWRS"
++            + "ZWFzb25zLmFkZCgnQ1JPU1NfT1JJR0lOX0ZSQU1FJyk7CiAgICAgICAgICAgIGV4Y2x1ZGVkUm9vdHMucHVzaChlbGVtZW50KTsK"
++            + "ICAgICAgICAgIH0KICAgICAgICB9IGNhdGNoIHsKICAgICAgICAgIGV4Y2x1ZGVkUmVhc29ucy5hZGQoJ0NST1NTX09SSUdJTl9G"
++            + "UkFNRScpOwogICAgICAgICAgZXhjbHVkZWRSb290cy5wdXNoKGVsZW1lbnQpOwogICAgICAgIH0KICAgICAgICBjb250aW51ZTsK"
++            + "ICAgICAgfQogICAgICBpZiAoZWxlbWVudC5tYXRjaGVzKCdbY29udGVudGVkaXRhYmxlXTpub3QoW2NvbnRlbnRlZGl0YWJsZT0i"
++            + "ZmFsc2UiXSksW3JvbGU9InRleHRib3giXScpKSB7CiAgICAgICAgaGFuZG9mZlJlYXNvbnMuYWRkKCdTRU5TSVRJVkVfSU5QVVRf"
++            + "UkVRVUlSRUQnKTsKICAgICAgICBibG9ja0NvbGxlY3Rpb24gPSB0cnVlOwogICAgICB9CiAgICAgIGlmIChbJ0lOUFVUJywgJ1RF"
++            + "WFRBUkVBJywgJ1NFTEVDVCddLmluY2x1ZGVzKGVsZW1lbnQudGFnTmFtZSkgJiYgc2Vuc2l0aXZlSW5wdXQoZWxlbWVudCkpIHsK"
++            + "ICAgICAgICBoYW5kb2ZmUmVhc29ucy5hZGQoL3Bhc3N3b3JkfHBhc3Njb2RlfG9uZS10aW1lfG90cHzruYTrsIDrsojtmLh87J24"
++            + "7Kad67KI7Zi4L2kudGVzdChbCiAgICAgICAgICBlbGVtZW50LnR5cGUsIGVsZW1lbnQuYXV0b2NvbXBsZXRlLCBlbGVtZW50Lm5h"
++            + "bWUsIGVsZW1lbnQuaWQsIGFjY2Vzc2libGVOYW1lKGVsZW1lbnQpLAogICAgICAgIF0uam9pbignICcpKSA/ICdBVVRIRU5USUNB"
++            + "VElPTl9SRVFVSVJFRCcgOiAnU0VOU0lUSVZFX0lOUFVUX1JFUVVJUkVEJyk7CiAgICAgICAgYmxvY2tDb2xsZWN0aW9uID0gdHJ1"
++            + "ZTsKICAgICAgfSBlbHNlIGlmIChoYXNVc2VySW5wdXRWYWx1ZShlbGVtZW50KSkgewogICAgICAgIGhhbmRvZmZSZWFzb25zLmFk"
++            + "ZCgnU0VOU0lUSVZFX0lOUFVUX1JFUVVJUkVEJyk7CiAgICAgICAgYmxvY2tDb2xsZWN0aW9uID0gdHJ1ZTsKICAgICAgfSBlbHNl"
++            + "IGlmIChbJ0lOUFVUJywgJ1RFWFRBUkVBJywgJ1NFTEVDVCddLmluY2x1ZGVzKGVsZW1lbnQudGFnTmFtZSkgJiYKICAgICAgICAg"
++            + "ICEoZWxlbWVudC50YWdOYW1lID09PSAnSU5QVVQnICYmIFsnaGlkZGVuJywgJ2J1dHRvbicsICdzdWJtaXQnLCAncmVzZXQnLCAn"
++            + "aW1hZ2UnXS5pbmNsdWRlcyhlbGVtZW50LnR5cGUpKSAmJgogICAgICAgICAgIXNhZmVTZWFyY2goZWxlbWVudCkpIHsKICAgICAg"
++            + "ICBoYW5kb2ZmUmVhc29ucy5hZGQoJ0ZPUk1fU1VCTUlTU0lPTl9SRVFVSVJFRCcpOwogICAgICAgIGJsb2NrQ29sbGVjdGlvbiA9"
++            + "IHRydWU7CiAgICAgIH0KICAgICAgY29uc3QgbWVhbmluZyA9IGAke2FjY2Vzc2libGVOYW1lKGVsZW1lbnQpfSAke2VsZW1lbnQu"
++            + "Z2V0QXR0cmlidXRlKCdhY3Rpb24nKSB8fCAnJ31gOwogICAgICBpZiAocGF5bWVudE1lYW5pbmcobWVhbmluZykpIHsKICAgICAg"
++            + "ICBleGNsdWRlZFJlYXNvbnMuYWRkKCdQQVlNRU5UX09SX0NPTU1JVE1FTlQnKTsKICAgICAgICBleGNsdWRlZFJvb3RzLnB1c2go"
++            + "ZWxlbWVudCk7CiAgICAgIH0gZWxzZSBpZiAoZWxlbWVudC5tYXRjaGVzKCdidXR0b24sW3JvbGU9ImJ1dHRvbiJdJykpIHsKICAg"
++            + "ICAgICBleGNsdWRlZFJlYXNvbnMuYWRkKCdVTlNVUFBPUlRFRF9JTlRFUkFDVElPTicpOwogICAgICAgIGV4Y2x1ZGVkUm9vdHMu"
++            + "cHVzaChlbGVtZW50KTsKICAgICAgfSBlbHNlIGlmIChlbGVtZW50LnRhZ05hbWUgPT09ICdGT1JNJyAmJiAhZWxlbWVudC5xdWVy"
++            + "eVNlbGVjdG9yKCdpbnB1dFt0eXBlPSJzZWFyY2giXSxbcm9sZT0ic2VhcmNoYm94Il0nKSkgewogICAgICAgIGV4Y2x1ZGVkUmVh"
++            + "c29ucy5hZGQoJ0ZPUk1fU1VCTUlTU0lPTl9SRVFVSVJFRCcpOwogICAgICAgIGV4Y2x1ZGVkUm9vdHMucHVzaChlbGVtZW50KTsK"
++            + "ICAgICAgfQogICAgfQoKICAgIGNvbnN0IHJlZnMgPSBuZXcgTWFwKCk7CiAgICBjb25zdCBjYW5kaWRhdGVzID0gW107CiAgICBp"
++            + "ZiAoIWJsb2NrQ29sbGVjdGlvbikgewogICAgICBjb25zdCBlbGVtZW50cyA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoJ2Fb"
++            + "aHJlZl0saW5wdXRbdHlwZT0ic2VhcmNoIl0sW3JvbGU9InNlYXJjaGJveCJdJyk7CiAgICAgIGZvciAobGV0IGkgPSAwOyBpIDwg"
++            + "TWF0aC5taW4oZWxlbWVudHMubGVuZ3RoLCAxMjAwKSAmJiBjYW5kaWRhdGVzLmxlbmd0aCA8IDEyMDsgaSsrKSB7CiAgICAgICAg"
++            + "Y29uc3QgZWxlbWVudCA9IGVsZW1lbnRzW2ldOwogICAgICAgIGlmICghdmlzaWJsZShlbGVtZW50KSkgY29udGludWU7CiAgICAg"
++            + "ICAgaWYgKGV4Y2x1ZGVkUm9vdHMuc29tZSgocm9vdCkgPT4gcm9vdCA9PT0gZWxlbWVudCB8fCByb290LmNvbnRhaW5zKGVsZW1l"
++            + "bnQpKSkgY29udGludWU7CiAgICAgICAgbGV0IGluZm87CiAgICAgICAgdHJ5IHsgaW5mbyA9IGNhbmRpZGF0ZUluZm8oZWxlbWVu"
++            + "dCwgY2FuZGlkYXRlcy5sZW5ndGggKyAxKTsgfQogICAgICAgIGNhdGNoIHsKICAgICAgICAgIGlmIChlbGVtZW50LnRhZ05hbWUg"
++            + "PT09ICdBJykgewogICAgICAgICAgICBleGNsdWRlZFJlYXNvbnMuYWRkKCdQUklWQVRFX05FVFdPUktfQkxPQ0tFRCcpOwogICAg"
++            + "ICAgICAgICBleGNsdWRlZFJvb3RzLnB1c2goZWxlbWVudCk7CiAgICAgICAgICB9CiAgICAgICAgICBjb250aW51ZTsKICAgICAg"
++            + "ICB9CiAgICAgICAgaWYgKGluZm8/Lm9taXRSZWFzb24pIHsKICAgICAgICAgIGV4Y2x1ZGVkUmVhc29ucy5hZGQoaW5mby5vbWl0"
++            + "UmVhc29uKTsKICAgICAgICAgIGV4Y2x1ZGVkUm9vdHMucHVzaChlbGVtZW50KTsKICAgICAgICAgIGNvbnRpbnVlOwogICAgICAg"
++            + "IH0KICAgICAgICBpZiAoIWluZm8pIGNvbnRpbnVlOwogICAgICAgIHJlZnMuc2V0KGluZm8uY2FuZGlkYXRlUmVmLCB7IGVsZW1l"
++            + "bnQsIGluZm8sIGZpbmdlcnByaW50OiBKU09OLnN0cmluZ2lmeShpbmZvKSB9KTsKICAgICAgICBjYW5kaWRhdGVzLnB1c2goaW5m"
++            + "byk7CiAgICAgIH0KICAgIH0KCiAgICBsZXQgdmlzaWJsZVRleHQgPSAnJzsKICAgIGlmICghYmxvY2tDb2xsZWN0aW9uKSB7CiAg"
++            + "ICAgIGNvbnN0IHdhbGtlciA9IGRvY3VtZW50LmNyZWF0ZVRyZWVXYWxrZXIoZG9jdW1lbnQuYm9keSB8fCBkb2N1bWVudC5kb2N1"
++            + "bWVudEVsZW1lbnQsIE5vZGVGaWx0ZXIuU0hPV19URVhUKTsKICAgICAgbGV0IG5vZGU7CiAgICAgIGxldCB2aXNpdGVkID0gMDsK"
++            + "ICAgICAgd2hpbGUgKChub2RlID0gd2Fsa2VyLm5leHROb2RlKCkpICYmIHZpc2libGVUZXh0Lmxlbmd0aCA8IDEwMDAwICYmIHZp"
++            + "c2l0ZWQrKyA8IDUwMDApIHsKICAgICAgICBjb25zdCBwYXJlbnQgPSBub2RlLnBhcmVudEVsZW1lbnQ7CiAgICAgICAgaWYgKCFw"
++            + "YXJlbnQgfHwgcGFyZW50LmNsb3Nlc3QoJ3NjcmlwdCxzdHlsZSxub3NjcmlwdCxpbnB1dCx0ZXh0YXJlYSxzZWxlY3QsW2NvbnRl"
++            + "bnRlZGl0YWJsZV0nKSB8fAogICAgICAgICAgICBleGNsdWRlZFJvb3RzLnNvbWUoKHJvb3QpID0+IHJvb3QgPT09IHBhcmVudCB8"
++            + "fCByb290LmNvbnRhaW5zKHBhcmVudCkpIHx8ICF2aXNpYmxlKHBhcmVudCkpIGNvbnRpbnVlOwogICAgICAgIGNvbnN0IHBhcnQg"
++            + "PSBjbGVhbihub2RlLnRleHRDb250ZW50LCA2MDApOwogICAgICAgIGlmIChwYXJ0KSB2aXNpYmxlVGV4dCArPSBgJHtwYXJ0fVxu"
++            + "YDsKICAgICAgfQogICAgfQoKICAgIGlmIChibG9ja0NvbGxlY3Rpb24pIHsKICAgICAgcmVmcy5jbGVhcigpOwogICAgICBjYW5k"
++            + "aWRhdGVzLmxlbmd0aCA9IDA7CiAgICAgIHZpc2libGVUZXh0ID0gJyc7CiAgICB9CiAgICBjb25zdCBvYnNlcnZhdGlvbklkID0g"
++            + "cmFuZG9tSWQoJ29icycpOwogICAgY29uc3QgcGFnZVR5cGVIaW50ID0gYmxvY2tDb2xsZWN0aW9uID8gJ3Vua25vd24nIDoKICAg"
++            + "ICAgY2FuZGlkYXRlcy5zb21lKChjYW5kaWRhdGUpID0+IGNhbmRpZGF0ZS5raW5kID09PSAncHVibGljX3NlYXJjaCcpID8gJ3Nl"
++            + "YXJjaCcgOgogICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoJ1tpdGVtdHlwZSo9IlByb2R1Y3QiXSxtZXRhW3Byb3BlcnR5"
++            + "PSJwcm9kdWN0OnByaWNlOmFtb3VudCJdJykgPyAncHJvZHVjdCcgOgogICAgICAgICAgY2FuZGlkYXRlcy5sZW5ndGggPiA4ID8g"
++            + "J2xpc3RpbmcnIDogJ3B1YmxpYyc7CiAgICBjb25zdCBvYnNlcnZhdGlvbiA9IHsKICAgICAgb2JzZXJ2YXRpb25JZCwKICAgICAg"
++            + "bmF0aXZlTWV0YWRhdGE6IG1ldGFkYXRhLAogICAgICB1bnRydXN0ZWRQYWdlRGF0YTogewogICAgICAgIHBhZ2VUeXBlSGludCwK"
++            + "ICAgICAgICB0aXRsZTogYmxvY2tDb2xsZWN0aW9uID8gJycgOiBjbGVhbihkb2N1bWVudC50aXRsZSwgMzAwKSwKICAgICAgICB2"
++            + "aXNpYmxlVGV4dDogdmlzaWJsZVRleHQuc2xpY2UoMCwgMTAwMDApLAogICAgICAgIGNhbmRpZGF0ZXMsCiAgICAgIH0sCiAgICAg"
++            + "IHByaXZhY3k6IHsKICAgICAgICBpbnB1dFZhbHVlc09taXR0ZWQ6IHRydWUsCiAgICAgICAgc2VjcmV0c09taXR0ZWQ6IHRydWUs"
++            + "CiAgICAgICAgc2NyZWVuc2hvdEluY2x1ZGVkOiBmYWxzZSwKICAgICAgICB1cmxRdWVyeUFuZEZyYWdtZW50T21pdHRlZDogdHJ1"
++            + "ZSwKICAgICAgICBjb2xsZWN0aW9uU3RhdHVzOiBibG9ja0NvbGxlY3Rpb24gPyAnaGFuZG9mZl9yZXF1aXJlZCcgOiAnc2FuaXRp"
++            + "emVkJywKICAgICAgICBoYW5kb2ZmUmVhc29uQ29kZXM6IGJsb2NrQ29sbGVjdGlvbiA/IEFycmF5LmZyb20oaGFuZG9mZlJlYXNv"
++            + "bnMpLnNvcnQoKSA6IFtdLAogICAgICAgIGV4Y2x1ZGVkQm91bmRhcnlDb2RlczogYmxvY2tDb2xsZWN0aW9uID8gW10gOiBBcnJh"
++            + "eS5mcm9tKGV4Y2x1ZGVkUmVhc29ucykuc29ydCgpLAogICAgICB9LAogICAgfTsKICAgIHN0YXRlID0gewogICAgICBvYnNlcnZh"
++            + "dGlvbklkLAogICAgICBtZXRhZGF0YSwKICAgICAgcmVmcywKICAgICAgbG9jYXRpb25IcmVmOiBsb2NhdGlvbi5ocmVmLAogICAg"
++            + "ICB1c2VkOiBmYWxzZSwKICAgIH07CiAgICByZXR1cm4gb2JzZXJ2YXRpb247CiAgfQoKICBmdW5jdGlvbiByZWplY3RlZChjb21t"
++            + "YW5kSWQsIGNvZGUpIHsKICAgIHJldHVybiB7IGFsbG93ZWQ6IGZhbHNlLCBjb21tYW5kSWQ6IGlkKGNvbW1hbmRJZCkgPyBjb21t"
++            + "YW5kSWQgOiAnaW52YWxpZF9jb21tYW5kJywgY29kZSB9OwogIH0KCiAgZnVuY3Rpb24gaW5zcGVjdChjb21tYW5kKSB7CiAgICBp"
++            + "ZiAoIXJlY29yZChjb21tYW5kKSB8fCBjb21tYW5kLnByb3RvY29sVmVyc2lvbiAhPT0gMSB8fCAhaWQoY29tbWFuZC5jb21tYW5k"
++            + "SWQpIHx8ICFpZChjb21tYW5kLnJ1bklkKSB8fAogICAgICAgICFpZChjb21tYW5kLmRldmljZUlkKSB8fCAhaWQoY29tbWFuZC5w"
++            + "cm9maWxlUmVmKSB8fCAhTnVtYmVyLmlzU2FmZUludGVnZXIoY29tbWFuZC5zZXF1ZW5jZSkgfHwgY29tbWFuZC5zZXF1ZW5jZSA8"
++            + "IDEgfHwKICAgICAgICAhTnVtYmVyLmlzU2FmZUludGVnZXIoY29tbWFuZC5sZWFzZUVwb2NoKSB8fCBjb21tYW5kLmxlYXNlRXBv"
++            + "Y2ggPCAxIHx8CiAgICAgICAgIU51bWJlci5pc1NhZmVJbnRlZ2VyKGNvbW1hbmQuY29udHJvbEdlbmVyYXRpb24pIHx8IGNvbW1h"
++            + "bmQuY29udHJvbEdlbmVyYXRpb24gPCAwIHx8ICFyZWNvcmQoY29tbWFuZC5hY3Rpb24pIHx8CiAgICAgICAgdHlwZW9mIGNvbW1h"
++            + "bmQuYWN0aW9uSGFzaCAhPT0gJ3N0cmluZycgfHwgIS9eW2EtZjAtOV17NjR9JC8udGVzdChjb21tYW5kLmFjdGlvbkhhc2gpIHx8"
++            + "CiAgICAgICAgdHlwZW9mIGNvbW1hbmQuc2VydmVyUGVybWl0ICE9PSAnc3RyaW5nJyB8fCAhL15obWFjLXNoYTI1NjpbQS1aYS16"
++            + "MC05Xy1dezQzfSQvLnRlc3QoY29tbWFuZC5zZXJ2ZXJQZXJtaXQpKSB7CiAgICAgIHJldHVybiByZWplY3RlZChjb21tYW5kPy5j"
++            + "b21tYW5kSWQsICdJTlZBTElEX0NPTU1BTkQnKTsKICAgIH0KICAgIGlmICghc3RhdGUgfHwgc3RhdGUudXNlZCkgcmV0dXJuIHJl"
++            + "amVjdGVkKGNvbW1hbmQuY29tbWFuZElkLCAnUkVQTEFZX0NPTkZMSUNUJyk7CiAgICBjb25zdCBleHBpcmF0aW9uID0gRGF0ZS5w"
++            + "YXJzZShjb21tYW5kLmV4cGlyZXNBdCk7CiAgICBjb25zdCBub3cgPSBEYXRlLm5vdygpOwogICAgaWYgKHR5cGVvZiBjb21tYW5k"
++            + "LmV4cGlyZXNBdCAhPT0gJ3N0cmluZycgfHwgIU51bWJlci5pc0Zpbml0ZShleHBpcmF0aW9uKSB8fAogICAgICAgIG5ldyBEYXRl"
++            + "KGV4cGlyYXRpb24pLnRvSVNPU3RyaW5nKCkgIT09IGNvbW1hbmQuZXhwaXJlc0F0KSByZXR1cm4gcmVqZWN0ZWQoY29tbWFuZC5j"
++            + "b21tYW5kSWQsICdJTlZBTElEX0NPTU1BTkQnKTsKICAgIGlmIChleHBpcmF0aW9uIDw9IG5vdykgcmV0dXJuIHJlamVjdGVkKGNv"
++            + "bW1hbmQuY29tbWFuZElkLCAnQ09NTUFORF9FWFBJUkVEJyk7CiAgICBpZiAoZXhwaXJhdGlvbiAtIG5vdyA+IDYwXzAwMCkgcmV0"
++            + "dXJuIHJlamVjdGVkKGNvbW1hbmQuY29tbWFuZElkLCAnSU5WQUxJRF9DT01NQU5EJyk7CiAgICBjb25zdCBhY3Rpb24gPSBjb21t"
++            + "YW5kLmFjdGlvbjsKICAgIGNvbnN0IHBhZ2UgPSBhY3Rpb24ucGFnZTsKICAgIGlmICghcmVjb3JkKHBhZ2UpIHx8IHBhZ2Uub2Jz"
++            + "ZXJ2YXRpb25JZCAhPT0gc3RhdGUub2JzZXJ2YXRpb25JZCB8fCBwYWdlLnRhYklkICE9PSBzdGF0ZS5tZXRhZGF0YS50YWJJZCB8"
++            + "fAogICAgICAgIHBhZ2UuZnJhbWVJZCAhPT0gc3RhdGUubWV0YWRhdGEuZnJhbWVJZCB8fCBwYWdlLmRvY3VtZW50RXBvY2ggIT09"
++            + "IHN0YXRlLm1ldGFkYXRhLmRvY3VtZW50RXBvY2ggfHwKICAgICAgICBwYWdlLnRvcE9yaWdpbiAhPT0gc3RhdGUubWV0YWRhdGEu"
++            + "dG9wT3JpZ2luIHx8IHBhZ2UuZnJhbWVPcmlnaW4gIT09IHN0YXRlLm1ldGFkYXRhLmZyYW1lT3JpZ2luIHx8CiAgICAgICAgcGFn"
++            + "ZS5wYXRobmFtZSAhPT0gc3RhdGUubWV0YWRhdGEucGF0aG5hbWUgfHwKICAgICAgICBwYWdlLnF1ZXJ5T3JGcmFnbWVudFByZXNl"
++            + "bnQgIT09IHN0YXRlLm1ldGFkYXRhLnF1ZXJ5T3JGcmFnbWVudFByZXNlbnQgfHwKICAgICAgICBzdGF0ZS5sb2NhdGlvbkhyZWYg"
++            + "IT09IGxvY2F0aW9uLmhyZWYgfHwgbG9jYXRpb24ub3JpZ2luICE9PSBzdGF0ZS5tZXRhZGF0YS50b3BPcmlnaW4pIHsKICAgICAg"
++            + "cmV0dXJuIHJlamVjdGVkKGNvbW1hbmQuY29tbWFuZElkLCAnUkVPQlNFUlZFX1JFUVVJUkVEJyk7CiAgICB9CiAgICBzd2l0Y2gg"
++            + "KGFjdGlvbi5raW5kKSB7CiAgICAgIGNhc2UgJ2luc3BlY3RfcGFnZSc6CiAgICAgICAgcmV0dXJuIHsgYWxsb3dlZDogdHJ1ZSwg"
++            + "Y29tbWFuZElkOiBjb21tYW5kLmNvbW1hbmRJZCwgZWZmZWN0OiAncmVhZCcsIGxhYmVsOiAnSW5zcGVjdCBwYWdlJyB9OwogICAg"
++            + "ICBjYXNlICdyZXF1ZXN0X2h1bWFuJzoKICAgICAgICByZXR1cm4gdHlwZW9mIGFjdGlvbi5yZWFzb25Db2RlID09PSAnc3RyaW5n"
++            + "JyAmJiB0eXBlb2YgYWN0aW9uLm1lc3NhZ2UgPT09ICdzdHJpbmcnID8KICAgICAgICAgIHsgYWxsb3dlZDogdHJ1ZSwgY29tbWFu"
++            + "ZElkOiBjb21tYW5kLmNvbW1hbmRJZCwgZWZmZWN0OiAnaGFuZG9mZicsIGxhYmVsOiBjbGVhbihhY3Rpb24ubWVzc2FnZSwgMjAw"
++            + "KSB9IDoKICAgICAgICAgIHJlamVjdGVkKGNvbW1hbmQuY29tbWFuZElkLCAnUE9MSUNZX0RFTklFRCcpOwogICAgICBjYXNlICdm"
++            + "aW5pc2gnOgogICAgICAgIHJldHVybiB0eXBlb2YgYWN0aW9uLm1lc3NhZ2UgPT09ICdzdHJpbmcnID8KICAgICAgICAgIHsgYWxs"
++            + "b3dlZDogdHJ1ZSwgY29tbWFuZElkOiBjb21tYW5kLmNvbW1hbmRJZCwgZWZmZWN0OiAnZmluaXNoJywgbGFiZWw6IGNsZWFuKGFj"
++            + "dGlvbi5tZXNzYWdlLCAyMDApIH0gOgogICAgICAgICAgcmVqZWN0ZWQoY29tbWFuZC5jb21tYW5kSWQsICdQT0xJQ1lfREVOSUVE"
++            + "Jyk7CiAgICAgIGNhc2UgJ3Njcm9sbCc6CiAgICAgICAgcmV0dXJuIFsndXAnLCAnZG93biddLmluY2x1ZGVzKGFjdGlvbi5kaXJl"
++            + "Y3Rpb24pID8KICAgICAgICAgIHsgYWxsb3dlZDogdHJ1ZSwgY29tbWFuZElkOiBjb21tYW5kLmNvbW1hbmRJZCwgZWZmZWN0OiAn"
++            + "dmlld3BvcnQnLCBsYWJlbDogYWN0aW9uLmRpcmVjdGlvbiB9IDoKICAgICAgICAgIHJlamVjdGVkKGNvbW1hbmQuY29tbWFuZElk"
++            + "LCAnUE9MSUNZX0RFTklFRCcpOwogICAgICBjYXNlICdvcGVuX2NhbmRpZGF0ZSc6IHsKICAgICAgICBjb25zdCB0YXJnZXQgPSBz"
++            + "dGF0ZS5yZWZzLmdldChhY3Rpb24uY2FuZGlkYXRlUmVmKTsKICAgICAgICBpZiAoIXRhcmdldCB8fCB0YXJnZXQuaW5mby5raW5k"
++            + "ICE9PSAnc2FmZV9saW5rJyB8fCAhdGFyZ2V0LmVsZW1lbnQuaXNDb25uZWN0ZWQgfHwgIXZpc2libGUodGFyZ2V0LmVsZW1lbnQp"
++            + "KSB7CiAgICAgICAgICByZXR1cm4gcmVqZWN0ZWQoY29tbWFuZC5jb21tYW5kSWQsICdSRU9CU0VSVkVfUkVRVUlSRUQnKTsKICAg"
++            + "ICAgICB9CiAgICAgICAgY29uc3QgY3VycmVudCA9IGN1cnJlbnRDYW5kaWRhdGUodGFyZ2V0LmVsZW1lbnQsIHRhcmdldC5pbmZv"
++            + "KTsKICAgICAgICBpZiAoIWN1cnJlbnQgfHwgSlNPTi5zdHJpbmdpZnkoY3VycmVudCkgIT09IHRhcmdldC5maW5nZXJwcmludCkg"
++            + "cmV0dXJuIHJlamVjdGVkKGNvbW1hbmQuY29tbWFuZElkLCAnUkVPQlNFUlZFX1JFUVVJUkVEJyk7CiAgICAgICAgdHJ5IHsgcHVi"
++            + "bGljVXJsKGN1cnJlbnQuaHJlZik7IH0gY2F0Y2ggeyByZXR1cm4gcmVqZWN0ZWQoY29tbWFuZC5jb21tYW5kSWQsICdQT0xJQ1lf"
++            + "REVOSUVEJyk7IH0KICAgICAgICByZXR1cm4gewogICAgICAgICAgYWxsb3dlZDogdHJ1ZSwKICAgICAgICAgIGNvbW1hbmRJZDog"
++            + "Y29tbWFuZC5jb21tYW5kSWQsCiAgICAgICAgICBlZmZlY3Q6ICdoYW5kb2ZmX25hdmlnYXRpb24nLAogICAgICAgICAgbGFiZWw6"
++            + "IGN1cnJlbnQubmFtZSB8fCAnTGluaycsCiAgICAgICAgICB0YXJnZXRPcmlnaW46IG5ldyBVUkwoY3VycmVudC5ocmVmKS5vcmln"
++            + "aW4sCiAgICAgICAgICB0YXJnZXRVcmw6IGN1cnJlbnQuaHJlZiwKICAgICAgICB9OwogICAgICB9CiAgICAgIGNhc2UgJ3J1bl9w"
++            + "cmVwYXJhdGlvbl9zdGVwJzogewogICAgICAgIGlmIChhY3Rpb24uYWRhcHRlcklkID09PSAnYnVpbHRpbi5wdWJsaWMtc2VhcmNo"
++            + "JykgewogICAgICAgICAgaWYgKGFjdGlvbi5yZWNpcGVWZXJzaW9uICE9PSAnMScgfHwgYWN0aW9uLnN0ZXBJZCAhPT0gJ3ByZXBh"
++            + "cmVfcXVlcnknIHx8ICFyZWNvcmQoYWN0aW9uLmJpbmRpbmdzKSkgewogICAgICAgICAgICByZXR1cm4gcmVqZWN0ZWQoY29tbWFu"
++            + "ZC5jb21tYW5kSWQsICdQT0xJQ1lfREVOSUVEJyk7CiAgICAgICAgICB9CiAgICAgICAgICBjb25zdCB7IGNhbmRpZGF0ZVJlZiwg"
++            + "cXVlcnkgfSA9IGFjdGlvbi5iaW5kaW5nczsKICAgICAgICAgIGNvbnN0IHRhcmdldCA9IHN0YXRlLnJlZnMuZ2V0KGNhbmRpZGF0"
++            + "ZVJlZik7CiAgICAgICAgICBpZiAoIXRhcmdldCB8fCB0YXJnZXQuaW5mby5raW5kICE9PSAncHVibGljX3NlYXJjaCcgfHwgIXRh"
++            + "cmdldC5lbGVtZW50LmlzQ29ubmVjdGVkIHx8ICFzYWZlU2VhcmNoKHRhcmdldC5lbGVtZW50KSB8fAogICAgICAgICAgICAgIHR5"
++            + "cGVvZiBxdWVyeSAhPT0gJ3N0cmluZycgfHwgIXF1ZXJ5LnRyaW0oKSB8fCBxdWVyeS5sZW5ndGggPiAxNjAgfHwgcXVlcnkgIT09"
++            + "IHF1ZXJ5LnRyaW0oKSB8fCBsaWtlbHlTZW5zaXRpdmVRdWVyeShxdWVyeSkpIHsKICAgICAgICAgICAgcmV0dXJuIHJlamVjdGVk"
++            + "KGNvbW1hbmQuY29tbWFuZElkLCAnUE9MSUNZX0RFTklFRCcpOwogICAgICAgICAgfQogICAgICAgICAgY29uc3QgY3VycmVudCA9"
++            + "IGN1cnJlbnRDYW5kaWRhdGUodGFyZ2V0LmVsZW1lbnQsIHRhcmdldC5pbmZvKTsKICAgICAgICAgIGlmICghY3VycmVudCB8fCBK"
++            + "U09OLnN0cmluZ2lmeShjdXJyZW50KSAhPT0gdGFyZ2V0LmZpbmdlcnByaW50KSByZXR1cm4gcmVqZWN0ZWQoY29tbWFuZC5jb21t"
++            + "YW5kSWQsICdSRU9CU0VSVkVfUkVRVUlSRUQnKTsKICAgICAgICAgIHJldHVybiB7IGFsbG93ZWQ6IHRydWUsIGNvbW1hbmRJZDog"
++            + "Y29tbWFuZC5jb21tYW5kSWQsIGVmZmVjdDogJ3B1YmxpY19zZWFyY2hfcHJlcGFyZScsIGxhYmVsOiBjdXJyZW50Lm5hbWUgfHwg"
++            + "J1NlYXJjaCcgfTsKICAgICAgICB9CiAgICAgICAgY29uc3QgcHJlcGFyZWQgPSBjb3VwYW5nUHJlcGFyYXRpb24oYWN0aW9uKTsK"
++            + "ICAgICAgICBpZiAoIXByZXBhcmVkLnRhcmdldCAmJiAhcHJlcGFyZWQudmVyaWZ5T25seSkgcmV0dXJuIHJlamVjdGVkKGNvbW1h"
++            + "bmQuY29tbWFuZElkLCBwcmVwYXJlZC5jb2RlKTsKICAgICAgICByZXR1cm4gewogICAgICAgICAgYWxsb3dlZDogdHJ1ZSwKICAg"
++            + "ICAgICAgIGNvbW1hbmRJZDogY29tbWFuZC5jb21tYW5kSWQsCiAgICAgICAgICBlZmZlY3Q6IGBjb3VwYW5nXyR7YWN0aW9uLnN0"
++            + "ZXBJZH1gLAogICAgICAgICAgbGFiZWw6IGFjdGlvbi5zdGVwSWQsCiAgICAgICAgfTsKICAgICAgfQogICAgICBkZWZhdWx0Ogog"
++            + "ICAgICAgIHJldHVybiByZWplY3RlZChjb21tYW5kLmNvbW1hbmRJZCwgJ1BPTElDWV9ERU5JRUQnKTsKICAgIH0KICB9CgogIGZ1"
++            + "bmN0aW9uIGV4ZWN1dGUoY29tbWFuZCkgewogICAgY29uc3QgY2hlY2sgPSBpbnNwZWN0KGNvbW1hbmQpOwogICAgaWYgKCFjaGVj"
++            + "ay5hbGxvd2VkKSByZXR1cm4geyBjb21tYW5kSWQ6IGNoZWNrLmNvbW1hbmRJZCwgc3RhdHVzOiAncmVqZWN0ZWQnLCBjb2RlOiBj"
++            + "aGVjay5jb2RlIH07CiAgICBjb25zdCBhY3Rpb24gPSBjb21tYW5kLmFjdGlvbjsKICAgIGNvbnN0IHRhcmdldCA9IGFjdGlvbi5r"
++            + "aW5kID09PSAnb3Blbl9jYW5kaWRhdGUnID8gc3RhdGUucmVmcy5nZXQoYWN0aW9uLmNhbmRpZGF0ZVJlZikgOgogICAgICBhY3Rp"
++            + "b24ua2luZCA9PT0gJ3J1bl9wcmVwYXJhdGlvbl9zdGVwJyAmJiBhY3Rpb24uYWRhcHRlcklkID09PSAnYnVpbHRpbi5wdWJsaWMt"
++            + "c2VhcmNoJwogICAgICAgID8gc3RhdGUucmVmcy5nZXQoYWN0aW9uLmJpbmRpbmdzLmNhbmRpZGF0ZVJlZikKICAgICAgICA6IG51"
++            + "bGw7CiAgICBzdGF0ZS51c2VkID0gdHJ1ZTsKICAgIHRyeSB7CiAgICAgIHN3aXRjaCAoYWN0aW9uLmtpbmQpIHsKICAgICAgICBj"
++            + "YXNlICdyZXF1ZXN0X2h1bWFuJzoKICAgICAgICAgIHJldHVybiB7IGNvbW1hbmRJZDogY29tbWFuZC5jb21tYW5kSWQsIHN0YXR1"
++            + "czogJ2hhbmRvZmYnLCBjb2RlOiBhY3Rpb24ucmVhc29uQ29kZSB9OwogICAgICAgIGNhc2UgJ2ZpbmlzaCc6CiAgICAgICAgICBy"
++            + "ZXR1cm4geyBjb21tYW5kSWQ6IGNvbW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdhcHBsaWVkJywgY29kZTogJ0FJX1JFU1BPTlNF"
++            + "X1JFQ09SREVEJyB9OwogICAgICAgIGNhc2UgJ2luc3BlY3RfcGFnZSc6CiAgICAgICAgICByZXR1cm4geyBjb21tYW5kSWQ6IGNv"
++            + "bW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdhcHBsaWVkJywgY29kZTogJ09CU0VSVkFUSU9OX1JFUVVJUkVEJyB9OwogICAgICAg"
++            + "IGNhc2UgJ3Njcm9sbCc6CiAgICAgICAgICBzY3JvbGxCeSh7IHRvcDogaW5uZXJIZWlnaHQgKiAwLjggKiAoYWN0aW9uLmRpcmVj"
++            + "dGlvbiA9PT0gJ3VwJyA/IC0xIDogMSksIGJlaGF2aW9yOiAnaW5zdGFudCcgfSk7CiAgICAgICAgICByZXR1cm4geyBjb21tYW5k"
++            + "SWQ6IGNvbW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdhcHBsaWVkJywgY29kZTogJ1ZJRVdQT1JUX1NDUk9MTEVEJyB9OwogICAg"
++            + "ICAgIGNhc2UgJ29wZW5fY2FuZGlkYXRlJzoKICAgICAgICAgIC8vIEF1dG9tYXRpYyBuYXZpZ2F0aW9uIHJlbWFpbnMgZGlzYWJs"
++            + "ZWQgdW50aWwgdGhlIG5hdGl2ZSBmb3JrIG93bnMgYQogICAgICAgICAgLy8gcmVkaXJlY3QtIGFuZCBETlMtYXdhcmUgTmF2aWdh"
++            + "dGlvblRocm90dGxlL25ldHdvcmsgcG9saWN5LiBFdmVuIGEKICAgICAgICAgIC8vIHNhbWUtb3JpZ2luIGhyZWYgY2FuIHJlZGly"
++            + "ZWN0IHRvIGEgcHJpdmF0ZSBvciBjb21taXRtZW50IHN1cmZhY2UuCiAgICAgICAgICBwdWJsaWNVcmwodGFyZ2V0LmluZm8uaHJl"
++            + "Zik7CiAgICAgICAgICByZXR1cm4geyBjb21tYW5kSWQ6IGNvbW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdoYW5kb2ZmJywgY29k"
++            + "ZTogJ05BVklHQVRJT05fUkVRVUlSRVNfVVNFUicgfTsKICAgICAgICBjYXNlICdydW5fcHJlcGFyYXRpb25fc3RlcCc6IHsKICAg"
++            + "ICAgICAgIGlmIChhY3Rpb24uYWRhcHRlcklkID09PSAnYnVpbHRpbi5wdWJsaWMtc2VhcmNoJykgewogICAgICAgICAgICBjb25z"
++            + "dCBpbnB1dCA9IHRhcmdldC5lbGVtZW50OwogICAgICAgICAgICAvLyBEZWxpYmVyYXRlbHkgYXZvaWQgZm9jdXMvaW5wdXQvY2hh"
++            + "bmdlL3N1Ym1pdCBldmVudHMuIEEgcGFnZSBjYW4KICAgICAgICAgICAgLy8gYXR0YWNoIGFyYml0cmFyeSBzaWRlIGVmZmVjdHMg"
++            + "dG8gdGhvc2UgZXZlbnRzOyB2MSBvbmx5IHN0YWdlcyB0aGUKICAgICAgICAgICAgLy8gcHVibGljIHF1ZXJ5IHZhbHVlIGZvciB0"
++            + "aGUgdXNlciB0byByZXZpZXcgYW5kIHN1Ym1pdCBkaXJlY3RseS4KICAgICAgICAgICAgT2JqZWN0LmdldE93blByb3BlcnR5RGVz"
++            + "Y3JpcHRvcihIVE1MSW5wdXRFbGVtZW50LnByb3RvdHlwZSwgJ3ZhbHVlJykuc2V0LmNhbGwoaW5wdXQsIGFjdGlvbi5iaW5kaW5n"
++            + "cy5xdWVyeSk7CiAgICAgICAgICAgIGlmIChpbnB1dC52YWx1ZSAhPT0gYWN0aW9uLmJpbmRpbmdzLnF1ZXJ5KSB7CiAgICAgICAg"
++            + "ICAgICAgcmV0dXJuIHsgY29tbWFuZElkOiBjb21tYW5kLmNvbW1hbmRJZCwgc3RhdHVzOiAnb3V0Y29tZV91bmtub3duJywgY29k"
++            + "ZTogJ1BSRVBBUkFUSU9OX09VVENPTUVfVU5LTk9XTicgfTsKICAgICAgICAgICAgfQogICAgICAgICAgICByZXR1cm4geyBjb21t"
++            + "YW5kSWQ6IGNvbW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdhcHBsaWVkJywgY29kZTogJ1BVQkxJQ19TRUFSQ0hfUFJFUEFSRUQn"
++            + "IH07CiAgICAgICAgICB9CiAgICAgICAgICBjb25zdCBwcmVwYXJlZCA9IGNvdXBhbmdQcmVwYXJhdGlvbihhY3Rpb24pOwogICAg"
++            + "ICAgICAgaWYgKHByZXBhcmVkLnZlcmlmeU9ubHkpIHsKICAgICAgICAgICAgcmV0dXJuIHsgY29tbWFuZElkOiBjb21tYW5kLmNv"
++            + "bW1hbmRJZCwgc3RhdHVzOiAnYXBwbGllZCcsIGNvZGU6ICdDT1VQQU5HX09QVElPTlNfVkVSSUZJRUQnIH07CiAgICAgICAgICB9"
++            + "CiAgICAgICAgICBpZiAoIXByZXBhcmVkLnRhcmdldCB8fCAhcHJlcGFyZWQudGFyZ2V0LmlzQ29ubmVjdGVkIHx8ICF2aXNpYmxl"
++            + "KHByZXBhcmVkLnRhcmdldCkgfHwgIWVuYWJsZWQocHJlcGFyZWQudGFyZ2V0KSkgewogICAgICAgICAgICByZXR1cm4geyBjb21t"
++            + "YW5kSWQ6IGNvbW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdyZWplY3RlZCcsIGNvZGU6IHByZXBhcmVkLmNvZGUgfHwgJ1JFT0JT"
++            + "RVJWRV9SRVFVSVJFRCcgfTsKICAgICAgICAgIH0KICAgICAgICAgIGlmIChhY3Rpb24uc3RlcElkID09PSAnc2V0X3F1YW50aXR5"
++            + "JykgewogICAgICAgICAgICBjb25zdCBzZXR0ZXIgPSBPYmplY3QuZ2V0T3duUHJvcGVydHlEZXNjcmlwdG9yKEhUTUxJbnB1dEVs"
++            + "ZW1lbnQucHJvdG90eXBlLCAndmFsdWUnKT8uc2V0OwogICAgICAgICAgICBpZiAoIXNldHRlcikgcmV0dXJuIHsgY29tbWFuZElk"
++            + "OiBjb21tYW5kLmNvbW1hbmRJZCwgc3RhdHVzOiAncmVqZWN0ZWQnLCBjb2RlOiAnSU5QVVRfVU5TVVBQT1JURUQnIH07CiAgICAg"
++            + "ICAgICAgIHNldHRlci5jYWxsKHByZXBhcmVkLnRhcmdldCwgU3RyaW5nKHByZXBhcmVkLmRlc2lyZWRRdWFudGl0eSkpOwogICAg"
++            + "ICAgICAgICBwcmVwYXJlZC50YXJnZXQuZGlzcGF0Y2hFdmVudChuZXcgRXZlbnQoJ2lucHV0JywgeyBidWJibGVzOiB0cnVlIH0p"
++            + "KTsKICAgICAgICAgICAgcHJlcGFyZWQudGFyZ2V0LmRpc3BhdGNoRXZlbnQobmV3IEV2ZW50KCdjaGFuZ2UnLCB7IGJ1YmJsZXM6"
++            + "IHRydWUgfSkpOwogICAgICAgICAgICByZXR1cm4gcHJlcGFyZWQudGFyZ2V0LnZhbHVlID09PSBTdHJpbmcocHJlcGFyZWQuZGVz"
++            + "aXJlZFF1YW50aXR5KQogICAgICAgICAgICAgID8geyBjb21tYW5kSWQ6IGNvbW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdhcHBs"
++            + "aWVkJywgY29kZTogJ0NPVVBBTkdfUVVBTlRJVFlfU0VUJyB9CiAgICAgICAgICAgICAgOiB7IGNvbW1hbmRJZDogY29tbWFuZC5j"
++            + "b21tYW5kSWQsIHN0YXR1czogJ291dGNvbWVfdW5rbm93bicsIGNvZGU6ICdDT1VQQU5HX1FVQU5USVRZX09VVENPTUVfVU5LTk9X"
++            + "TicgfTsKICAgICAgICAgIH0KICAgICAgICAgIGlmIChhY3Rpb24uc3RlcElkID09PSAnc2VsZWN0X29wdGlvbicpIHsKICAgICAg"
++            + "ICAgICAgaWYgKHByZXBhcmVkLnRhcmdldCBpbnN0YW5jZW9mIEhUTUxTZWxlY3RFbGVtZW50KSB7CiAgICAgICAgICAgICAgY29u"
++            + "c3Qgc2V0dGVyID0gT2JqZWN0LmdldE93blByb3BlcnR5RGVzY3JpcHRvcihIVE1MU2VsZWN0RWxlbWVudC5wcm90b3R5cGUsICd2"
++            + "YWx1ZScpPy5zZXQ7CiAgICAgICAgICAgICAgaWYgKCFzZXR0ZXIgfHwgIXByZXBhcmVkLm9wdGlvbikgewogICAgICAgICAgICAg"
++            + "ICAgcmV0dXJuIHsgY29tbWFuZElkOiBjb21tYW5kLmNvbW1hbmRJZCwgc3RhdHVzOiAncmVqZWN0ZWQnLCBjb2RlOiAnSU5QVVRf"
++            + "VU5TVVBQT1JURUQnIH07CiAgICAgICAgICAgICAgfQogICAgICAgICAgICAgIHNldHRlci5jYWxsKHByZXBhcmVkLnRhcmdldCwg"
++            + "cHJlcGFyZWQub3B0aW9uLnZhbHVlKTsKICAgICAgICAgICAgICBwcmVwYXJlZC50YXJnZXQuZGlzcGF0Y2hFdmVudChuZXcgRXZl"
++            + "bnQoJ2lucHV0JywgeyBidWJibGVzOiB0cnVlIH0pKTsKICAgICAgICAgICAgICBwcmVwYXJlZC50YXJnZXQuZGlzcGF0Y2hFdmVu"
++            + "dChuZXcgRXZlbnQoJ2NoYW5nZScsIHsgYnViYmxlczogdHJ1ZSB9KSk7CiAgICAgICAgICAgICAgY29uc3Qgc2VsZWN0ZWQgPSBj"
++            + "bGVhbihwcmVwYXJlZC50YXJnZXQuc2VsZWN0ZWRPcHRpb25zPy5bMF0/LnRleHRDb250ZW50LCAyMDApCiAgICAgICAgICAgICAg"
++            + "ICAubm9ybWFsaXplKCdORktDJykucmVwbGFjZSgvXHMrL2csICcgJykudHJpbSgpOwogICAgICAgICAgICAgIHJldHVybiBzZWxl"
++            + "Y3RlZCA9PT0gYWN0aW9uLmJpbmRpbmdzLnZhbHVlTmFtZS5ub3JtYWxpemUoJ05GS0MnKS5yZXBsYWNlKC9ccysvZywgJyAnKS50"
++            + "cmltKCkKICAgICAgICAgICAgICAgID8geyBjb21tYW5kSWQ6IGNvbW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdhcHBsaWVkJywg"
++            + "Y29kZTogJ0NPVVBBTkdfT1BUSU9OX1NFTEVDVEVEJyB9CiAgICAgICAgICAgICAgICA6IHsgY29tbWFuZElkOiBjb21tYW5kLmNv"
++            + "bW1hbmRJZCwgc3RhdHVzOiAnb3V0Y29tZV91bmtub3duJywgY29kZTogJ0NPVVBBTkdfT1BUSU9OX09VVENPTUVfVU5LTk9XTicg"
++            + "fTsKICAgICAgICAgICAgfQogICAgICAgICAgICBwcmVwYXJlZC50YXJnZXQuY2xpY2soKTsKICAgICAgICAgICAgY29uc3Qgc2Vs"
++            + "ZWN0ZWQgPSBwcmVwYXJlZC50YXJnZXQuY2hlY2tlZCA9PT0gdHJ1ZSB8fCBwcmVwYXJlZC50YXJnZXQuZ2V0QXR0cmlidXRlKCdh"
++            + "cmlhLWNoZWNrZWQnKSA9PT0gJ3RydWUnIHx8CiAgICAgICAgICAgICAgcHJlcGFyZWQudGFyZ2V0LmdldEF0dHJpYnV0ZSgnYXJp"
++            + "YS1zZWxlY3RlZCcpID09PSAndHJ1ZScgfHwgcHJlcGFyZWQudGFyZ2V0LmNsYXNzTGlzdC5jb250YWlucygnc2VsZWN0ZWQnKTsK"
++            + "ICAgICAgICAgICAgcmV0dXJuIHNlbGVjdGVkCiAgICAgICAgICAgICAgPyB7IGNvbW1hbmRJZDogY29tbWFuZC5jb21tYW5kSWQs"
++            + "IHN0YXR1czogJ2FwcGxpZWQnLCBjb2RlOiAnQ09VUEFOR19PUFRJT05fU0VMRUNURUQnIH0KICAgICAgICAgICAgICA6IHsgY29t"
++            + "bWFuZElkOiBjb21tYW5kLmNvbW1hbmRJZCwgc3RhdHVzOiAnb3V0Y29tZV91bmtub3duJywgY29kZTogJ0NPVVBBTkdfT1BUSU9O"
++            + "X09VVENPTUVfVU5LTk9XTicgfTsKICAgICAgICAgIH0KICAgICAgICAgIGxldCBhY3RpdmF0aW9uQ291bnQgPSAwOwogICAgICAg"
++            + "ICAgY29uc3QgbWFya0FjdGl2YXRpb24gPSAoZXZlbnQpID0+IHsKICAgICAgICAgICAgaWYgKGV2ZW50LnRhcmdldCA9PT0gcHJl"
++            + "cGFyZWQudGFyZ2V0IHx8IHByZXBhcmVkLnRhcmdldC5jb250YWlucyhldmVudC50YXJnZXQpKSBhY3RpdmF0aW9uQ291bnQrKzsK"
++            + "ICAgICAgICAgIH07CiAgICAgICAgICBkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsIG1hcmtBY3RpdmF0aW9uLCB0"
++            + "cnVlKTsKICAgICAgICAgIHByZXBhcmVkLnRhcmdldC5jbGljaygpOwogICAgICAgICAgZG9jdW1lbnQucmVtb3ZlRXZlbnRMaXN0"
++            + "ZW5lcignY2xpY2snLCBtYXJrQWN0aXZhdGlvbiwgdHJ1ZSk7CiAgICAgICAgICBpZiAoYWN0aXZhdGlvbkNvdW50ICE9PSAxKSB7"
++            + "CiAgICAgICAgICAgIHJldHVybiB7IGNvbW1hbmRJZDogY29tbWFuZC5jb21tYW5kSWQsIHN0YXR1czogJ291dGNvbWVfdW5rbm93"
++            + "bicsIGNvZGU6ICdNRVJDSEFOVF9BQ1RJVkFUSU9OX1VOS05PV04nIH07CiAgICAgICAgICB9CiAgICAgICAgICBjb25zdCBjb2Rl"
++            + "ID0gYWN0aW9uLnN0ZXBJZCA9PT0gJ2FkZF90b19jYXJ0JyA/ICdDT1VQQU5HX0FERF9UT19DQVJUX0FDVElWQVRFRCcgOgogICAg"
++            + "ICAgICAgICBhY3Rpb24uc3RlcElkID09PSAnYnV5X25vdycgPyAnQ09VUEFOR19CVVlfTk9XX0FDVElWQVRFRCcgOiAnQ09VUEFO"
++            + "R19DSEVDS09VVF9SRVZJRVdfQUNUSVZBVEVEJzsKICAgICAgICAgIC8vIEFjdGl2YXRpb24gaXMgdGhlIGxhc3QgYXV0b21hdGVk"
++            + "IGJvdW5kYXJ5LiBOYXZpZ2F0aW9uLCBsb2dpbiwgYW5kCiAgICAgICAgICAvLyBmaW5hbCBvcmRlci9wYXltZW50IGNvbmZpcm1h"
++            + "dGlvbiBjb250aW51ZSB1bmRlciBkaXJlY3QgdXNlciBjb250cm9sLgogICAgICAgICAgcmV0dXJuIHsKICAgICAgICAgICAgY29t"
++            + "bWFuZElkOiBjb21tYW5kLmNvbW1hbmRJZCwKICAgICAgICAgICAgc3RhdHVzOiBhY3Rpb24uc3RlcElkID09PSAnYWRkX3RvX2Nh"
++            + "cnQnID8gJ2FwcGxpZWQnIDogJ2hhbmRvZmYnLAogICAgICAgICAgICBjb2RlLAogICAgICAgICAgfTsKICAgICAgICB9CiAgICAg"
++            + "ICAgZGVmYXVsdDoKICAgICAgICAgIHJldHVybiB7IGNvbW1hbmRJZDogY29tbWFuZC5jb21tYW5kSWQsIHN0YXR1czogJ3JlamVj"
++            + "dGVkJywgY29kZTogJ1BPTElDWV9ERU5JRUQnIH07CiAgICAgIH0KICAgIH0gY2F0Y2ggewogICAgICByZXR1cm4geyBjb21tYW5k"
++            + "SWQ6IGNvbW1hbmQuY29tbWFuZElkLCBzdGF0dXM6ICdvdXRjb21lX3Vua25vd24nLCBjb2RlOiAnRVhFQ1VUSU9OX09VVENPTUVf"
++            + "VU5LTk9XTicgfTsKICAgIH0KICB9CgogIGdsb2JhbFRoaXMuX19sYW5lQWdlbnQgPSBPYmplY3QuZnJlZXplKHsgc25hcHNob3Qs"
++            + "IGluc3BlY3QsIGV4ZWN1dGUgfSk7Cn0pKCk7Cg==", Base64.DEFAULT), StandardCharsets.UTF_8);
++    private LanePageScript() {}
++}

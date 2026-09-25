@@ -1,0 +1,1623 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vitlane.example/schemas/browser-protocol/v1.schema.json",
+  "title": "Vitlane browser protocol v1",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/StepRequest"
+    },
+    {
+      "$ref": "#/$defs/AuthorizedCommand"
+    },
+    {
+      "$ref": "#/$defs/ActionResult"
+    },
+    {
+      "$ref": "#/$defs/DiscoverRequest"
+    },
+    {
+      "$ref": "#/$defs/DiscoverResponse"
+    }
+  ],
+  "$defs": {
+    "Identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "PageIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tabId",
+        "frameId",
+        "documentEpoch",
+        "observationId",
+        "topOrigin",
+        "frameOrigin",
+        "pathname",
+        "queryOrFragmentPresent"
+      ],
+      "properties": {
+        "tabId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "frameId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "documentEpoch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observationId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "topOrigin": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 512
+        },
+        "frameOrigin": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 512
+        },
+        "pathname": {
+          "type": "string",
+          "pattern": "^/[^?#]{0,1023}$",
+          "maxLength": 1024
+        },
+        "queryOrFragmentPresent": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Candidate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "candidateRef",
+            "nodeRef",
+            "kind",
+            "role",
+            "name",
+            "href"
+          ],
+          "properties": {
+            "candidateRef": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "nodeRef": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "kind": {
+              "const": "safe_link"
+            },
+            "role": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "href": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 4096,
+              "description": "Public HTTP(S), no credentials/query/fragment, and same-origin with nativeMetadata.topOrigin; enforced by runtime policy."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "candidateRef",
+            "nodeRef",
+            "kind",
+            "role",
+            "name"
+          ],
+          "properties": {
+            "candidateRef": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "nodeRef": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "kind": {
+              "const": "public_search"
+            },
+            "role": {
+              "const": "searchbox"
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        }
+      ]
+    },
+    "SanitizedObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observationId",
+        "nativeMetadata",
+        "untrustedPageData",
+        "privacy"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "privacy": {
+                "required": [
+                  "collectionStatus"
+                ],
+                "properties": {
+                  "collectionStatus": {
+                    "const": "handoff_required"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "untrustedPageData": {
+                "properties": {
+                  "pageTypeHint": {
+                    "const": "unknown"
+                  },
+                  "title": {
+                    "const": ""
+                  },
+                  "visibleText": {
+                    "const": ""
+                  },
+                  "candidates": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "observationId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "nativeMetadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tabId",
+            "frameId",
+            "documentEpoch",
+            "topOrigin",
+            "frameOrigin",
+            "foreground",
+            "pathname",
+            "queryOrFragmentPresent"
+          ],
+          "properties": {
+            "tabId": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "frameId": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "documentEpoch": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "topOrigin": {
+              "type": "string",
+              "format": "uri"
+            },
+            "frameOrigin": {
+              "type": "string",
+              "format": "uri"
+            },
+            "foreground": {
+              "const": true
+            },
+            "pathname": {
+              "type": "string",
+              "pattern": "^/[^?#]{0,1023}$",
+              "maxLength": 1024
+            },
+            "queryOrFragmentPresent": {
+              "type": "boolean",
+              "description": "Browser-verified presence only; query and fragment values remain omitted."
+            }
+          }
+        },
+        "untrustedPageData": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pageTypeHint",
+            "title",
+            "visibleText",
+            "candidates"
+          ],
+          "properties": {
+            "pageTypeHint": {
+              "enum": [
+                "public",
+                "search",
+                "product",
+                "listing",
+                "unknown"
+              ]
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "visibleText": {
+              "type": "string",
+              "maxLength": 10000
+            },
+            "candidates": {
+              "type": "array",
+              "maxItems": 120,
+              "items": {
+                "$ref": "#/$defs/Candidate"
+              }
+            }
+          }
+        },
+        "privacy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "inputValuesOmitted",
+            "secretsOmitted",
+            "screenshotIncluded",
+            "urlQueryAndFragmentOmitted",
+            "collectionStatus",
+            "handoffReasonCodes",
+            "excludedBoundaryCodes"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "collectionStatus": {
+                    "const": "sanitized"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "handoffReasonCodes": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "collectionStatus": {
+                    "const": "handoff_required"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "handoffReasonCodes": {
+                    "minItems": 1
+                  },
+                  "excludedBoundaryCodes": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "inputValuesOmitted": {
+              "const": true
+            },
+            "secretsOmitted": {
+              "const": true
+            },
+            "screenshotIncluded": {
+              "const": false
+            },
+            "urlQueryAndFragmentOmitted": {
+              "const": true
+            },
+            "collectionStatus": {
+              "enum": [
+                "sanitized",
+                "handoff_required"
+              ]
+            },
+            "handoffReasonCodes": {
+              "type": "array",
+              "uniqueItems": true,
+              "maxItems": 12,
+              "items": {
+                "enum": [
+                  "AUTHENTICATION_REQUIRED",
+                  "SENSITIVE_INPUT_REQUIRED",
+                  "FORM_SUBMISSION_REQUIRED",
+                  "PAYMENT_OR_COMMITMENT",
+                  "UNSUPPORTED_INTERACTION",
+                  "CROSS_ORIGIN_FRAME",
+                  "PRIVATE_NETWORK_BLOCKED"
+                ]
+              }
+            },
+            "excludedBoundaryCodes": {
+              "type": "array",
+              "uniqueItems": true,
+              "maxItems": 12,
+              "description": "Nonblocking subtrees or controls omitted before visibleText and candidates were produced.",
+              "items": {
+                "enum": [
+                  "FORM_SUBMISSION_REQUIRED",
+                  "PAYMENT_OR_COMMITMENT",
+                  "UNSUPPORTED_INTERACTION",
+                  "CROSS_ORIGIN_FRAME",
+                  "PRIVATE_NETWORK_BLOCKED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "StepRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolVersion",
+        "goal",
+        "observation",
+        "history",
+        "commandContext"
+      ],
+      "properties": {
+        "protocolVersion": {
+          "const": 1
+        },
+        "goal": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "observation": {
+          "$ref": "#/$defs/SanitizedObservation"
+        },
+        "history": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sequence",
+              "actionKind",
+              "status",
+              "code"
+            ],
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "actionKind": {
+                "enum": [
+                  "inspect_page",
+                  "open_candidate",
+                  "scroll",
+                  "run_preparation_step",
+                  "request_human",
+                  "finish"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "rejected",
+                  "applied",
+                  "outcome_unknown",
+                  "handoff"
+                ]
+              },
+              "code": {
+                "$ref": "#/$defs/Identifier"
+              }
+            }
+          }
+        },
+        "commandContext": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "runId",
+            "deviceId",
+            "profileRef",
+            "sequence",
+            "leaseEpoch",
+            "controlGeneration"
+          ],
+          "properties": {
+            "runId": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "deviceId": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "profileRef": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "leaseEpoch": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "controlGeneration": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "approvedPreparation": {
+          "$ref": "#/$defs/ApprovedPreparation"
+        }
+      }
+    },
+    "ProposedAction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "page",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "inspect_page"
+            },
+            "page": {
+              "$ref": "#/$defs/PageIdentity"
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "page",
+            "candidateRef",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "open_candidate"
+            },
+            "page": {
+              "$ref": "#/$defs/PageIdentity"
+            },
+            "candidateRef": {
+              "$ref": "#/$defs/Identifier"
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "page",
+            "direction",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "scroll"
+            },
+            "page": {
+              "$ref": "#/$defs/PageIdentity"
+            },
+            "direction": {
+              "enum": [
+                "up",
+                "down"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "page",
+            "adapterId",
+            "recipeVersion",
+            "stepId",
+            "bindings",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "run_preparation_step"
+            },
+            "page": {
+              "$ref": "#/$defs/PageIdentity"
+            },
+            "adapterId": {
+              "const": "builtin.public-search"
+            },
+            "recipeVersion": {
+              "const": "1"
+            },
+            "stepId": {
+              "const": "prepare_query"
+            },
+            "bindings": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "candidateRef",
+                "query"
+              ],
+              "properties": {
+                "candidateRef": {
+                  "$ref": "#/$defs/Identifier"
+                },
+                "query": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                }
+              }
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "page",
+            "adapterId",
+            "recipeVersion",
+            "stepId",
+            "bindings",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "run_preparation_step"
+            },
+            "page": {
+              "$ref": "#/$defs/PageIdentity"
+            },
+            "adapterId": {
+              "const": "builtin.coupang.purchase-preparation"
+            },
+            "recipeVersion": {
+              "const": "1"
+            },
+            "stepId": {
+              "enum": [
+                "select_option",
+                "verify_options",
+                "set_quantity",
+                "buy_now",
+                "add_to_cart",
+                "start_checkout"
+              ]
+            },
+            "bindings": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "approvedPreparation",
+                    "approval",
+                    "targetLineIndex",
+                    "productId",
+                    "itemId",
+                    "vendorItemId",
+                    "quantity",
+                    "unitPriceCeilingKrw",
+                    "linePriceCeilingKrw",
+                    "expectedOrigin",
+                    "expectedPath"
+                  ],
+                  "properties": {
+                    "approval": {
+                      "$ref": "#/$defs/PurchasePreparationApproval"
+                    },
+                    "productId": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,19}$"
+                    },
+                    "itemId": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,19}$"
+                    },
+                    "vendorItemId": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,19}$"
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 99
+                    },
+                    "unitPriceCeilingKrw": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 1000000000000
+                    },
+                    "linePriceCeilingKrw": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 1000000000000
+                    },
+                    "expectedOrigin": {
+                      "enum": [
+                        "https://coupang.com",
+                        "https://www.coupang.com"
+                      ]
+                    },
+                    "expectedPath": {
+                      "type": "string",
+                      "pattern": "^/vp/products/[1-9][0-9]*/?$",
+                      "maxLength": 1024
+                    },
+                    "approvedPreparation": {
+                      "$ref": "#/$defs/ApprovedPreparationSnapshot"
+                    },
+                    "targetLineIndex": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 19
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "approvedPreparation",
+                    "approval",
+                    "targetLineIndex",
+                    "productId",
+                    "itemId",
+                    "vendorItemId",
+                    "quantity",
+                    "unitPriceCeilingKrw",
+                    "linePriceCeilingKrw",
+                    "expectedOrigin",
+                    "expectedPath",
+                    "targetOptionIndex",
+                    "groupName",
+                    "valueName"
+                  ],
+                  "properties": {
+                    "approval": {
+                      "$ref": "#/$defs/PurchasePreparationApproval"
+                    },
+                    "productId": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,19}$"
+                    },
+                    "itemId": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,19}$"
+                    },
+                    "vendorItemId": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,19}$"
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 99
+                    },
+                    "unitPriceCeilingKrw": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 1000000000000
+                    },
+                    "linePriceCeilingKrw": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 1000000000000
+                    },
+                    "expectedOrigin": {
+                      "enum": [
+                        "https://coupang.com",
+                        "https://www.coupang.com"
+                      ]
+                    },
+                    "expectedPath": {
+                      "type": "string",
+                      "pattern": "^/vp/products/[1-9][0-9]*/?$",
+                      "maxLength": 1024
+                    },
+                    "approvedPreparation": {
+                      "$ref": "#/$defs/ApprovedPreparationSnapshot"
+                    },
+                    "targetLineIndex": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 19
+                    },
+                    "targetOptionIndex": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9
+                    },
+                    "groupName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "valueName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "approvedPreparation",
+                    "approval",
+                    "approvedLines",
+                    "expectedOrigin",
+                    "expectedPath"
+                  ],
+                  "properties": {
+                    "approval": {
+                      "$ref": "#/$defs/PurchasePreparationApproval"
+                    },
+                    "approvedLines": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 20,
+                      "items": {
+                        "$ref": "#/$defs/CoupangApprovedLine"
+                      }
+                    },
+                    "expectedOrigin": {
+                      "enum": [
+                        "https://cart.coupang.com"
+                      ]
+                    },
+                    "expectedPath": {
+                      "const": "/cartView.pang"
+                    },
+                    "approvedPreparation": {
+                      "$ref": "#/$defs/ApprovedPreparationSnapshot"
+                    }
+                  }
+                }
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "stepId": {
+                    "const": "select_option"
+                  }
+                },
+                "required": [
+                  "stepId"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "bindings": {
+                    "required": [
+                      "targetOptionIndex",
+                      "groupName",
+                      "valueName"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "stepId": {
+                    "const": "start_checkout"
+                  }
+                },
+                "required": [
+                  "stepId"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "bindings": {
+                    "required": [
+                      "approvedLines"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "stepId": {
+                    "enum": [
+                      "verify_options",
+                      "set_quantity",
+                      "buy_now",
+                      "add_to_cart"
+                    ]
+                  }
+                },
+                "required": [
+                  "stepId"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "bindings": {
+                    "required": [
+                      "targetLineIndex"
+                    ],
+                    "not": {
+                      "required": [
+                        "targetOptionIndex"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "page",
+            "reasonCode",
+            "message",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "request_human"
+            },
+            "page": {
+              "$ref": "#/$defs/PageIdentity"
+            },
+            "reasonCode": {
+              "enum": [
+                "AUTHENTICATION_REQUIRED",
+                "SENSITIVE_INPUT_REQUIRED",
+                "FORM_SUBMISSION_REQUIRED",
+                "PAYMENT_OR_COMMITMENT",
+                "UNSUPPORTED_INTERACTION",
+                "CROSS_ORIGIN_FRAME",
+                "PRIVATE_NETWORK_BLOCKED",
+                "PAGE_CHANGED",
+                "USER_DECISION_REQUIRED"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "page",
+            "message",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "finish"
+            },
+            "page": {
+              "$ref": "#/$defs/PageIdentity"
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4000
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        }
+      ]
+    },
+    "AuthorizedCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolVersion",
+        "commandId",
+        "runId",
+        "deviceId",
+        "profileRef",
+        "sequence",
+        "leaseEpoch",
+        "controlGeneration",
+        "expiresAt",
+        "actionHash",
+        "action",
+        "serverPermit"
+      ],
+      "properties": {
+        "protocolVersion": {
+          "const": 1
+        },
+        "commandId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "runId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "deviceId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "profileRef": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "leaseEpoch": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "controlGeneration": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actionHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "action": {
+          "$ref": "#/$defs/ProposedAction"
+        },
+        "serverPermit": {
+          "type": "string",
+          "pattern": "^hmac-sha256:[A-Za-z0-9_-]{43}$"
+        }
+      }
+    },
+    "ActionResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commandId",
+        "status",
+        "code"
+      ],
+      "properties": {
+        "commandId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "status": {
+          "enum": [
+            "rejected",
+            "applied",
+            "outcome_unknown",
+            "handoff"
+          ]
+        },
+        "code": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "nextObservationId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "evidenceRef": {
+          "$ref": "#/$defs/Identifier"
+        }
+      }
+    },
+    "MerchantSource": {
+      "enum": [
+        "COUPANG",
+        "ELEVENST",
+        "MUSINSA",
+        "KURLY",
+        "LOTTEON",
+        "DAISOMALL",
+        "AUCTION",
+        "OHOUSE"
+      ]
+    },
+    "DiscoverRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query",
+        "source",
+        "limit",
+        "offset"
+      ],
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "source": {
+          "$ref": "#/$defs/MerchantSource"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 400
+        }
+      }
+    },
+    "DiscoveryResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "url",
+        "title",
+        "context"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/MerchantSource"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 4096
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "context": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "priceText": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^(?:₩(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,12})(?:원)?|(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,12})원)$"
+        }
+      }
+    },
+    "DiscoveryCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "status",
+        "count"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/MerchantSource"
+        },
+        "status": {
+          "enum": [
+            "SUCCEEDED",
+            "EMPTY",
+            "FAILED"
+          ]
+        },
+        "reasonCode": {
+          "enum": [
+            "DISCOVERY_BROWSER_UNAVAILABLE",
+            "DISCOVERY_CANCELLED",
+            "DISCOVERY_DNS_FAILED",
+            "DISCOVERY_FAILED",
+            "DISCOVERY_NAVIGATION_BLOCKED",
+            "DISCOVERY_RESULT_INVALID",
+            "DISCOVERY_TIMEOUT",
+            "DISCOVERY_UPSTREAM_FAILED",
+            "PRIVATE_NETWORK_BLOCKED"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        }
+      }
+    },
+    "DiscoveryResponseBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolVersion",
+        "results",
+        "coverage"
+      ],
+      "properties": {
+        "protocolVersion": {
+          "const": 1
+        },
+        "results": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/DiscoveryResult"
+          }
+        },
+        "coverage": {
+          "$ref": "#/$defs/DiscoveryCoverage"
+        }
+      }
+    },
+    "DiscoverResponse": {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/DiscoveryResponseBase"
+            },
+            {
+              "properties": {
+                "results": {
+                  "minItems": 1
+                },
+                "coverage": {
+                  "properties": {
+                    "status": {
+                      "const": "SUCCEEDED"
+                    },
+                    "count": {
+                      "minimum": 1
+                    }
+                  },
+                  "not": {
+                    "required": [
+                      "reasonCode"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/DiscoveryResponseBase"
+            },
+            {
+              "properties": {
+                "results": {
+                  "maxItems": 0
+                },
+                "coverage": {
+                  "properties": {
+                    "status": {
+                      "const": "EMPTY"
+                    },
+                    "count": {
+                      "const": 0
+                    }
+                  },
+                  "not": {
+                    "required": [
+                      "reasonCode"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/DiscoveryResponseBase"
+            },
+            {
+              "properties": {
+                "results": {
+                  "maxItems": 0
+                },
+                "coverage": {
+                  "required": [
+                    "reasonCode"
+                  ],
+                  "properties": {
+                    "status": {
+                      "const": "FAILED"
+                    },
+                    "count": {
+                      "const": 0
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "PurchasePreparationApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approvalId",
+        "approvalDigest",
+        "currency",
+        "revision",
+        "expiresAt",
+        "totalPriceCeilingKrw"
+      ],
+      "properties": {
+        "approvalId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "approvalDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "currency": {
+          "const": "KRW"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "totalPriceCeilingKrw": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        }
+      }
+    },
+    "CoupangOfferIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "productId",
+        "itemId",
+        "vendorItemId"
+      ],
+      "properties": {
+        "productId": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "itemId": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "vendorItemId": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        }
+      }
+    },
+    "CoupangApprovedLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "productId",
+        "itemId",
+        "vendorItemId",
+        "quantity",
+        "unitPriceCeilingKrw",
+        "linePriceCeilingKrw"
+      ],
+      "properties": {
+        "productId": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "itemId": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "vendorItemId": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "unitPriceCeilingKrw": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        },
+        "linePriceCeilingKrw": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        }
+      }
+    },
+    "CoupangApprovedOptions": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "none"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "choices"
+          ],
+          "properties": {
+            "kind": {
+              "const": "choices"
+            },
+            "choices": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 10,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "groupName",
+                  "valueName"
+                ],
+                "properties": {
+                  "groupName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "valueName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CoupangApprovedPlanItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query",
+        "offerIdentity",
+        "quantity",
+        "unitPriceCeilingKrw",
+        "linePriceCeilingKrw",
+        "productUrl",
+        "options"
+      ],
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "offerIdentity": {
+          "$ref": "#/$defs/CoupangOfferIdentity"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "unitPriceCeilingKrw": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        },
+        "linePriceCeilingKrw": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000000
+        },
+        "productUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 4096
+        },
+        "options": {
+          "$ref": "#/$defs/CoupangApprovedOptions"
+        }
+      }
+    },
+    "ApprovedPreparation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "merchantId",
+        "recipeVersion",
+        "mode",
+        "approval",
+        "items",
+        "cursor",
+        "expectedPage"
+      ],
+      "properties": {
+        "merchantId": {
+          "const": "COUPANG"
+        },
+        "recipeVersion": {
+          "const": "1"
+        },
+        "mode": {
+          "enum": [
+            "single",
+            "multi"
+          ]
+        },
+        "approval": {
+          "$ref": "#/$defs/PurchasePreparationApproval"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/CoupangApprovedPlanItem"
+          }
+        },
+        "cursor": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "expectedPage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "origin",
+            "pathname"
+          ],
+          "properties": {
+            "origin": {
+              "enum": [
+                "https://coupang.com",
+                "https://www.coupang.com",
+                "https://cart.coupang.com"
+              ]
+            },
+            "pathname": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          }
+        }
+      }
+    },
+    "ApprovedPreparationSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "merchantId",
+        "recipeVersion",
+        "mode",
+        "route",
+        "approval",
+        "items"
+      ],
+      "properties": {
+        "merchantId": {
+          "const": "COUPANG"
+        },
+        "recipeVersion": {
+          "const": "1"
+        },
+        "mode": {
+          "enum": [
+            "single",
+            "multi"
+          ]
+        },
+        "approval": {
+          "$ref": "#/$defs/PurchasePreparationApproval"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/CoupangApprovedPlanItem"
+          }
+        },
+        "route": {
+          "enum": [
+            "single_buy_now",
+            "multi_cart_checkout"
+          ]
+        }
+      }
+    }
+  }
+}

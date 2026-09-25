@@ -1,0 +1,1 @@
+DROP TABLE curation_combination_cart_commands;

@@ -1,0 +1,5 @@
+.amazon-api-usage { min-width: 0; overflow-wrap: anywhere; }
+.amazon-api-usage button { min-height: var(--vt-foundation-size-touch); max-width: 100%; height: auto; white-space: normal; }
+.amazon-api-usage dd { margin-inline-start: 0; margin-block-end: var(--vt-foundation-space-3); }
+
+.amazon-api-usage__actions { display: flex; flex-wrap: wrap; gap: var(--vt-foundation-space-3); align-items: center; }

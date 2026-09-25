@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" role="img" aria-labelledby="t d">
+  <title id="t">Knit Runner sample product</title><desc id="d">Abstract light knit running shoe illustration.</desc>
+  <rect width="960" height="720" fill="#f5f1e8"/><ellipse cx="480" cy="575" rx="330" ry="38" fill="#ddd5c5"/>
+  <path d="M152 460c112-21 190-75 243-184 13-26 44-35 68-21l144 84c48 28 89 63 124 106l66 80c16 20 2 50-24 50H235c-70 0-108-38-83-115Z" fill="#e8e2d4" stroke="#817968" stroke-width="8"/>
+  <path d="M204 513h580c20 0 29 25 14 38l-22 19H225c-40 0-56-36-21-57Z" fill="#ffffff"/>
+  <path d="m395 325 142 77m-171-21 142 77m-170-18 142 77" stroke="#817968" stroke-width="12" stroke-linecap="round" stroke-dasharray="4 22"/>
+  <text x="64" y="90" fill="#5e584c" font-family="system-ui,sans-serif" font-size="38" font-weight="700">KNIT RUNNER</text>
+</svg>

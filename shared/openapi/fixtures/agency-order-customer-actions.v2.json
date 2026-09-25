@@ -1,0 +1,1098 @@
+{
+  "schemaVersion": "vitlane.agency-order-customer-actions.v2",
+  "cases": [
+    {
+      "name": "지시 유효·수납 전 — PAY만 열린다",
+      "now": "2026-08-22T12:00:00Z",
+      "projection": {
+        "agencyOrder": {
+          "id": "order-fixture-1",
+          "status": "ISSUED",
+          "sourceCartSnapshot": {
+            "cartId": "cart-fixture-1",
+            "cartVersion": 3,
+            "snapshotHash": "0xfixture-cart-snapshot",
+            "items": null
+          },
+          "lines": [
+            {
+              "lineId": "line-a",
+              "sourceCartItemId": "",
+              "planTargetId": "",
+              "candidateId": "",
+              "catalogProvider": "",
+              "shopDomain": "alpha.example",
+              "productUrl": "https://alpha.example/products/fixture-lamp",
+              "variantId": "variant-blue",
+              "productTitle": "Fixture Lamp",
+              "variantTitle": "Blue / 110V",
+              "selectedOptions": [
+                "Color: Blue",
+                "Voltage: 110V"
+              ],
+              "quantity": 2,
+              "unitPrice": {
+                "amountMinor": 1500,
+                "currency": "USD"
+              },
+              "lineSubtotal": {
+                "amountMinor": 3000,
+                "currency": "USD"
+              },
+              "observedAt": "0001-01-01T00:00:00Z",
+              "evidenceHash": ""
+            }
+          ],
+          "shippingAddress": {
+            "snapshotRef": "shipping-fixture-1",
+            "snapshotRevision": 2,
+            "snapshotHash": "0xfixture-shipping-snapshot",
+            "maskedSummary": "",
+            "country": "US"
+          },
+          "paymentSelection": {
+            "rail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecution": "SIMULATED"
+          },
+          "executionProfile": {
+            "paymentRail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecutionMode": "SIMULATED_NO_EFFECT"
+          },
+          "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+          "merchantCheckouts": null,
+          "passThroughTotal": {
+            "amountMinor": 3000,
+            "currency": "USD"
+          },
+          "agencyFee": {
+            "variable": {
+              "amountMinor": 162,
+              "currency": "USD"
+            },
+            "fixed": {
+              "amountMinor": 30,
+              "currency": "USD"
+            },
+            "total": {
+              "amountMinor": 192,
+              "currency": "USD"
+            },
+            "policyVersion": "PAYPAL_MO_PASS_THROUGH_540BPS_PLUS_30C_V1"
+          },
+          "customerPayableTotal": {
+            "amountMinor": 3192,
+            "currency": "USD"
+          },
+          "procurementAuthorization": {
+            "kind": "MANUAL_OPERATOR_PURCHASE",
+            "shops": [
+              {
+                "merchantId": "merchant-alpha",
+                "shopDomain": "alpha.example",
+                "lines": [
+                  {
+                    "lineId": "line-a",
+                    "productUrl": "https://alpha.example/products/fixture-lamp",
+                    "productTitle": "Fixture Lamp",
+                    "variantId": "variant-blue",
+                    "variantTitle": "Blue / 110V",
+                    "selectedOptions": [
+                      "Color: Blue",
+                      "Voltage: 110V"
+                    ],
+                    "quantity": 2,
+                    "unitPrice": {
+                      "amountMinor": 1500,
+                      "currency": "USD"
+                    },
+                    "lineSubtotal": {
+                      "amountMinor": 3000,
+                      "currency": "USD"
+                    }
+                  }
+                ],
+                "approvedAmount": {
+                  "amountMinor": 3000,
+                  "currency": "USD"
+                },
+                "conditions": {
+                  "shippingStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "cancellationStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "returnStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "deliveryGroups": null,
+                  "taxTotal": {
+                    "amountMinor": 0,
+                    "currency": "USD"
+                  },
+                  "dutiesDisposition": "NO_DUTY_OR_CROSS_BORDER_SIGNAL_AT_PREFLIGHT"
+                },
+                "quoteFingerprint": "0xfixture-quote",
+                "evidenceHash": "0xfixture-checkout-evidence"
+              }
+            ],
+            "approvedPassThrough": {
+              "amountMinor": 3000,
+              "currency": "USD"
+            },
+            "approvedAgencyFee": {
+              "amountMinor": 192,
+              "currency": "USD"
+            },
+            "approvedCustomerPayable": {
+              "amountMinor": 3192,
+              "currency": "USD"
+            },
+            "customerApproval": {
+              "agencyConsent": true,
+              "privacyConsent": true,
+              "locale": "en-US",
+              "copyVersion": "procurement-authorization.v1"
+            },
+            "orderSheetSessionId": "sheet-fixture-1",
+            "sourceCartSnapshotHash": "0xfixture-cart-snapshot",
+            "displayedSnapshotHash": "0xfixture-displayed-snapshot",
+            "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+            "acceptedAt": "2026-08-22T11:00:00Z",
+            "authorizationHash": "0xdd3f98d9da305543ecdd57c60f35821b85cc247c8985cc010e12ff8b412c3ccb"
+          },
+          "issuanceEvidence": {
+            "orderSheetSessionId": "sheet-fixture-1",
+            "displayedSnapshotHash": "0xfixture-displayed-snapshot",
+            "disclosureVersion": "2026-08-27",
+            "idempotencyKeyHash": "0xfixture-idempotency"
+          },
+          "issuedAt": "2026-08-22T11:00:00Z",
+          "expiresAt": "2026-08-23T07:00:00Z",
+          "snapshotHash": ""
+        },
+        "paymentInstruction": {
+          "id": "instruction-1",
+          "agencyOrderId": "order-fixture-1",
+          "agencyOrderSnapshotHash": "",
+          "paymentSelection": {
+            "rail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecution": "SIMULATED"
+          },
+          "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+          "customerPayableTotal": {
+            "amountMinor": 3192,
+            "currency": "USD"
+          },
+          "paymentPolicyVersion": "",
+          "shippingSnapshotRef": "",
+          "shippingSnapshotHash": "",
+          "expiresAt": "2026-08-23T07:00:00Z",
+          "idempotencyKeyHash": "",
+          "state": "PENDING",
+          "createdAt": "2026-08-22T11:00:00Z"
+        },
+        "process": {
+          "agencyOrderId": "order-fixture-1",
+          "state": "WAITING_CUSTOMER_PAYMENT",
+          "version": 1,
+          "createdAt": "0001-01-01T00:00:00Z",
+          "updatedAt": "0001-01-01T00:00:00Z"
+        },
+        "availableActions": [
+          {
+            "kind": "PAY",
+            "rail": "PAYPAL"
+          }
+        ],
+        "chainTransactions": null,
+        "merchantOrders": [],
+        "shipments": [],
+        "units": null
+      },
+      "availableActions": [
+        {
+          "kind": "PAY",
+          "rail": "PAYPAL"
+        }
+      ]
+    },
+    {
+      "name": "수납 확정·Shop PLANNED — 해당 MO 자유 취소만 열린다",
+      "now": "2026-08-22T12:00:00Z",
+      "projection": {
+        "agencyOrder": {
+          "id": "order-fixture-1",
+          "status": "ISSUED",
+          "sourceCartSnapshot": {
+            "cartId": "cart-fixture-1",
+            "cartVersion": 3,
+            "snapshotHash": "0xfixture-cart-snapshot",
+            "items": null
+          },
+          "lines": [
+            {
+              "lineId": "line-a",
+              "sourceCartItemId": "",
+              "planTargetId": "",
+              "candidateId": "",
+              "catalogProvider": "",
+              "shopDomain": "alpha.example",
+              "productUrl": "https://alpha.example/products/fixture-lamp",
+              "variantId": "variant-blue",
+              "productTitle": "Fixture Lamp",
+              "variantTitle": "Blue / 110V",
+              "selectedOptions": [
+                "Color: Blue",
+                "Voltage: 110V"
+              ],
+              "quantity": 2,
+              "unitPrice": {
+                "amountMinor": 1500,
+                "currency": "USD"
+              },
+              "lineSubtotal": {
+                "amountMinor": 3000,
+                "currency": "USD"
+              },
+              "observedAt": "0001-01-01T00:00:00Z",
+              "evidenceHash": ""
+            }
+          ],
+          "shippingAddress": {
+            "snapshotRef": "shipping-fixture-1",
+            "snapshotRevision": 2,
+            "snapshotHash": "0xfixture-shipping-snapshot",
+            "maskedSummary": "",
+            "country": "US"
+          },
+          "paymentSelection": {
+            "rail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecution": "SIMULATED"
+          },
+          "executionProfile": {
+            "paymentRail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecutionMode": "SIMULATED_NO_EFFECT"
+          },
+          "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+          "merchantCheckouts": null,
+          "passThroughTotal": {
+            "amountMinor": 3000,
+            "currency": "USD"
+          },
+          "agencyFee": {
+            "variable": {
+              "amountMinor": 162,
+              "currency": "USD"
+            },
+            "fixed": {
+              "amountMinor": 30,
+              "currency": "USD"
+            },
+            "total": {
+              "amountMinor": 192,
+              "currency": "USD"
+            },
+            "policyVersion": "PAYPAL_MO_PASS_THROUGH_540BPS_PLUS_30C_V1"
+          },
+          "customerPayableTotal": {
+            "amountMinor": 3192,
+            "currency": "USD"
+          },
+          "procurementAuthorization": {
+            "kind": "MANUAL_OPERATOR_PURCHASE",
+            "shops": [
+              {
+                "merchantId": "merchant-alpha",
+                "shopDomain": "alpha.example",
+                "lines": [
+                  {
+                    "lineId": "line-a",
+                    "productUrl": "https://alpha.example/products/fixture-lamp",
+                    "productTitle": "Fixture Lamp",
+                    "variantId": "variant-blue",
+                    "variantTitle": "Blue / 110V",
+                    "selectedOptions": [
+                      "Color: Blue",
+                      "Voltage: 110V"
+                    ],
+                    "quantity": 2,
+                    "unitPrice": {
+                      "amountMinor": 1500,
+                      "currency": "USD"
+                    },
+                    "lineSubtotal": {
+                      "amountMinor": 3000,
+                      "currency": "USD"
+                    }
+                  }
+                ],
+                "approvedAmount": {
+                  "amountMinor": 3000,
+                  "currency": "USD"
+                },
+                "conditions": {
+                  "shippingStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "cancellationStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "returnStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "deliveryGroups": null,
+                  "taxTotal": {
+                    "amountMinor": 0,
+                    "currency": "USD"
+                  },
+                  "dutiesDisposition": "NO_DUTY_OR_CROSS_BORDER_SIGNAL_AT_PREFLIGHT"
+                },
+                "quoteFingerprint": "0xfixture-quote",
+                "evidenceHash": "0xfixture-checkout-evidence"
+              }
+            ],
+            "approvedPassThrough": {
+              "amountMinor": 3000,
+              "currency": "USD"
+            },
+            "approvedAgencyFee": {
+              "amountMinor": 192,
+              "currency": "USD"
+            },
+            "approvedCustomerPayable": {
+              "amountMinor": 3192,
+              "currency": "USD"
+            },
+            "customerApproval": {
+              "agencyConsent": true,
+              "privacyConsent": true,
+              "locale": "en-US",
+              "copyVersion": "procurement-authorization.v1"
+            },
+            "orderSheetSessionId": "sheet-fixture-1",
+            "sourceCartSnapshotHash": "0xfixture-cart-snapshot",
+            "displayedSnapshotHash": "0xfixture-displayed-snapshot",
+            "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+            "acceptedAt": "2026-08-22T11:00:00Z",
+            "authorizationHash": "0xdd3f98d9da305543ecdd57c60f35821b85cc247c8985cc010e12ff8b412c3ccb"
+          },
+          "issuanceEvidence": {
+            "orderSheetSessionId": "sheet-fixture-1",
+            "displayedSnapshotHash": "0xfixture-displayed-snapshot",
+            "disclosureVersion": "2026-08-27",
+            "idempotencyKeyHash": "0xfixture-idempotency"
+          },
+          "issuedAt": "2026-08-22T11:00:00Z",
+          "expiresAt": "2026-08-23T07:00:00Z",
+          "snapshotHash": ""
+        },
+        "paymentInstruction": {
+          "id": "instruction-1",
+          "agencyOrderId": "order-fixture-1",
+          "agencyOrderSnapshotHash": "",
+          "paymentSelection": {
+            "rail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecution": "SIMULATED"
+          },
+          "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+          "customerPayableTotal": {
+            "amountMinor": 3192,
+            "currency": "USD"
+          },
+          "paymentPolicyVersion": "",
+          "shippingSnapshotRef": "",
+          "shippingSnapshotHash": "",
+          "expiresAt": "2026-08-23T07:00:00Z",
+          "idempotencyKeyHash": "",
+          "state": "PENDING",
+          "createdAt": "2026-08-22T11:00:00Z"
+        },
+        "process": {
+          "agencyOrderId": "order-fixture-1",
+          "state": "PROCUREMENT_IN_PROGRESS",
+          "version": 3,
+          "createdAt": "0001-01-01T00:00:00Z",
+          "updatedAt": "0001-01-01T00:00:00Z"
+        },
+        "availableActions": [
+          {
+            "kind": "CANCEL_PRE_EFFECT",
+            "eligibleMerchantOrderIds": [
+              "shop-1"
+            ]
+          }
+        ],
+        "payment": {
+          "id": "payment-1",
+          "state": "AUTHORIZED",
+          "rail": "PAYPAL",
+          "amountBaseUnits": ""
+        },
+        "chainTransactions": null,
+        "merchantOrders": [
+          {
+            "id": "shop-1",
+            "allocationId": "allocation-1",
+            "shopDomain": "alpha.example",
+            "merchantId": "merchant-1",
+            "checkoutOrdinal": 1,
+            "customerGrossAmount": {
+              "amountMinor": 3192,
+              "currency": "USD"
+            },
+            "executionMode": "SIMULATED_NO_EFFECT",
+            "state": "PLANNED",
+            "fundingState": "AVAILABLE",
+            "operational": {
+              "stage": "",
+              "workStage": "",
+              "progress": {
+                "funding": "",
+                "procurement": "",
+                "delivery": "",
+                "resolution": ""
+              },
+              "units": {
+                "total": 0,
+                "ordered": 0,
+                "procuring": 0,
+                "awaitingShipment": 0,
+                "inTransit": 0,
+                "delivered": 0,
+                "exception": 0,
+                "returnInProgress": 0,
+                "refundRequested": 0,
+                "refundPending": 0,
+                "refunded": 0,
+                "procurementFailed": 0,
+                "cancelled": 0
+              }
+            },
+            "units": [
+              {
+                "id": "unit-1",
+                "lineId": "line-a",
+                "unitIndex": 1,
+                "disposition": "PENDING"
+              }
+            ],
+            "updatedAt": "0001-01-01T00:00:00Z"
+          }
+        ],
+        "shipments": [],
+        "units": null
+      },
+      "availableActions": [
+        {
+          "kind": "CANCEL_PRE_EFFECT",
+          "eligibleMerchantOrderIds": [
+            "shop-1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PLACED 진행 중 — 환불 요청만 열린다",
+      "now": "2026-08-22T12:00:00Z",
+      "projection": {
+        "agencyOrder": {
+          "id": "order-fixture-1",
+          "status": "ISSUED",
+          "sourceCartSnapshot": {
+            "cartId": "cart-fixture-1",
+            "cartVersion": 3,
+            "snapshotHash": "0xfixture-cart-snapshot",
+            "items": null
+          },
+          "lines": [
+            {
+              "lineId": "line-a",
+              "sourceCartItemId": "",
+              "planTargetId": "",
+              "candidateId": "",
+              "catalogProvider": "",
+              "shopDomain": "alpha.example",
+              "productUrl": "https://alpha.example/products/fixture-lamp",
+              "variantId": "variant-blue",
+              "productTitle": "Fixture Lamp",
+              "variantTitle": "Blue / 110V",
+              "selectedOptions": [
+                "Color: Blue",
+                "Voltage: 110V"
+              ],
+              "quantity": 2,
+              "unitPrice": {
+                "amountMinor": 1500,
+                "currency": "USD"
+              },
+              "lineSubtotal": {
+                "amountMinor": 3000,
+                "currency": "USD"
+              },
+              "observedAt": "0001-01-01T00:00:00Z",
+              "evidenceHash": ""
+            }
+          ],
+          "shippingAddress": {
+            "snapshotRef": "shipping-fixture-1",
+            "snapshotRevision": 2,
+            "snapshotHash": "0xfixture-shipping-snapshot",
+            "maskedSummary": "",
+            "country": "US"
+          },
+          "paymentSelection": {
+            "rail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecution": "SIMULATED"
+          },
+          "executionProfile": {
+            "paymentRail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecutionMode": "SIMULATED_NO_EFFECT"
+          },
+          "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+          "merchantCheckouts": null,
+          "passThroughTotal": {
+            "amountMinor": 3000,
+            "currency": "USD"
+          },
+          "agencyFee": {
+            "variable": {
+              "amountMinor": 162,
+              "currency": "USD"
+            },
+            "fixed": {
+              "amountMinor": 30,
+              "currency": "USD"
+            },
+            "total": {
+              "amountMinor": 192,
+              "currency": "USD"
+            },
+            "policyVersion": "PAYPAL_MO_PASS_THROUGH_540BPS_PLUS_30C_V1"
+          },
+          "customerPayableTotal": {
+            "amountMinor": 3192,
+            "currency": "USD"
+          },
+          "procurementAuthorization": {
+            "kind": "MANUAL_OPERATOR_PURCHASE",
+            "shops": [
+              {
+                "merchantId": "merchant-alpha",
+                "shopDomain": "alpha.example",
+                "lines": [
+                  {
+                    "lineId": "line-a",
+                    "productUrl": "https://alpha.example/products/fixture-lamp",
+                    "productTitle": "Fixture Lamp",
+                    "variantId": "variant-blue",
+                    "variantTitle": "Blue / 110V",
+                    "selectedOptions": [
+                      "Color: Blue",
+                      "Voltage: 110V"
+                    ],
+                    "quantity": 2,
+                    "unitPrice": {
+                      "amountMinor": 1500,
+                      "currency": "USD"
+                    },
+                    "lineSubtotal": {
+                      "amountMinor": 3000,
+                      "currency": "USD"
+                    }
+                  }
+                ],
+                "approvedAmount": {
+                  "amountMinor": 3000,
+                  "currency": "USD"
+                },
+                "conditions": {
+                  "shippingStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "cancellationStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "returnStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "deliveryGroups": null,
+                  "taxTotal": {
+                    "amountMinor": 0,
+                    "currency": "USD"
+                  },
+                  "dutiesDisposition": "NO_DUTY_OR_CROSS_BORDER_SIGNAL_AT_PREFLIGHT"
+                },
+                "quoteFingerprint": "0xfixture-quote",
+                "evidenceHash": "0xfixture-checkout-evidence"
+              }
+            ],
+            "approvedPassThrough": {
+              "amountMinor": 3000,
+              "currency": "USD"
+            },
+            "approvedAgencyFee": {
+              "amountMinor": 192,
+              "currency": "USD"
+            },
+            "approvedCustomerPayable": {
+              "amountMinor": 3192,
+              "currency": "USD"
+            },
+            "customerApproval": {
+              "agencyConsent": true,
+              "privacyConsent": true,
+              "locale": "en-US",
+              "copyVersion": "procurement-authorization.v1"
+            },
+            "orderSheetSessionId": "sheet-fixture-1",
+            "sourceCartSnapshotHash": "0xfixture-cart-snapshot",
+            "displayedSnapshotHash": "0xfixture-displayed-snapshot",
+            "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+            "acceptedAt": "2026-08-22T11:00:00Z",
+            "authorizationHash": "0xdd3f98d9da305543ecdd57c60f35821b85cc247c8985cc010e12ff8b412c3ccb"
+          },
+          "issuanceEvidence": {
+            "orderSheetSessionId": "sheet-fixture-1",
+            "displayedSnapshotHash": "0xfixture-displayed-snapshot",
+            "disclosureVersion": "2026-08-27",
+            "idempotencyKeyHash": "0xfixture-idempotency"
+          },
+          "issuedAt": "2026-08-22T11:00:00Z",
+          "expiresAt": "2026-08-23T07:00:00Z",
+          "snapshotHash": ""
+        },
+        "paymentInstruction": {
+          "id": "instruction-1",
+          "agencyOrderId": "order-fixture-1",
+          "agencyOrderSnapshotHash": "",
+          "paymentSelection": {
+            "rail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecution": "SIMULATED"
+          },
+          "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+          "customerPayableTotal": {
+            "amountMinor": 3192,
+            "currency": "USD"
+          },
+          "paymentPolicyVersion": "",
+          "shippingSnapshotRef": "",
+          "shippingSnapshotHash": "",
+          "expiresAt": "2026-08-23T07:00:00Z",
+          "idempotencyKeyHash": "",
+          "state": "PENDING",
+          "createdAt": "2026-08-22T11:00:00Z"
+        },
+        "process": {
+          "agencyOrderId": "order-fixture-1",
+          "state": "LOGISTICS_IN_PROGRESS",
+          "version": 6,
+          "createdAt": "0001-01-01T00:00:00Z",
+          "updatedAt": "0001-01-01T00:00:00Z"
+        },
+        "availableActions": [
+          {
+            "kind": "REQUEST_REFUND",
+            "eligibleMerchantOrderIds": [
+              "shop-1"
+            ],
+            "reasonCodes": [
+              "ITEM_NOT_RECEIVED",
+              "ITEM_DAMAGED_DEFECTIVE",
+              "WRONG_ITEM_RECEIVED",
+              "ORDER_DELAYED",
+              "OTHER_SERVICE_FAULT"
+            ]
+          }
+        ],
+        "payment": {
+          "id": "payment-1",
+          "state": "AUTHORIZED",
+          "rail": "PAYPAL",
+          "amountBaseUnits": ""
+        },
+        "chainTransactions": null,
+        "merchantOrders": [
+          {
+            "id": "shop-1",
+            "allocationId": "allocation-1",
+            "shopDomain": "alpha.example",
+            "merchantId": "merchant-1",
+            "checkoutOrdinal": 1,
+            "customerGrossAmount": {
+              "amountMinor": 3192,
+              "currency": "USD"
+            },
+            "executionMode": "SIMULATED_NO_EFFECT",
+            "state": "PLACED",
+            "fundingState": "ACTIVE",
+            "operational": {
+              "stage": "",
+              "workStage": "",
+              "progress": {
+                "funding": "",
+                "procurement": "",
+                "delivery": "",
+                "resolution": ""
+              },
+              "units": {
+                "total": 0,
+                "ordered": 0,
+                "procuring": 0,
+                "awaitingShipment": 0,
+                "inTransit": 0,
+                "delivered": 0,
+                "exception": 0,
+                "returnInProgress": 0,
+                "refundRequested": 0,
+                "refundPending": 0,
+                "refunded": 0,
+                "procurementFailed": 0,
+                "cancelled": 0
+              }
+            },
+            "units": [
+              {
+                "id": "unit-1",
+                "lineId": "line-a",
+                "unitIndex": 1,
+                "disposition": "PENDING"
+              }
+            ],
+            "updatedAt": "0001-01-01T00:00:00Z"
+          }
+        ],
+        "shipments": [],
+        "units": null
+      },
+      "availableActions": [
+        {
+          "kind": "REQUEST_REFUND",
+          "eligibleMerchantOrderIds": [
+            "shop-1"
+          ],
+          "reasonCodes": [
+            "ITEM_NOT_RECEIVED",
+            "ITEM_DAMAGED_DEFECTIVE",
+            "WRONG_ITEM_RECEIVED",
+            "ORDER_DELAYED",
+            "OTHER_SERVICE_FAULT"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "발행 31일 경과 미배송 — 지연 취소와 환불 요청이 열린다",
+      "now": "2026-08-22T12:00:00Z",
+      "projection": {
+        "agencyOrder": {
+          "id": "order-fixture-1",
+          "status": "ISSUED",
+          "sourceCartSnapshot": {
+            "cartId": "cart-fixture-1",
+            "cartVersion": 3,
+            "snapshotHash": "0xfixture-cart-snapshot",
+            "items": null
+          },
+          "lines": [
+            {
+              "lineId": "line-a",
+              "sourceCartItemId": "",
+              "planTargetId": "",
+              "candidateId": "",
+              "catalogProvider": "",
+              "shopDomain": "alpha.example",
+              "productUrl": "https://alpha.example/products/fixture-lamp",
+              "variantId": "variant-blue",
+              "productTitle": "Fixture Lamp",
+              "variantTitle": "Blue / 110V",
+              "selectedOptions": [
+                "Color: Blue",
+                "Voltage: 110V"
+              ],
+              "quantity": 2,
+              "unitPrice": {
+                "amountMinor": 1500,
+                "currency": "USD"
+              },
+              "lineSubtotal": {
+                "amountMinor": 3000,
+                "currency": "USD"
+              },
+              "observedAt": "0001-01-01T00:00:00Z",
+              "evidenceHash": ""
+            }
+          ],
+          "shippingAddress": {
+            "snapshotRef": "shipping-fixture-1",
+            "snapshotRevision": 2,
+            "snapshotHash": "0xfixture-shipping-snapshot",
+            "maskedSummary": "",
+            "country": "US"
+          },
+          "paymentSelection": {
+            "rail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecution": "SIMULATED"
+          },
+          "executionProfile": {
+            "paymentRail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecutionMode": "SIMULATED_NO_EFFECT"
+          },
+          "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+          "merchantCheckouts": null,
+          "passThroughTotal": {
+            "amountMinor": 3000,
+            "currency": "USD"
+          },
+          "agencyFee": {
+            "variable": {
+              "amountMinor": 162,
+              "currency": "USD"
+            },
+            "fixed": {
+              "amountMinor": 30,
+              "currency": "USD"
+            },
+            "total": {
+              "amountMinor": 192,
+              "currency": "USD"
+            },
+            "policyVersion": "PAYPAL_MO_PASS_THROUGH_540BPS_PLUS_30C_V1"
+          },
+          "customerPayableTotal": {
+            "amountMinor": 3192,
+            "currency": "USD"
+          },
+          "procurementAuthorization": {
+            "kind": "MANUAL_OPERATOR_PURCHASE",
+            "shops": [
+              {
+                "merchantId": "merchant-alpha",
+                "shopDomain": "alpha.example",
+                "lines": [
+                  {
+                    "lineId": "line-a",
+                    "productUrl": "https://alpha.example/products/fixture-lamp",
+                    "productTitle": "Fixture Lamp",
+                    "variantId": "variant-blue",
+                    "variantTitle": "Blue / 110V",
+                    "selectedOptions": [
+                      "Color: Blue",
+                      "Voltage: 110V"
+                    ],
+                    "quantity": 2,
+                    "unitPrice": {
+                      "amountMinor": 1500,
+                      "currency": "USD"
+                    },
+                    "lineSubtotal": {
+                      "amountMinor": 3000,
+                      "currency": "USD"
+                    }
+                  }
+                ],
+                "approvedAmount": {
+                  "amountMinor": 3000,
+                  "currency": "USD"
+                },
+                "conditions": {
+                  "shippingStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "cancellationStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "returnStatus": "NOT_PROVIDED_BY_PROVIDER",
+                  "deliveryGroups": null,
+                  "taxTotal": {
+                    "amountMinor": 0,
+                    "currency": "USD"
+                  },
+                  "dutiesDisposition": "NO_DUTY_OR_CROSS_BORDER_SIGNAL_AT_PREFLIGHT"
+                },
+                "quoteFingerprint": "0xfixture-quote",
+                "evidenceHash": "0xfixture-checkout-evidence"
+              }
+            ],
+            "approvedPassThrough": {
+              "amountMinor": 3000,
+              "currency": "USD"
+            },
+            "approvedAgencyFee": {
+              "amountMinor": 192,
+              "currency": "USD"
+            },
+            "approvedCustomerPayable": {
+              "amountMinor": 3192,
+              "currency": "USD"
+            },
+            "customerApproval": {
+              "agencyConsent": true,
+              "privacyConsent": true,
+              "locale": "en-US",
+              "copyVersion": "procurement-authorization.v1"
+            },
+            "orderSheetSessionId": "sheet-fixture-1",
+            "sourceCartSnapshotHash": "0xfixture-cart-snapshot",
+            "displayedSnapshotHash": "0xfixture-displayed-snapshot",
+            "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+            "acceptedAt": "2026-08-22T11:00:00Z",
+            "authorizationHash": "0xdd3f98d9da305543ecdd57c60f35821b85cc247c8985cc010e12ff8b412c3ccb"
+          },
+          "issuanceEvidence": {
+            "orderSheetSessionId": "sheet-fixture-1",
+            "displayedSnapshotHash": "0xfixture-displayed-snapshot",
+            "disclosureVersion": "2026-08-27",
+            "idempotencyKeyHash": "0xfixture-idempotency"
+          },
+          "issuedAt": "2026-07-22T12:00:00Z",
+          "expiresAt": "2026-08-23T07:00:00Z",
+          "snapshotHash": ""
+        },
+        "paymentInstruction": {
+          "id": "instruction-1",
+          "agencyOrderId": "order-fixture-1",
+          "agencyOrderSnapshotHash": "",
+          "paymentSelection": {
+            "rail": "PAYPAL",
+            "providerEnvironment": "SANDBOX",
+            "asset": "USD",
+            "economicEffect": "NO_REAL_VALUE",
+            "merchantExecution": "SIMULATED"
+          },
+          "executionProfileHash": "0x6b5f02663c9702ec58d6c7f0547ae0fdf150445ae500fcab91206e67de9c6665",
+          "customerPayableTotal": {
+            "amountMinor": 3192,
+            "currency": "USD"
+          },
+          "paymentPolicyVersion": "",
+          "shippingSnapshotRef": "",
+          "shippingSnapshotHash": "",
+          "expiresAt": "2026-08-23T07:00:00Z",
+          "idempotencyKeyHash": "",
+          "state": "PENDING",
+          "createdAt": "2026-08-22T11:00:00Z"
+        },
+        "process": {
+          "agencyOrderId": "order-fixture-1",
+          "state": "LOGISTICS_IN_PROGRESS",
+          "version": 6,
+          "createdAt": "0001-01-01T00:00:00Z",
+          "updatedAt": "0001-01-01T00:00:00Z"
+        },
+        "availableActions": [
+          {
+            "kind": "CANCEL_DELAY_RULE",
+            "eligibleMerchantOrderIds": [
+              "shop-1"
+            ]
+          },
+          {
+            "kind": "REQUEST_REFUND",
+            "eligibleMerchantOrderIds": [
+              "shop-1"
+            ],
+            "reasonCodes": [
+              "ITEM_NOT_RECEIVED",
+              "ITEM_DAMAGED_DEFECTIVE",
+              "WRONG_ITEM_RECEIVED",
+              "ORDER_DELAYED",
+              "OTHER_SERVICE_FAULT"
+            ]
+          }
+        ],
+        "payment": {
+          "id": "payment-1",
+          "state": "AUTHORIZED",
+          "rail": "PAYPAL",
+          "amountBaseUnits": ""
+        },
+        "chainTransactions": null,
+        "merchantOrders": [
+          {
+            "id": "shop-1",
+            "allocationId": "allocation-1",
+            "shopDomain": "alpha.example",
+            "merchantId": "merchant-1",
+            "checkoutOrdinal": 1,
+            "customerGrossAmount": {
+              "amountMinor": 3192,
+              "currency": "USD"
+            },
+            "executionMode": "SIMULATED_NO_EFFECT",
+            "state": "PLACED",
+            "fundingState": "ACTIVE",
+            "operational": {
+              "stage": "",
+              "workStage": "",
+              "progress": {
+                "funding": "",
+                "procurement": "",
+                "delivery": "",
+                "resolution": ""
+              },
+              "units": {
+                "total": 0,
+                "ordered": 0,
+                "procuring": 0,
+                "awaitingShipment": 0,
+                "inTransit": 0,
+                "delivered": 0,
+                "exception": 0,
+                "returnInProgress": 0,
+                "refundRequested": 0,
+                "refundPending": 0,
+                "refunded": 0,
+                "procurementFailed": 0,
+                "cancelled": 0
+              }
+            },
+            "units": [
+              {
+                "id": "unit-1",
+                "lineId": "line-a",
+                "unitIndex": 1,
+                "disposition": "PENDING"
+              }
+            ],
+            "updatedAt": "0001-01-01T00:00:00Z"
+          }
+        ],
+        "shipments": [],
+        "units": null
+      },
+      "availableActions": [
+        {
+          "kind": "CANCEL_DELAY_RULE",
+          "eligibleMerchantOrderIds": [
+            "shop-1"
+          ]
+        },
+        {
+          "kind": "REQUEST_REFUND",
+          "eligibleMerchantOrderIds": [
+            "shop-1"
+          ],
+          "reasonCodes": [
+            "ITEM_NOT_RECEIVED",
+            "ITEM_DAMAGED_DEFECTIVE",
+            "WRONG_ITEM_RECEIVED",
+            "ORDER_DELAYED",
+            "OTHER_SERVICE_FAULT"
+          ]
+        }
+      ]
+    }
+  ]
+}

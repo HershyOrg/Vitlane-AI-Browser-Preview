@@ -1,0 +1,28 @@
+name: Browser fork Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    # Chromium needs a dedicated x86-64 Linux host with more than 100 GB free disk.
+    runs-on: [self-hosted, linux, x64, chromium]
+    timeout-minutes: 360
+    defaults:
+      run:
+        working-directory: browser-fork
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 scripts/chromium_patch.py --check
+      - run: bash scripts/build-android.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VitlaneBrowser-arm64
+          path: browser-fork/out/VitlaneBrowser-arm64.apk
+          if-no-files-found: error

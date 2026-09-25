@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS managed_runner_reservation_resolutions;

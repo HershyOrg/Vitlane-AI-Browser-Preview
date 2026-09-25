@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "vitlane.curation-step2-fixture.v1",
+  "firstPreferences": {
+    "preferences": {
+      "schemaVersion": "vitlane.user-preferences.v1",
+      "version": 0
+    },
+    "effective": {
+      "schemaVersion": "vitlane.user-preferences.v1",
+      "version": 0,
+      "uiLocale": "ko-KR",
+      "preferredCurrency": "KRW",
+      "researchCountry": "KR"
+    }
+  },
+  "observation": {
+    "schemaVersion": "vitlane.external-product-observation.v1",
+    "productRef": {
+      "source": "COUPANG",
+      "marketplace": "KR",
+      "productId": "8825648110"
+    },
+    "productUrl": "https://www.coupang.com/vp/products/8825648110",
+    "title": "삼성 갤럭시 버즈3 프로 — 테스트 관찰",
+    "price": {
+      "kind": "OBSERVED",
+      "amountMinor": 174870,
+      "currency": "KRW"
+    },
+    "priceScope": "PRODUCT",
+    "seller": {
+      "kind": "UNKNOWN"
+    },
+    "provenance": {
+      "apiProvider": "OpenWebNinja",
+      "apiProduct": "Real-Time Product Search v2",
+      "discoveryChannel": "GOOGLE_SHOPPING",
+      "country": "KR",
+      "queryLanguage": "ko"
+    },
+    "observedAt": "2026-09-11T00:00:00Z"
+  },
+  "unknownObservation": {
+    "schemaVersion": "vitlane.external-product-observation.v1",
+    "productRef": {
+      "source": "ELEVENST",
+      "marketplace": "KR",
+      "productId": "5337333981"
+    },
+    "productUrl": "https://www.11st.co.kr/products/5337333981",
+    "title": "라미 사파리 — 테스트 관찰",
+    "price": {
+      "kind": "UNKNOWN",
+      "reasonCode": "PRICE_NOT_REPORTED"
+    },
+    "priceScope": "PRODUCT",
+    "seller": {
+      "kind": "UNKNOWN"
+    },
+    "provenance": {
+      "apiProvider": "NAVER API HUB",
+      "apiProduct": "Search Webkr",
+      "discoveryChannel": "NAVER_WEB",
+      "country": "KR",
+      "queryLanguage": "ko",
+      "detailApiProvider": "11st",
+      "detailApiProduct": "Public product page"
+    },
+    "observedAt": "2026-09-11T00:00:00Z"
+  },
+  "mallObservations": [
+    {
+      "schemaVersion": "vitlane.external-product-observation.v1",
+      "productRef": {
+        "source": "ZIGZAG",
+        "marketplace": "KR",
+        "productId": "108087931"
+      },
+      "productUrl": "https://zigzag.kr/catalog/products/108087931",
+      "title": "로씨로씨 밴딩 팬츠 — 테스트 관찰",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 51750,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "provenance": {
+        "apiProvider": "NAVER API HUB",
+        "apiProduct": "Search Webkr",
+        "discoveryChannel": "NAVER_WEBKR",
+        "country": "KR",
+        "queryLanguage": "ko",
+        "detailApiProvider": "Zigzag"
+      },
+      "observedAt": "2026-09-16T00:00:00Z"
+    },
+    {
+      "schemaVersion": "vitlane.external-product-observation.v1",
+      "productRef": {
+        "source": "KURLY",
+        "marketplace": "KR",
+        "productId": "5063110"
+      },
+      "productUrl": "https://www.kurly.com/goods/5063110",
+      "title": "전용목장우유 900mL — 테스트 관찰",
+      "price": {
+        "kind": "UNKNOWN",
+        "reasonCode": "PRICE_NOT_REPORTED"
+      },
+      "priceScope": "PRODUCT",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "provenance": {
+        "apiProvider": "Kurly",
+        "apiProduct": "Public search JSON",
+        "discoveryChannel": "KURLY_SEARCH",
+        "country": "KR",
+        "queryLanguage": "ko",
+        "detailApiProvider": "Kurly"
+      },
+      "observedAt": "2026-09-16T00:00:00Z"
+    },
+    {
+      "schemaVersion": "vitlane.external-product-observation.v1",
+      "productRef": {
+        "source": "DAISOMALL",
+        "marketplace": "KR",
+        "productId": "1058641"
+      },
+      "productUrl": "https://www.daisomall.co.kr/pd/pdr/SCR_PDR_0001?pdNo=1058641",
+      "title": "C타입 케이블 — 테스트 관찰",
+      "price": {
+        "kind": "OBSERVED",
+        "amountMinor": 3000,
+        "currency": "KRW"
+      },
+      "priceScope": "PRODUCT",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "provenance": {
+        "apiProvider": "NAVER API HUB",
+        "apiProduct": "Search Webkr",
+        "discoveryChannel": "NAVER_WEBKR",
+        "country": "KR",
+        "queryLanguage": "ko",
+        "detailApiProvider": "Daiso Mall"
+      },
+      "observedAt": "2026-09-16T00:00:00Z"
+    },
+    {
+      "schemaVersion": "vitlane.external-product-observation.v1",
+      "productRef": {
+        "source": "MUSINSA",
+        "marketplace": "KR",
+        "productId": "4297589"
+      },
+      "productUrl": "https://www.musinsa.com/products/4297589",
+      "title": "무신사 상의 — 테스트 관찰",
+      "price": {
+        "kind": "UNKNOWN",
+        "reasonCode": "PRICE_NOT_REPORTED"
+      },
+      "priceScope": "PRODUCT",
+      "seller": {
+        "kind": "UNKNOWN"
+      },
+      "provenance": {
+        "apiProvider": "OpenWebNinja",
+        "apiProduct": "Real-Time Product Search v2",
+        "discoveryChannel": "GOOGLE_SHOPPING",
+        "country": "KR",
+        "queryLanguage": "ko"
+      },
+      "observedAt": "2026-09-16T00:00:00Z"
+    }
+  ]
+}

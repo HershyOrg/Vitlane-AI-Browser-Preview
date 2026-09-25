@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vitlane.example/shared/openapi/schemas/curation-selection-snapshot-hash.v1.schema.json",
+  "title": "CurationSelectionSnapshotHash.v1 logical value",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "snapshot"
+  ],
+  "properties": {
+    "schema": {
+      "const": "CurationSelectionSnapshotHash.v1"
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateConfigurationHash",
+        "candidateConfigurationId",
+        "candidateId",
+        "curationId",
+        "quantity",
+        "selectionId",
+        "shoppingSessionId",
+        "targetId",
+        "version"
+      ],
+      "properties": {
+        "candidateConfigurationHash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidateConfigurationId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "candidateId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "curationId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "selectionId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "shoppingSessionId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "targetId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    }
+  }
+}

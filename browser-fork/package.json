@@ -1,0 +1,20 @@
+{
+  "name": "@vitlane/browser-fork",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/main.mjs",
+    "try:coupang": "node scripts/live-coupang-single.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node --test tests/browser/*.test.mjs",
+    "check:patch": "python3 scripts/chromium_patch.py --check",
+    "patch": "python3 scripts/chromium_patch.py"
+  },
+  "dependencies": {
+    "playwright": "1.63.0"
+  }
+}

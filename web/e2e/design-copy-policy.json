@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "consumerForbiddenTerms": [
+    "Identity checkpoint",
+    "Verified entry",
+    "Workspace",
+    "CheckoutQuote",
+    "남은 금액 전액 반환",
+    "나머지는 저희가 할게요",
+    "Agent Grant 발급",
+    "canonical chain projection",
+    "settlement pay",
+    "Mock 주문 완료"
+  ],
+  "consumerAllowedUppercaseTerms": [
+    "Agent",
+    "API",
+    "ETH",
+    "GIWA",
+    "Google",
+    "KYC",
+    "TEST",
+    "USB",
+    "USB-C",
+    "USD",
+    "USDC",
+    "Vitlane",
+    "Web2",
+    "Web3",
+    "tVITUSD"
+  ],
+  "consumerForbiddenRawEnums": [
+    "AWAITING_USER_APPROVAL",
+    "FINALIZED",
+    "FULFILLMENT_PENDING",
+    "MOCK_DOJANG_VERIFIED",
+    "ORDER_ACCEPTED",
+    "PLANNING",
+    "REVIEWING",
+    "WALLET_OWNERSHIP_ONLY"
+  ],
+  "technicalDisclosureSelectors": [
+    "details:not([open])",
+    "code",
+    "[data-allow-technical-copy]"
+  ]
+}
