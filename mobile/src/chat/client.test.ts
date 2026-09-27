@@ -46,7 +46,8 @@ describe("direct OpenAI chat", () => {
     expect(JSON.parse(init.body as string)).toEqual({
       model: DEFAULT_MODEL,
       input: history.map(({ role, content }) => ({ role, content })),
-      max_output_tokens: 4096,
+      max_output_tokens: 16384,
+      reasoning: { effort: "medium" },
       store: false,
     });
     expect(init.body).not.toContain("secret-key");
@@ -68,7 +69,25 @@ describe("direct OpenAI chat", () => {
     await expect(sendChat({ apiKey: "key", model: " gpt-custom ", messages: history })).resolves.toEqual({
       text: "첫 번째 답변\n\n두 번째 답변\n\n마지막 답변", incomplete: false,
     });
-    expect(JSON.parse(fetcher.mock.calls[0][1].body).model).toBe("gpt-custom");
+    const request = JSON.parse(fetcher.mock.calls[0][1].body);
+    expect(request.model).toBe("gpt-custom");
+    expect(request.max_output_tokens).toBe(4096);
+    expect(request.reasoning).toBeUndefined();
+  });
+
+  it.each(["gpt-6-sol", " gpt-6-sol ", ""])("uses Sol reasoning settings for model %j", async (model) => {
+    await sendChat({ apiKey: "key", model, messages: history });
+    const request = JSON.parse(fetcher.mock.calls[0][1].body);
+    expect(request).toMatchObject({ model: "gpt-6-sol", reasoning: { effort: "medium" }, max_output_tokens: 16384 });
+    expect(request.temperature).toBeUndefined();
+    expect(request.top_p).toBeUndefined();
+  });
+
+  it("respects an explicitly selected legacy model without applying Sol parameters", async () => {
+    await sendChat({ apiKey: "key", model: "gpt-5-mini", messages: history });
+    const request = JSON.parse(fetcher.mock.calls[0][1].body);
+    expect(request).toMatchObject({ model: "gpt-5-mini", max_output_tokens: 4096 });
+    expect(request.reasoning).toBeUndefined();
   });
 
   it("returns partial text with an incomplete flag", async () => {

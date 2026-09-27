@@ -24,16 +24,16 @@ Web 화면의 브라우저 영역은 UI 검수용 시뮬레이터입니다. 일�
 동일 출처 정책 때문에 로그인된 쿠팡·네이버 같은 다른 사이트의 탭이나 iframe을 직접
 읽고 클릭할 수 없습니다.
 
-`browser-fork`에는 다음 단계의 소스가 들어 있습니다.
+Android 앱에는 다음 단계의 네이티브 AI 브라우저가 들어 있습니다.
 
-- macOS Chrome 전용 프로필을 사용하는 쿠팡 단일 상품 검수 harness
-- Android Chromium용 승인 패널과 고정 purchase-preparation recipe
-- iOS WKWebView adapter와 동일 recipe 검증기
-- 서명된 명령, 정제된 observation과 Go BrowserRun journal
+- 일반 대화와 웹 작업을 나누고, 검색 공간을 결정하는 필수 조건 한 가지만 먼저 묻는 `gpt-6-sol` 추론 라우터
+- 공개 페이지 관찰, 페이지를 유지하는 실행 중 웹 검색, 이동·입력·선택·스크롤, 같은 페이지 modal/drawer와 실행 결과 재검증
+- 로그인·OTP·카드 입력과 마지막 결제만 사용자에게 넘기는 채팅형 작업 흐름
+- AI에서 격리된 기기 보안정보 보관소, 암호화된 연락·배송 정보와 사용 목적 기록, 카탈로그 결과, 백그라운드 알림 답변
 
-Android APK, Android React Native host와 Go Device Channel은 아직 완성되지 않았습니다.
-실제 로그인·옵션 확인·주문서와 최종 결제는 사용자가 직접 수행해야 합니다. 자세한
-상태와 검수 명령은 [`browser-fork/README.md`](browser-fork/README.md)를 확인하세요.
+`browser-fork`에는 macOS Chrome harness, Chromium patch, iOS WKWebView adapter와 Go
+BrowserRun 실험 코드가 별도로 남아 있습니다. Android 0.8.21의 동작 범위와 검수 명령은
+[`mobile/README.md`](mobile/README.md)를 확인하세요. 보안정보는 기기 보관소 또는 열린 사이트에서 입력하며 최종 결제는 사용자가 직접 수행합니다.
 
 ## 로컬 실행
 

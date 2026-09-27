@@ -23,6 +23,7 @@ import { DEFAULT_MODEL, sendChat, type ChatMessage } from "./client";
 import { clearSettings, loadSettings, saveSettings, type ChatSettings } from "./storage";
 
 export function OpenAIChatScreen() {
+  const nativeChat = Platform.OS === "android";
   const [settings, setSettings] = useState<ChatSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -31,29 +32,51 @@ export function OpenAIChatScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [opening, setOpening] = useState(false);
   const request = useRef<AbortController | null>(null);
   const scroll = useRef<ScrollView>(null);
+  const mounted = useRef(false);
+  const initialLaunchAttempted = useRef(false);
+  const launchInFlight = useRef(false);
+  const settingsRef = useRef<ChatSettings | null>(null);
+  const settingsRevision = useRef(0);
+
+  function updateSettings(next: ChatSettings | null) {
+    settingsRef.current = next;
+    settingsRevision.current++;
+    setSettings(next);
+  }
 
   useEffect(() => subscribeToBrowserSettings((next) => {
-    setSettings(next);
+    updateSettings(next);
     setError("");
   }), []);
 
   useEffect(() => {
     let active = true;
+    mounted.current = true;
+    const revision = settingsRevision.current;
     void loadSettings().then((saved) => {
       if (!active) return;
-      setSettings(saved);
-      setSettingsOpen(!saved);
+      // A native settings save may finish while this initial read is pending.
+      if (revision === settingsRevision.current) updateSettings(saved);
+      if (!nativeChat) setSettingsOpen(!settingsRef.current);
     }).catch(() => {
       if (!active) return;
-      setError("저장된 설정을 읽지 못했습니다. API 키를 다시 설정해 주세요.");
-      setSettingsOpen(true);
+      const message = "저장된 설정을 읽지 못했습니다. API 키를 다시 설정해 주세요.";
+      if (nativeChat) setNotice(message);
+      else { setError(message); setSettingsOpen(true); }
     }).finally(() => {
-      if (active) setLoading(false);
+      if (!active) return;
+      setLoading(false);
+      if (nativeChat && !initialLaunchAttempted.current) {
+        initialLaunchAttempted.current = true;
+        void openBrowser(settingsRef.current);
+      }
     });
     return () => {
       active = false;
+      mounted.current = false;
       request.current?.abort();
       request.current = null;
     };
@@ -101,17 +124,58 @@ export function OpenAIChatScreen() {
     ]);
   }
 
-  async function openBrowser() {
+  async function openBrowser(next = settingsRef.current) {
+    if (launchInFlight.current) return;
+    launchInFlight.current = true;
+    setOpening(true);
     setError("");
     try {
-      await openAgentBrowser(settings);
+      await openAgentBrowser(next);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "브라우저를 열지 못했습니다.");
+      if (mounted.current) setError(cause instanceof Error ? cause.message
+        : nativeChat ? "대화 화면을 열지 못했습니다. 다시 시도해 주세요." : "브라우저를 열지 못했습니다.");
+    } finally {
+      launchInFlight.current = false;
+      if (mounted.current) setOpening(false);
     }
   }
 
   if (loading) {
     return <SafeAreaView style={styles.loading}><ActivityIndicator accessibilityLabel="설정 불러오는 중" color={colors.action} /></SafeAreaView>;
+  }
+
+  const settingsSheet = settingsOpen ? (
+    <SettingsSheet
+      current={settings}
+      onClose={() => setSettingsOpen(false)}
+      onSaved={(next) => { updateSettings(next); setSettingsOpen(false); setError(""); setNotice(""); }}
+      onRemoved={() => { updateSettings(null); setMessages([]); setDraft(""); setError(""); setNotice(""); }}
+    />
+  ) : null;
+
+  if (nativeChat) {
+    return (
+      <SafeAreaView style={styles.page}>
+        <View style={styles.header}>
+          <View style={styles.brand}>
+            <Text accessibilityRole="header" style={styles.title}>Vitlane</Text>
+            <Text numberOfLines={1} style={styles.caption}>{settings?.model ?? DEFAULT_MODEL}</Text>
+          </View>
+          <ActionButton compact label="설정" disabled={opening} onPress={() => setSettingsOpen(true)} />
+        </View>
+        <ScrollView contentContainerStyle={styles.conversation}>
+          <View style={styles.welcome}>
+            <View style={styles.mark}><Text style={styles.markText}>V</Text></View>
+            <Text accessibilityRole="header" style={styles.hero}>Vitlane 대화</Text>
+            <Text style={styles.welcomeText}>대화 화면에서 질문하고, 필요할 때{"\n"}브라우저를 켜서 웹 작업을 이어가세요.</Text>
+            <ActionButton label="대화 열기" emphasis="primary" busy={opening} onPress={() => { void openBrowser(); }} />
+            {error ? <StatusNotice message={error} tone="danger" /> : null}
+            {notice ? <StatusNotice message={notice} tone="warning" /> : null}
+          </View>
+        </ScrollView>
+        {settingsSheet}
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -137,7 +201,12 @@ export function OpenAIChatScreen() {
             <View style={styles.welcome}>
               <View style={styles.mark}><Text style={styles.markText}>V</Text></View>
               <Text accessibilityRole="header" style={styles.hero}>대화에서 웹 탐색까지</Text>
-              <Text style={styles.welcomeText}>궁금한 것을 묻거나, 브라우저를 열어{"\n"}AI와 함께 상품을 찾아보세요.</Text>
+              <Text style={styles.welcomeText}>하고 싶은 일을 말해 주세요. 필요한 경우에만{"\n"}웹을 열고, 중요한 순간에 다시 여쭤볼게요.</Text>
+              <View style={styles.quickActions}>
+                <ActionButton compact label="상품 비교" onPress={() => setDraft("조건에 맞는 상품을 찾아 비교해줘")} />
+                <ActionButton compact label="여행 탐색" onPress={() => setDraft("여행 옵션을 찾아 비교해줘")} />
+                <ActionButton compact label="자료 조사" onPress={() => setDraft("웹에서 자료를 조사하고 출처와 함께 정리해줘")} />
+              </View>
               <ActionButton label="AI 브라우저 열기" emphasis="primary" onPress={() => { void openBrowser(); }} />
               <Text style={styles.footnote}>검색·이동·입력을 도와드려요. 로그인과 최종 결제는 직접 진행해 주세요.</Text>
               {!settings ? <ActionButton label="OpenAI API 키 설정" emphasis="primary" onPress={() => setSettingsOpen(true)} /> : null}
@@ -175,14 +244,7 @@ export function OpenAIChatScreen() {
           <Text style={styles.footnote}>대화는 OpenAI로 전송됩니다. 이 앱에는 대화 기록을 저장하지 않습니다.</Text>
         </View>
       </KeyboardAvoidingView>
-      {settingsOpen ? (
-        <SettingsSheet
-          current={settings}
-          onClose={() => setSettingsOpen(false)}
-          onSaved={(next) => { setSettings(next); setSettingsOpen(false); setError(""); }}
-          onRemoved={() => { setSettings(null); setMessages([]); setDraft(""); setError(""); setNotice(""); }}
-        />
-      ) : null}
+      {settingsSheet}
     </SafeAreaView>
   );
 }
@@ -207,7 +269,7 @@ function SettingsSheet({ current, onClose, onSaved, onRemoved }: {
       return;
     }
     if (!/^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,199}$/.test(nextModel)) {
-      setError("사용할 모델 ID를 입력해 주세요. 예: gpt-5-mini");
+      setError(`사용할 모델 ID를 입력해 주세요. 예: ${DEFAULT_MODEL}`);
       return;
     }
     setSaving(true);
@@ -283,23 +345,24 @@ function SettingsSheet({ current, onClose, onSaved, onRemoved }: {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.canvas },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.canvas },
-  header: { paddingHorizontal: spacing[4], paddingVertical: spacing[3], flexDirection: "row", alignItems: "center", gap: spacing[2], borderBottomWidth: 1, borderBottomColor: colors.border },
+  header: { margin: spacing[3], marginBottom: 0, paddingHorizontal: spacing[4], paddingVertical: spacing[3], flexDirection: "row", alignItems: "center", gap: spacing[2], borderWidth: 1, borderColor: colors.border, borderRadius: radius.sheet, backgroundColor: colors.surface, shadowColor: "#111322", shadowOpacity: 0.05, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   brand: { flex: 1 },
   title: { fontSize: type.heading, lineHeight: type.headingLine, fontWeight: "700", color: colors.text },
   caption: { fontSize: type.helper, lineHeight: type.helperLine, color: colors.textMuted },
   conversation: { padding: spacing[4], gap: spacing[4], flexGrow: 1, width: "100%", maxWidth: 760, alignSelf: "center" },
   welcome: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[5], paddingVertical: spacing[12] },
-  mark: { width: 64, height: 64, alignItems: "center", justifyContent: "center", borderRadius: 22, backgroundColor: colors.surfaceSelected },
+  mark: { width: 68, height: 68, alignItems: "center", justifyContent: "center", borderRadius: 24, backgroundColor: colors.surfaceSelected, transform: [{ rotate: "-3deg" }] },
   markText: { fontSize: 34, fontWeight: "700", color: colors.action },
   hero: { fontSize: type.hero, lineHeight: type.heroLine, fontWeight: "600", color: colors.text },
   welcomeText: { fontSize: type.body, lineHeight: type.bodyLine, textAlign: "center", color: colors.textMuted },
-  message: { padding: spacing[4], borderRadius: radius.overlay, gap: spacing[2], maxWidth: "94%" },
+  quickActions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: spacing[2] },
+  message: { padding: spacing[4], borderRadius: radius.overlay, gap: spacing[2], maxWidth: "94%", shadowColor: "#111322", shadowOpacity: 0.035, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 1 },
   userMessage: { alignSelf: "flex-end", backgroundColor: colors.surfaceSelected },
   assistantMessage: { alignSelf: "flex-start", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   speaker: { fontSize: type.helper, lineHeight: type.helperLine, fontWeight: "600", color: colors.textAccent },
   messageText: { fontSize: type.body, lineHeight: type.bodyLine, color: colors.text },
   thinking: { flexDirection: "row", gap: spacing[3], alignItems: "center", padding: spacing[3] },
-  composerArea: { paddingHorizontal: spacing[4], paddingBottom: spacing[2], gap: spacing[2], borderTopWidth: 1, borderTopColor: colors.border },
+  composerArea: { marginHorizontal: spacing[3], marginBottom: spacing[3], paddingHorizontal: spacing[3], paddingBottom: spacing[2], gap: spacing[2], borderWidth: 1, borderColor: colors.border, borderRadius: radius.sheet, backgroundColor: colors.surface, shadowColor: "#111322", shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 5 },
   composer: { flexDirection: "row", alignItems: "flex-end", gap: spacing[2], paddingTop: spacing[3] },
   messageInput: { flex: 1, fontSize: type.body, lineHeight: type.bodyLine, color: colors.text, backgroundColor: colors.surface, minHeight: size.primary, maxHeight: 156, borderWidth: 1, borderColor: colors.border, borderRadius: radius.overlay, padding: spacing[3] },
   footnote: { fontSize: 11, lineHeight: 16, color: colors.textMuted, textAlign: "center" },

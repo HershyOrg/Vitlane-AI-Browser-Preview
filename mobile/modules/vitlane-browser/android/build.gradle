@@ -4,18 +4,19 @@ plugins {
 }
 
 group = 'com.vitlane.browser'
-version = '0.3.1'
+version = '0.8.21'
 
 android {
   namespace 'com.vitlane.browser'
   defaultConfig {
-    versionCode 3
-    versionName '0.3.1'
+    versionCode 33
+    versionName '0.8.21'
   }
 }
 
 dependencies {
   testImplementation 'junit:junit:4.13.2'
+  testImplementation 'org.robolectric:robolectric:4.14.1'
 }
 
 // Keep the compiled DOM adapter in sync with its reviewed/tested JavaScript source.

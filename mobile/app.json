@@ -3,7 +3,7 @@
     "name": "Vitlane",
     "slug": "vitlane-mobile",
     "scheme": "vitlane",
-    "version": "0.3.1",
+    "version": "0.8.21",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "plugins": [
@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "com.vitlane.mobile",
-      "versionCode": 3,
+      "versionCode": 33,
       "predictiveBackGestureEnabled": false
     },
     "web": {

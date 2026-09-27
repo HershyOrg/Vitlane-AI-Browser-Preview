@@ -6,7 +6,7 @@ import { loadSettings, saveSettings, type ChatSettings } from "../chat/storage";
 export function subscribeToBrowserSettings(onSaved: (settings: ChatSettings) => void): () => void {
   if (Platform.OS !== "android" || !BrowserModule?.addListener || !BrowserModule.finishSettingsRequest) return () => {};
   let active = true;
-  let saving = false;
+  let pending = Promise.resolve();
   const module = BrowserModule;
   async function reply(request: BrowserSettingsRequest, next: ChatSettings | null, error = "") {
     try {
@@ -15,21 +15,29 @@ export function subscribeToBrowserSettings(onSaved: (settings: ChatSettings) => 
     } catch { /* The native screen may have closed; never log credential-bearing arguments. */ }
   }
   const subscription = module.addListener("onSettingsRequest", (request) => {
-    void (async () => {
+    // A resume can arrive while a save is still finishing. Read only after that write.
+    pending = pending.then(async () => {
       if (!active) return;
-      if (saving) { await reply(request, null, "설정을 저장 중입니다. 잠시 후 다시 시도해 주세요."); return; }
-      saving = true;
       try {
-        const current = await loadSettings();
+        if (request.action === "load") {
+          const current = await loadSettings();
+          if (!active) return;
+          if (current) onSaved(current);
+          await reply(request, current);
+          return;
+        }
+        // A replacement key must remain saveable even if the old record cannot be read.
+        const inputKey = request.apiKey.trim();
+        const current = inputKey ? null : await loadSettings();
         if (!active) return;
-        const apiKey = request.apiKey.trim() || current?.apiKey || "";
+        const apiKey = inputKey || current?.apiKey || "";
         const model = request.model.trim();
         if (apiKey.length > 1024 || !/^sk-[A-Za-z0-9_-]+$/.test(apiKey)) {
           await reply(request, null, "sk-로 시작하는 OpenAI API 키를 입력해 주세요."); return;
         }
         if (!/^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,199}$/.test(model)
-          || !Number.isInteger(request.maxSteps) || request.maxSteps < 1 || request.maxSteps > 20
-          || !Number.isInteger(request.timeoutSeconds) || request.timeoutSeconds < 30 || request.timeoutSeconds > 300) {
+          || !Number.isInteger(request.maxSteps) || request.maxSteps < 1 || request.maxSteps > 100
+          || !Number.isInteger(request.timeoutSeconds) || request.timeoutSeconds < 30 || request.timeoutSeconds > 1800) {
           await reply(request, null, "모델 이름, 실행 횟수와 제한 시간을 확인해 주세요."); return;
         }
         const next: ChatSettings = { apiKey, model,
@@ -39,9 +47,11 @@ export function subscribeToBrowserSettings(onSaved: (settings: ChatSettings) => 
         onSaved(next);
         await reply(request, next);
       } catch {
-        await reply(request, null, "설정을 안전하게 저장하지 못했습니다. 다시 시도해 주세요.");
-      } finally { saving = false; }
-    })();
+        await reply(request, null, request.action === "load"
+          ? "저장된 설정을 불러오지 못했습니다. 설정에서 다시 저장해 주세요."
+          : "설정을 안전하게 저장하지 못했습니다. 다시 시도해 주세요.");
+      }
+    });
   });
   return () => { active = false; subscription.remove(); };
 }

@@ -13,8 +13,11 @@ parser.add_argument("--javac", default="javac")
 parser.add_argument("--java", default="java")
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
-source = root / "modules/vitlane-browser/android/src/main/java/com/vitlane/browser/BrowserAgent.java"
-test = root / "tests/java/BrowserAgentTest.java"
+sources = [root / "modules/vitlane-browser/android/src/main/java/com/vitlane/browser" / name
+           for name in ("BrowserAgent.java", "BrowserChat.java", "BrowserTaskMemory.java", "BrowserTaskContract.java", "BrowserRecoveryPolicy.java",
+                        "BrowserResearchPlanner.java", "BrowserExecutionVerifier.java", "BrowserObservationPolicy.java", "BrowserLocationContext.java")]
+tests = [root / "tests/java" / name for name in ("BrowserAgentTest.java", "BrowserChatTest.java", "BrowserTaskMemoryTest.java", "BrowserTaskContractTest.java",
+                                                "BrowserResearchPlannerTest.java")]
 
 with tempfile.TemporaryDirectory(prefix="vitlane-browser-agent-") as temporary:
     output = Path(temporary)
@@ -22,9 +25,12 @@ with tempfile.TemporaryDirectory(prefix="vitlane-browser-agent-") as temporary:
         android_classes = output / "android"
         android_classes.mkdir()
         subprocess.run([args.javac, "-encoding", "UTF-8", "--release", "8", "-cp",
-                        str(args.android_jar.resolve()), "-d", str(android_classes), str(source)], check=True)
+                        str(args.android_jar.resolve()), "-d", str(android_classes), *map(str, sources)], check=True)
         print("BrowserAgent Android API compilation passed", flush=True)
+    compile_classpath = [str(args.json_jar.resolve())]
+    if args.android_jar: compile_classpath.append(str(args.android_jar.resolve()))
     subprocess.run([args.javac, "-encoding", "UTF-8", "--release", "8", "-cp",
-                    str(args.json_jar.resolve()), "-d", str(output), str(source), str(test)], check=True)
-    subprocess.run([args.java, "-cp", os.pathsep.join([str(output), str(args.json_jar.resolve())]),
-                    "com.vitlane.browser.BrowserAgentTest"], check=True)
+                    os.pathsep.join(compile_classpath), "-d", str(output), *map(str, sources), *map(str, tests)], check=True)
+    for test in tests:
+        subprocess.run([args.java, "-cp", os.pathsep.join([str(output), str(args.json_jar.resolve())]),
+                        "com.vitlane.browser." + test.stem], check=True)

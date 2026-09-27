@@ -1,0 +1,80 @@
+{
+  "candidate": "0.5.0 quote-presence plus BrowserTaskContract.canFinish",
+  "cases": [
+    {
+      "quoteOnlyAccepted": true,
+      "expectedGateBehaviorObserved": true,
+      "contractAccepted": false,
+      "interpretation": "New gate rejects a structurally incomplete or duplicated result that quote presence alone accepts.",
+      "id": "insufficient_candidates",
+      "issues": [
+        "명시한 결과 수량에 맞는 서로 다른 후보가 필요합니다."
+      ]
+    },
+    {
+      "quoteOnlyAccepted": true,
+      "expectedGateBehaviorObserved": true,
+      "contractAccepted": false,
+      "interpretation": "New gate rejects a structurally incomplete or duplicated result that quote presence alone accepts.",
+      "id": "missing_mandatory_check",
+      "issues": [
+        "c1: power 필수 조건 근거가 충족되지 않았습니다."
+      ]
+    },
+    {
+      "quoteOnlyAccepted": true,
+      "expectedGateBehaviorObserved": true,
+      "contractAccepted": false,
+      "interpretation": "New gate rejects a structurally incomplete or duplicated result that quote presence alone accepts.",
+      "id": "duplicate_selected_candidate",
+      "issues": [
+        "결과 후보 ID가 잘못되었거나 중복됩니다."
+      ]
+    },
+    {
+      "quoteOnlyAccepted": true,
+      "expectedGateBehaviorObserved": true,
+      "contractAccepted": true,
+      "interpretation": "Necessary structural evidence conditions present; semantic success still unmeasured.",
+      "id": "all_candidates_and_checks_present",
+      "issues": []
+    },
+    {
+      "quoteOnlyAccepted": true,
+      "expectedGateBehaviorObserved": true,
+      "contractAccepted": false,
+      "interpretation": "Collection-wide any requirements need support across the selected results, not on every candidate.",
+      "id": "heterogeneous_collection_missing_member",
+      "issues": [
+        "beta 조건을 뒷받침하는 선택된 결과가 없습니다."
+      ]
+    },
+    {
+      "quoteOnlyAccepted": true,
+      "expectedGateBehaviorObserved": true,
+      "contractAccepted": true,
+      "interpretation": "Collection-wide any requirements need support across the selected results, not on every candidate.",
+      "id": "heterogeneous_collection_complete",
+      "issues": []
+    },
+    {
+      "quoteOnlyAccepted": true,
+      "expectedGateBehaviorObserved": true,
+      "contractAccepted": true,
+      "interpretation": "Both accept misleading model assessments with real quotes: numeric/semantic truth is not independently validated.",
+      "id": "semantic_counterexample_over_budget_marked_supported",
+      "issues": []
+    }
+  ],
+  "baseline": "0.4.0 quote-presence rule, exercised through unchanged BrowserTaskMemory.validateEvidence",
+  "fixtureVersion": 1,
+  "measurement": "Deterministic validation gates only; not model or live-site task accuracy",
+  "runDate": "2026-09-26",
+  "sourceSha256": {
+    "mobile/modules/vitlane-browser/android/src/main/java/com/vitlane/browser/BrowserAgent.java": "42f1a03f3c25b0f3be599e654735101f96054336d0f09732972319d47f97b74f",
+    "mobile/modules/vitlane-browser/android/src/main/java/com/vitlane/browser/BrowserTaskMemory.java": "64b036312d9fe77b0f4a39022fa8d80cafdf5ba01450a78e0a55b68b00777d51",
+    "mobile/modules/vitlane-browser/android/src/main/java/com/vitlane/browser/BrowserTaskContract.java": "fd7f92c3b35da35f909cce5829c9af937a5bb345569ba9515d4ffa5ac078958c",
+    "mobile/modules/vitlane-browser/android/src/main/java/com/vitlane/browser/BrowserRecoveryPolicy.java": "af5604338a25001a54e1410cf5e3b1013b577936f4912afcc1269091f829bd34",
+    "docs/evaluation/BrowserCriteriaGateComparison.java": "06307d1b79fb59a195ad8ee7510db0af7b56d6c4b0708250b17fa1f73e1da4c2"
+  }
+}

@@ -53,6 +53,15 @@ it("replaces key and model in the store shared with chat", async () => {
   unsubscribe();
 });
 
+it("acknowledges extended browser budgets after save", async () => {
+  const unsubscribe = subscribeToBrowserSettings(jest.fn());
+  receive({ ...request, maxSteps: 100, timeoutSeconds: 1800 });
+  await waitFor(() => expect(native.finishSettingsRequest).toHaveBeenCalledWith(
+    request.requestId, existing.apiKey, existing.model, 100, 1800, ""));
+  expect(save).toHaveBeenCalledWith({ ...existing, browser: { maxSteps: 100, timeoutSeconds: 1800 } });
+  unsubscribe();
+});
+
 it("does not apply a failed write or expose its native error", async () => {
   save.mockRejectedValueOnce(new Error("sk-test-sensitive-native-error"));
   const onSaved = jest.fn();
@@ -64,7 +73,7 @@ it("does not apply a failed write or expose its native error", async () => {
   unsubscribe();
 });
 
-it.each([{ ...request, maxSteps: 21 }, { ...request, timeoutSeconds: 0 },
+it.each([{ ...request, maxSteps: 101 }, { ...request, timeoutSeconds: 0 },
   { ...request, timeoutSeconds: 90.5 }, { ...request, model: "invalid model" },
   { ...request, apiKey: "sk-invalid:key" }])(
   "rejects invalid settings before writing", async invalid => {
@@ -99,4 +108,58 @@ it("does not apply a late save to an unmounted screen", async () => {
   await Promise.resolve();
   expect(onSaved).not.toHaveBeenCalled();
   expect(native.finishSettingsRequest).not.toHaveBeenCalled();
+});
+
+it("restores the saved key, model and limits without overwriting them", async () => {
+  const saved = { apiKey: "sk-new-key", model: "gpt-custom", browser: { maxSteps: 3, timeoutSeconds: 60 } };
+  load.mockResolvedValueOnce(saved);
+  const onSaved = jest.fn();
+  const unsubscribe = subscribeToBrowserSettings(onSaved);
+  receive({ ...request, action: "load", model: "stale-model" });
+  await waitFor(() => expect(native.finishSettingsRequest).toHaveBeenCalledWith(
+    request.requestId, saved.apiKey, saved.model, 3, 60, ""));
+  expect(onSaved).toHaveBeenCalledWith(saved);
+  expect(save).not.toHaveBeenCalled();
+  unsubscribe();
+});
+
+it("returns empty settings when the saved key was removed", async () => {
+  load.mockResolvedValueOnce(null);
+  const onSaved = jest.fn();
+  const unsubscribe = subscribeToBrowserSettings(onSaved);
+  receive({ ...request, action: "load" });
+  await waitFor(() => expect(native.finishSettingsRequest).toHaveBeenCalledWith(
+    request.requestId, "", "", 20, 300, ""));
+  expect(onSaved).not.toHaveBeenCalled();
+  expect(save).not.toHaveBeenCalled();
+  unsubscribe();
+});
+
+it("allows a replacement key to repair settings without reading a broken old record", async () => {
+  load.mockRejectedValue(new Error("old key is unreadable"));
+  const unsubscribe = subscribeToBrowserSettings(jest.fn());
+  receive({ ...request, apiKey: "sk-replacement", model: "gpt-custom" });
+  await waitFor(() => expect(native.finishSettingsRequest).toHaveBeenCalledWith(
+    request.requestId, "sk-replacement", "gpt-custom", 8, 90, ""));
+  expect(load).not.toHaveBeenCalled();
+  unsubscribe();
+});
+
+it("waits for an in-flight save before restoring on resume", async () => {
+  let finishSave!: () => void;
+  const updated = { apiKey: "sk-updated", model: "gpt-custom", browser: { maxSteps: 8, timeoutSeconds: 90 } };
+  save.mockImplementationOnce(() => new Promise<void>(resolve => {
+    finishSave = () => { load.mockResolvedValue(updated); resolve(); };
+  }));
+  const unsubscribe = subscribeToBrowserSettings(jest.fn());
+  receive({ ...request, apiKey: updated.apiKey, model: updated.model });
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+  receive({ ...request, requestId: "resume", action: "load" });
+  await Promise.resolve();
+  expect(load).not.toHaveBeenCalled();
+  finishSave();
+  await waitFor(() => expect(native.finishSettingsRequest).toHaveBeenCalledWith(
+    "resume", updated.apiKey, updated.model, 8, 90, ""));
+  expect(save).toHaveBeenCalledTimes(1);
+  unsubscribe();
 });

@@ -20,11 +20,12 @@ class VitlaneBrowserModule : Module() {
     AsyncFunction("openAgentBrowser") { apiKey: String, model: String, maxSteps: Int, timeoutSeconds: Int ->
       val activity = appContext.currentActivity ?: throw Exceptions.MissingActivity()
       VitlaneBrowserActivity.launch(activity, apiKey, model, maxSteps, timeoutSeconds) {
-          inputKey, selectedModel, steps, seconds, callback ->
+          restore, inputKey, selectedModel, steps, seconds, callback ->
         val id = UUID.randomUUID().toString()
         pending[id] = callback
         // This event goes only to the app's React Native runtime, never to a web page.
         sendEvent("onSettingsRequest", mapOf(
+          "action" to if (restore) "load" else "save",
           "requestId" to id, "apiKey" to inputKey, "model" to selectedModel,
           "maxSteps" to steps, "timeoutSeconds" to seconds
         ))

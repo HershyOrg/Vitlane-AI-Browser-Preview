@@ -4,7 +4,7 @@ export type ChatMessage = {
   content: string;
 };
 
-export const DEFAULT_MODEL = "gpt-5-mini";
+export const DEFAULT_MODEL = "gpt-6-sol";
 
 export type SendChatOptions = {
   apiKey: string;
@@ -139,7 +139,8 @@ export async function sendChat({
         body: JSON.stringify({
           model: selectedModel,
           input: messages.map(({ role, content }) => ({ role, content })),
-          max_output_tokens: 4096,
+          max_output_tokens: selectedModel === "gpt-6-sol" ? 16384 : 4096,
+          ...(selectedModel === "gpt-6-sol" ? { reasoning: { effort: "medium" } } : {}),
           store: false,
         }),
         signal: controller.signal,

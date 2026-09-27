@@ -14,6 +14,15 @@ public class BrowserUrlPolicyTest {
         }
     }
 
+    @Test public void normalizesInternationalDomainsAndUpgradesHttpNavigation() {
+        assertEquals("https://xn--bcher-kva.de/catalog?q=test",
+                BrowserUrlPolicy.requirePublicHttps("https://bücher.de/catalog?q=test"));
+        assertEquals("https://example.com/catalog?q=one",
+                BrowserUrlPolicy.requirePublicHttpsNavigation("http://example.com:80/catalog?q=one"));
+        try { BrowserUrlPolicy.requirePublicHttps("http://example.com/catalog"); fail(); }
+        catch (IllegalArgumentException expected) { }
+    }
+
     @Test public void rejectsLocalSchemesCredentialsPortsAndAmbiguousHosts() {
         for (String url : new String[] {
                 "http://example.com", "file:///etc/passwd", "javascript:alert(1)",
@@ -43,5 +52,7 @@ public class BrowserUrlPolicyTest {
         assertFalse(BrowserUrlPolicy.isPublicAddress(InetAddress.getByName("fc00::1")));
         assertFalse(BrowserUrlPolicy.isPublicAddress(InetAddress.getByName("2001:db8::1")));
         assertTrue(BrowserUrlPolicy.isPublicAddress(InetAddress.getByName("2606:4700:4700::1111")));
+        assertTrue(BrowserUrlPolicy.isPublicAddress(InetAddress.getByName("64:ff9b::8.8.8.8")));
+        assertFalse(BrowserUrlPolicy.isPublicAddress(InetAddress.getByName("64:ff9b::192.168.1.1")));
     }
 }

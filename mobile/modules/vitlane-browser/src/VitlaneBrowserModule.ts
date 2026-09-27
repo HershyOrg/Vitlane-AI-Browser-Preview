@@ -2,6 +2,7 @@ import { NativeModule, requireOptionalNativeModule } from 'expo';
 
 export type BrowserSettingsRequest = {
   requestId: string;
+  action?: "save" | "load";
   apiKey: string;
   model: string;
   maxSteps: number;

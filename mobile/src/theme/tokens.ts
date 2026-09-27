@@ -3,17 +3,17 @@
  * Keep the Still Water semantic names so both clients make the same decisions.
  */
 export const colors = {
-  canvas: "#F5F8FA",
+  canvas: "#F5F6FA",
   surface: "#FFFFFF",
-  surfaceSubtle: "#F1F2F5",
-  surfaceSelected: "#E5EEF5",
-  text: "#202124",
-  textMuted: "#676B73",
-  textAccent: "#1B507E",
-  border: "#DFE1E6",
-  borderStrong: "#B7BBC4",
-  action: "#21629C",
-  actionPressed: "#1B507E",
+  surfaceSubtle: "#F6F7FB",
+  surfaceSelected: "#EEEDFF",
+  text: "#171821",
+  textMuted: "#6F7280",
+  textAccent: "#5856D6",
+  border: "#E7E7EF",
+  borderStrong: "#C8C9D3",
+  action: "#5856D6",
+  actionPressed: "#4442B8",
   onAction: "#FFFFFF",
   scrim: "rgba(32, 33, 36, 0.52)",
   positive: "#1E7A46",
@@ -42,9 +42,9 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  control: 6,
-  product: 8,
-  overlay: 12,
+  control: 16,
+  product: 20,
+  overlay: 18,
   sheet: 24,
   pill: 999,
 } as const;

@@ -12,6 +12,7 @@ package com.vitlane.browser;
 
 import android.util.Base64;
 import java.nio.charset.StandardCharsets;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Page-world DOM adapter. Native code owns navigation, approvals and API credentials. */
@@ -27,9 +28,101 @@ ${pieces.map(piece => '                    .append(' + JSON.stringify(piece) + '
         return "(" + SOURCE + ").observe()";
     }
 
+    /** Native UI only: never attach this result to a model observation or task record. */
+    public static String humanFields() {
+        return "(" + SOURCE + ").humanFields()";
+    }
+
+    /** Native secure-vault UI only: never attach this result to model input, memory or history. */
+    public static String secretFields() {
+        return "(" + SOURCE + ").secretFields()";
+    }
+
+    /** Secret-presence and readiness only; never exposes a field value. */
+    public static String manualState() {
+        return "(" + SOURCE + ").manualState()";
+    }
+
+    /** Only transient user-approved field answers enter the page; no goal, history or task metadata. */
+    public static String fillHumanFields(JSONObject command, String expectedUrl, String expectedDocumentId) {
+        JSONObject execution = new JSONObject();
+        JSONArray values = command == null ? null : command.optJSONArray("values");
+        JSONArray fields = new JSONArray();
+        try {
+            if (values != null && values.length() >= 1 && values.length() <= 8) {
+                for (int i = 0; i < values.length(); i++) {
+                    JSONObject item = values.getJSONObject(i);
+                    Object id = item.get("id"), value = item.get("value");
+                    if (!(id instanceof String) || !(value instanceof String)
+                            || ((String) id).length() > 80 || ((String) value).length() > 500) {
+                        fields = new JSONArray(); break;
+                    }
+                    fields.put(new JSONObject().put("id", id).put("value", value));
+                }
+            }
+            execution.put("values", fields);
+        } catch (org.json.JSONException ignored) {
+            execution = new JSONObject(); // The page helper rejects an incomplete batch without writing.
+        }
+        return "(" + SOURCE + ").fillHumanFields(" + execution.toString() + ","
+                + JSONObject.quote(expectedUrl == null ? "" : expectedUrl) + ","
+                + JSONObject.quote(expectedDocumentId == null ? "" : expectedDocumentId) + ")";
+    }
+
+    /** Direct vault-to-page channel. The generated script contains values only for this WebView call. */
+    public static String fillSecretFields(JSONObject command, String expectedUrl, String expectedDocumentId) {
+        JSONObject execution = new JSONObject();
+        JSONArray values = command == null ? null : command.optJSONArray("values");
+        JSONArray fields = new JSONArray();
+        try {
+            if (values != null && values.length() >= 1 && values.length() <= 8) {
+                for (int i = 0; i < values.length(); i++) {
+                    JSONObject item = values.getJSONObject(i);
+                    Object id = item.get("id"), value = item.get("value");
+                    if (!(id instanceof String) || !(value instanceof String)
+                            || ((String) id).length() > 80 || ((String) value).length() > 512) {
+                        fields = new JSONArray(); break;
+                    }
+                    fields.put(new JSONObject().put("id", id).put("value", value));
+                }
+            }
+            execution.put("values", fields);
+        } catch (org.json.JSONException ignored) {
+            execution = new JSONObject();
+        }
+        return "(" + SOURCE + ").fillSecretFields(" + execution.toString() + ","
+                + JSONObject.quote(expectedUrl == null ? "" : expectedUrl) + ","
+                + JSONObject.quote(expectedDocumentId == null ? "" : expectedDocumentId) + ")";
+    }
+
     public static String action(JSONObject action, String expectedUrl) {
-        return "(" + SOURCE + ").action(" + action.toString() + ","
-                + JSONObject.quote(expectedUrl == null ? "" : expectedUrl) + ")";
+        return action(action, expectedUrl, "");
+    }
+
+    /** Visual-only target marker used while the browser tab is visible; it performs no page action. */
+    public static String preview(JSONObject action, String expectedUrl, String expectedDocumentId) {
+        JSONObject execution = new JSONObject();
+        for (String key : new String[] {"type", "targetId"}) {
+            if (!action.has(key)) continue;
+            try { execution.put(key, action.get(key)); }
+            catch (org.json.JSONException ignored) { }
+        }
+        return "(" + SOURCE + ").preview(" + execution.toString() + ","
+                + JSONObject.quote(expectedUrl == null ? "" : expectedUrl) + ","
+                + JSONObject.quote(expectedDocumentId == null ? "" : expectedDocumentId) + ")";
+    }
+
+    public static String action(JSONObject action, String expectedUrl, String expectedDocumentId) {
+        // The page world must never receive the user's goal, plans, evidence or cross-page memory.
+        JSONObject execution = new JSONObject();
+        for (String key : new String[] {"type", "targetId", "text", "submit", "value", "checked", "direction", "approved"}) {
+            if (!action.has(key)) continue;
+            try { execution.put(key, action.get(key)); }
+            catch (org.json.JSONException ignored) { /* JSONObject has already been validated natively. */ }
+        }
+        return "(" + SOURCE + ").action(" + execution.toString() + ","
+                + JSONObject.quote(expectedUrl == null ? "" : expectedUrl) + ","
+                + JSONObject.quote(expectedDocumentId == null ? "" : expectedDocumentId) + ")";
     }
 }
 `;
