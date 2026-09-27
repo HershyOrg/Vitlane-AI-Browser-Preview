@@ -2,19 +2,24 @@ package com.vitlane.browser;
 
 import static org.junit.Assert.*;
 
+import android.net.Uri;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ValueCallback;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.json.JSONArray;
@@ -76,6 +81,17 @@ public class BrowserV08ActivityTest {
     private void handle(JSONObject page, JSONObject action) throws Exception {
         call("handleAction", new Class<?>[]{int.class, long.class, String.class, JSONObject.class, JSONObject.class},
                 (Integer)get("mGeneration"), (Long)get("mDocumentEpoch"), web.url, page, action);
+    }
+
+    private static WebResourceRequest requestFor(String url) {
+        return new WebResourceRequest() {
+            @Override public Uri getUrl() { return Uri.parse(url); }
+            @Override public boolean isForMainFrame() { return true; }
+            @Override public boolean isRedirect() { return false; }
+            @Override public boolean hasGesture() { return false; }
+            @Override public String getMethod() { return "GET"; }
+            @Override public Map<String, String> getRequestHeaders() { return Collections.emptyMap(); }
+        };
     }
 
     @Before public void setup() throws Exception {
@@ -195,6 +211,39 @@ public class BrowserV08ActivityTest {
         call("onBrowserTouch", new Class<?>[]{android.view.MotionEvent.class},
                 android.view.MotionEvent.obtain(down, down + 40, android.view.MotionEvent.ACTION_UP, 10, 100, 0));
         assertTrue("status=" + ((TextView)get("mStatus")).getText(), (Boolean)get("mRunning"));
+    }
+
+    @Test public void externalAppNavigationRejectsOnlyTheClickAndKeepsTheAgentRunning() throws Exception {
+        call("configureBrowser", new Class<?>[]{});
+        JSONObject action = new JSONObject().put("type", "click").put("targetId", "e1")
+                .put("message", "상품 상세를 엽니다");
+        set("mPendingAction", action);
+        set("mBeforeAction", page("상품 상세"));
+        set("mBusy", true);
+        set("mExpectedNavigation", true);
+
+        WebViewClient client = web.getWebViewClient();
+        assertTrue(client.shouldOverrideUrlLoading(web,
+                requestFor("intent://product/123#Intent;scheme=coupang;package=com.coupang.mobile;end")));
+
+        assertTrue((Boolean)get("mRunning"));
+        assertNull(get("mPendingAction"));
+        assertFalse((Boolean)get("mBusy"));
+        assertFalse((Boolean)get("mExpectedNavigation"));
+        assertEquals("EXTERNAL_NAVIGATION",
+                ((BrowserTaskMemory)get("mMemory")).toJson().getJSONObject("feedback").getString("code"));
+        assertTrue(((JSONArray)get("mHistory")).toString().contains("현재 페이지를 유지"));
+    }
+
+    @Test public void httpLinkCanBeClickedBecauseNavigationWillUpgradeItToHttps() throws Exception {
+        JSONObject linked = page("상품 상세");
+        linked.getJSONArray("elements").getJSONObject(0)
+                .put("tag", "a").put("role", "link").put("href", "http://shop.example.com/item/7");
+        handle(linked, new JSONObject().put("type", "click").put("targetId", "e1")
+                .put("message", "상품 상세를 엽니다"));
+        assertTrue((Boolean)get("mRunning"));
+        assertEquals(1, web.scripts.size());
+        assertTrue(web.scripts.get(0).contains(").action("));
     }
 
     @Test public void notificationReplyFeedsTheVisibleChatAnswerComposer() throws Exception {

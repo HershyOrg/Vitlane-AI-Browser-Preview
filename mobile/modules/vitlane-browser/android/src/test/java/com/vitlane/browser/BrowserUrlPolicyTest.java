@@ -23,6 +23,24 @@ public class BrowserUrlPolicyTest {
         catch (IllegalArgumentException expected) { }
     }
 
+    @Test public void extractsOnlyPublicWebFallbacksFromAndroidIntentUris() {
+        assertEquals("https://m.coupang.com/vm/products/123?itemId=456",
+                BrowserUrlPolicy.publicHttpsFallback("intent://product/123#Intent;scheme=coupang;"
+                        + "S.browser_fallback_url=https%3A%2F%2Fm.coupang.com%2Fvm%2Fproducts%2F123%3FitemId%3D456;end"));
+        assertEquals("https://shop.example.com/item/7",
+                BrowserUrlPolicy.publicHttpsFallback("intent://shop.example.com/item/7#Intent;scheme=https;end"));
+        assertEquals("", BrowserUrlPolicy.publicHttpsFallback(
+                "intent://product/123#Intent;scheme=coupang;S.browser_fallback_url=http%3A%2F%2Flocalhost%2Fsecret;end"));
+        assertEquals("", BrowserUrlPolicy.publicHttpsFallback("market://details?id=com.example"));
+    }
+
+    @Test public void distinguishesExternalAppsFromBlockedWebDocumentSchemes() {
+        assertTrue(BrowserUrlPolicy.isExternalAppNavigation("intent://product/123#Intent;scheme=coupang;end"));
+        assertTrue(BrowserUrlPolicy.isExternalAppNavigation("market://details?id=com.example"));
+        assertFalse(BrowserUrlPolicy.isExternalAppNavigation("javascript:void(0)"));
+        assertFalse(BrowserUrlPolicy.isExternalAppNavigation("https://example.com/product"));
+    }
+
     @Test public void rejectsLocalSchemesCredentialsPortsAndAmbiguousHosts() {
         for (String url : new String[] {
                 "http://example.com", "file:///etc/passwd", "javascript:alert(1)",

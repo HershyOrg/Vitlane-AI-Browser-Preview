@@ -3,6 +3,7 @@ package com.vitlane.browser;
 import java.net.IDN;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.util.Locale;
 
 /** Navigation policy shared by the native browser and planner. No network on the UI thread. */
@@ -16,6 +17,46 @@ public final class BrowserUrlPolicy {
     /** User-entered and server-redirected HTTP links are upgraded before WebView sees them. */
     public static String requirePublicHttpsNavigation(String value) {
         return normalize(value, true);
+    }
+
+    /**
+     * Extracts the public web fallback carried by an Android intent URI. The app never launches
+     * the external intent itself: a verified HTTPS fallback keeps the current browser task in the
+     * WebView, while a missing/unsafe fallback is treated as a recoverable navigation failure.
+     */
+    public static String publicHttpsFallback(String value) {
+        if (value == null || value.length() > 4096 || !value.regionMatches(true, 0, "intent://", 0, 9)) return "";
+        try {
+            int fragment = value.indexOf("#Intent;");
+            if (fragment < 9 || !value.endsWith(";end")) return "";
+            String parameters = value.substring(fragment + 8, value.length() - 4);
+            for (String parameter : parameters.split(";")) {
+                if (!parameter.startsWith("S.browser_fallback_url=")) continue;
+                String encoded = parameter.substring("S.browser_fallback_url=".length());
+                return requirePublicHttpsNavigation(URLDecoder.decode(encoded, "UTF-8"));
+            }
+            String scheme = "";
+            for (String parameter : parameters.split(";")) {
+                if (parameter.startsWith("scheme=")) scheme = parameter.substring("scheme=".length());
+            }
+            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) return "";
+            return requirePublicHttpsNavigation(scheme + "://" + value.substring(9, fragment));
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
+    public static boolean isExternalAppNavigation(String value) {
+        try {
+            String scheme = new URI(value).getScheme();
+            if (scheme == null) return false;
+            scheme = scheme.toLowerCase(Locale.ROOT);
+            return !("http".equals(scheme) || "https".equals(scheme) || "about".equals(scheme)
+                    || "javascript".equals(scheme) || "data".equals(scheme) || "blob".equals(scheme)
+                    || "file".equals(scheme));
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private static String normalize(String value, boolean upgradeHttp) {

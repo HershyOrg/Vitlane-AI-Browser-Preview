@@ -1,7 +1,7 @@
 # Vitlane mobile
 
 Expo SDK 57의 iOS·Android 공통 앱이다. 기본 화면은 별도 Vitlane 서버 없이 OpenAI
-Responses API에 직접 연결하는 개인용 대화 앱이다. Android 0.8.21은 일반 대화와 **AI 브라우저**를 하나의 채팅 화면에서 사용한다.
+Responses API에 직접 연결하는 개인용 대화 앱이다. Android 0.8.22는 일반 대화와 **AI 브라우저**를 하나의 채팅 화면에서 사용한다.
 설치 후 **OpenAI 연결**에서 본인의
 API 키를 입력하면 된다. 키와 모델 설정은 기기의 SecureStore에 저장하며 APK나
 `EXPO_PUBLIC_*`에 API 키를 포함하지 않는다. 기본 모델은 `gpt-6-sol`이며 설정에서
@@ -109,6 +109,9 @@ AI는 현재 공개 페이지의 본문·제목·폼·선택지와 정제된 HTM
 다시 확인한 중심 좌표에 Android 터치 이벤트를 보낸다. 이 터치는 사용자 조작으로 오인해 작업을 중지하지 않으며 결과는
 다시 DOM으로 검증한다. 장바구니·구매·주문·예약·삭제·취소·계정·결제처럼 중복 실행 위험이 있는 컨트롤에는 이 우회를
 사용하지 않는다. `target=_blank`나 `window.open()`은 별도 탭을 방치하지 않고 목적지가 공개 HTTPS인지 검사한 후 현재 탭으로 넘긴다.
+사이트가 `intent://` 앱 링크를 요청하면 검증된 `browser_fallback_url` 또는 HTTP(S) intent 목적지만 HTTPS로 전환해 연다.
+안전한 웹 폴백이 없으면 현재 페이지와 AI 작업을 종료하지 않고 해당 클릭만 실패로 기록하며, 모델은 같은 요소를 반복하지 않고
+웹용 링크·다른 버튼·현재 페이지 안의 경로를 다시 선택한다. DNS 확인 실패나 차단된 자동 이동도 마지막으로 검증한 공개 페이지를 복구해 재계획한다.
 
 상품 목록의 필터·정렬 UI가 `button`이나 ARIA role 없이 `div`/`span` 클릭 영역으로 구현된 경우에도
 표시 문구, `cursor`, filter/sort/facet/refinement/accordion 힌트를 함께 확인해 제한된 버튼 후보로 만든다.

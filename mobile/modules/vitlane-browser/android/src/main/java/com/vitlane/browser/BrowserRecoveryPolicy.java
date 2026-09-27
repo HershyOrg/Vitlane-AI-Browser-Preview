@@ -13,7 +13,8 @@ public final class BrowserRecoveryPolicy {
             case "NO_EFFECT": case "APPROVAL_REQUIRED": case "UNSUPPORTED": case "TARGET":
             case "RESPONSE": case "INCOMPLETE": case "CRITERIA": case "REPEATED_SEARCH": case "RESEARCH_FAILED":
             case "REPEATED_ACTION": case "UNCHANGED_PAGE": case "ALREADY_APPLIED":
-            case "SCROLL_BOUNDARY": case "SAME_DESTINATION": case "PERSONAL_FIELD": return raw;
+            case "SCROLL_BOUNDARY": case "SAME_DESTINATION": case "PERSONAL_FIELD":
+            case "EXTERNAL_NAVIGATION": case "BLOCKED_NAVIGATION": return raw;
             default: return "UNKNOWN";
         }
     }
@@ -42,6 +43,10 @@ public final class BrowserRecoveryPolicy {
                 strategy = "현재 주소와 같은 곳으로 다시 이동하려 했습니다. 이 페이지의 결과를 읽거나 다른 링크·검색 경로를 선택하세요."; break;
             case "PERSONAL_FIELD":
                 strategy = "저장된 개인정보와 호환되는 현재 입력란을 찾지 못했거나 사이트가 입력을 거절했습니다. 같은 화면에서 같은 개인정보 요청을 반복하지 말고 사용자의 직접 입력 결과를 기다리세요."; break;
+            case "EXTERNAL_NAVIGATION":
+                strategy = "사이트가 외부 앱 주소를 요청해 현재 웹페이지를 유지했습니다. 같은 요소를 반복하지 말고 웹용 링크·다른 버튼 또는 현재 페이지 안의 경로를 선택하세요."; break;
+            case "BLOCKED_NAVIGATION":
+                strategy = "이동 주소가 공개 웹 정책을 통과하지 못해 현재 페이지를 유지했습니다. 같은 주소를 반복하지 말고 다른 공개 HTTPS 출처나 현재 페이지의 경로를 선택하세요."; break;
             case "UNCHANGED_PAGE":
                 strategy = "여러 번 관찰해도 페이지가 변하지 않았습니다. 대기할 근거가 있는지 확인하고, 없으면 다른 대상·검색·뒤로 가기 경로를 선택하세요."; break;
             case "REPEATED_ACTION":

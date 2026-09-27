@@ -1321,10 +1321,13 @@ public final class VitlaneBrowserActivity extends Activity {
                         final String destination;
                         try { destination = BrowserUrlPolicy.requirePublicHttpsNavigation(raw); }
                         catch (RuntimeException invalid) {
+                            String fallback = BrowserUrlPolicy.publicHttpsFallback(raw);
                             popup.stopLoading(); popup.destroy();
-                            if (automated) rejectAction(mGeneration, mPendingAction == null ? new JSONObject() : mPendingAction,
-                                    "새 창 주소가 공개 HTTPS 페이지가 아닙니다.", "UNSUPPORTED");
-                            else status("공개 HTTPS 웹사이트만 열 수 있어요.");
+                            if (!fallback.isEmpty()) {
+                                mUi.post(() -> { if (!mDestroyed && mBrowserEnabled) navigate(fallback, automated); });
+                            } else if (automated) {
+                                recoverBlockedNavigation(raw, "새 창이 외부 앱 또는 지원하지 않는 주소를 요청해 현재 페이지를 유지했습니다.");
+                            } else status("새 창의 웹 주소를 열 수 없어 현재 페이지를 유지했어요.");
                             return true;
                         }
                         popup.stopLoading(); popup.destroy();
@@ -1354,7 +1357,15 @@ public final class VitlaneBrowserActivity extends Activity {
                 String requested = request.getUrl().toString(), destination;
                 try { destination = BrowserUrlPolicy.requirePublicHttpsNavigation(requested); }
                 catch (RuntimeException invalid) {
-                    if (request.isForMainFrame()) stopRun("공개 HTTPS 웹사이트만 열 수 있어요.");
+                    if (request.isForMainFrame()) {
+                        if (request.hasGesture() && mRunning && !isAgentGesture())
+                            stopRun("직접 선택한 링크를 확인하고 있어요.");
+                        String fallback = BrowserUrlPolicy.publicHttpsFallback(requested);
+                        if (!fallback.isEmpty()) navigate(fallback, mRunning);
+                        else if (mRunning) recoverBlockedNavigation(requested,
+                                "사이트가 외부 앱 또는 지원하지 않는 주소를 요청해 현재 페이지를 유지했습니다.");
+                        else status("이 주소를 열 수 없어 현재 페이지를 유지했어요.");
+                    }
                     return true;
                 }
                 if (request.isForMainFrame() && request.hasGesture() && mRunning && !isAgentGesture()) {
@@ -1373,8 +1384,15 @@ public final class VitlaneBrowserActivity extends Activity {
                 if (!mBrowserEnabled || view != mWeb || mDestroyed) return blockedResponse();
                 if (!BrowserUrlPolicy.isPublicNetworkUrl(request.getUrl().toString())) {
                     if (request.isForMainFrame()) mUi.post(() -> {
-                        if (!mDestroyed && mBrowserEnabled && view == mWeb && request.getUrl().toString().equals(view.getUrl()))
-                            stopRun("이 주소는 브라우저에서 열 수 없어요.");
+                        if (!mDestroyed && mBrowserEnabled && view == mWeb && request.getUrl().toString().equals(view.getUrl())) {
+                            view.stopLoading();
+                            mLoading = false;
+                            mLoadSerial++;
+                            if (mRunning) recoverBlockedNavigation(request.getUrl().toString(),
+                                    "이 주소의 공개 네트워크 연결을 확인할 수 없어 이전 페이지를 유지했습니다.");
+                            else status("이 주소는 브라우저에서 열 수 없어 이전 페이지를 유지했어요.");
+                            restoreLastSafePage(view);
+                        }
                     });
                     return blockedResponse();
                 }
@@ -1392,7 +1410,16 @@ public final class VitlaneBrowserActivity extends Activity {
                 trackPageLoad(view);
                 if (!allowedUrl(url)) {
                     view.stopLoading();
-                    stopRun("공개 HTTPS 웹사이트만 열 수 있어요.");
+                    mLoading = false;
+                    mLoadSerial++;
+                    String fallback = BrowserUrlPolicy.publicHttpsFallback(url);
+                    if (!fallback.isEmpty()) navigate(fallback, mRunning);
+                    else {
+                        if (mRunning) recoverBlockedNavigation(url,
+                                "지원하지 않는 주소로 이동하려 해 이전 페이지를 유지했습니다.");
+                        else status("이 주소를 열 수 없어 이전 페이지를 유지했어요.");
+                        restoreLastSafePage(view);
+                    }
                     return;
                 }
                 if (mRunning) {
@@ -2383,7 +2410,9 @@ public final class VitlaneBrowserActivity extends Activity {
         final String url;
         try { url = BrowserUrlPolicy.requirePublicHttpsNavigation(raw); }
         catch (RuntimeException error) {
-            stopRun("이 주소를 열 수 없어요. 주소가 공개 웹사이트이고 HTTPS를 지원하는지 확인해 주세요.");
+            if (automated) recoverBlockedNavigation(raw,
+                    "이동 주소가 공개 웹 정책을 통과하지 못해 현재 페이지를 유지했습니다.");
+            else stopRun("이 주소를 열 수 없어요. 주소가 공개 웹사이트이고 HTTPS를 지원하는지 확인해 주세요.");
             return;
         }
         final long request = ++mNavigationRequest;
@@ -2395,7 +2424,12 @@ public final class VitlaneBrowserActivity extends Activity {
             boolean allowed = BrowserUrlPolicy.isPublicNetworkUrl(url);
             mUi.post(() -> {
                 if (mDestroyed || !mBrowserEnabled || mWeb == null || request != mNavigationRequest || (automated && !valid(generation))) return;
-                if (!allowed) { stopRun("이 주소는 브라우저에서 열 수 없어요."); return; }
+                if (!allowed) {
+                    if (automated) recoverBlockedNavigation(url,
+                            "이 주소의 공개 네트워크 연결을 확인할 수 없어 현재 페이지를 유지했습니다.");
+                    else stopRun("이 주소는 브라우저에서 열 수 없어요.");
+                    return;
+                }
                 trackPageLoad(mWeb);
                 mWeb.loadUrl(url);
                 updateControls();
@@ -2791,7 +2825,12 @@ public final class VitlaneBrowserActivity extends Activity {
                     action.put("approved", true);
                 } else {
                     String href = target.optString("href");
-                    if (!href.isEmpty() && !allowedUrl(href)) { stopRun("공개 HTTPS 링크만 열 수 있어요."); return; }
+                    if (!href.isEmpty() && !navigationUrlAllowed(href)) {
+                        rejectAction(generation, action,
+                                "링크 주소가 공개 웹 정책을 통과하지 못했습니다. 현재 페이지의 다른 경로를 확인합니다.",
+                                BrowserUrlPolicy.isExternalAppNavigation(href) ? "EXTERNAL_NAVIGATION" : "BLOCKED_NAVIGATION");
+                        return;
+                    }
                     String method = action.optString("method", "dom");
                     if (!("dom".equals(method) || "direct".equals(method) || "native".equals(method))) {
                         rejectAction(generation, action, "지원하지 않는 클릭 방식입니다.", "UNSUPPORTED"); return;
@@ -3564,6 +3603,46 @@ public final class VitlaneBrowserActivity extends Activity {
             return path.matches("(?is).*(?:^|/)(?:cart|checkout|payments?|pay|orders?|purchase|buy|logout|signout|unsubscribe|remove|delete|cancel|subscribe|booking|reserve|wishlist|follow|like|vote|redeem|claim)(?:[/._-]|$).*")
                     || query.matches("(?is).*(?:^|&)(?:action|op|operation|method|cmd|do|event)=[^&]*(?:cart|buy|purchase|order|pay|delete|remove|cancel|subscribe|logout|signout|follow|like|vote|redeem|claim)[^&]*(?:&|$).*");
         } catch (Exception error) { return true; }
+    }
+
+    /** A blocked child navigation is an action failure, not the end of the browser task. */
+    private void recoverBlockedNavigation(String raw, String message) {
+        if (!mRunning) {
+            status(message);
+            browserActivity("이동 차단 · 현재 웹페이지를 유지했습니다");
+            return;
+        }
+        JSONObject rejected = mPendingAction;
+        mPendingAction = null;
+        mBeforeAction = null;
+        mExpectedNavigation = false;
+        mBusy = false;
+        mNavigationRequest++;
+        mOperationId++; // Ignore a late JavaScript callback from the click that requested this URL.
+        if (rejected == null) {
+            rejected = new JSONObject();
+            try {
+                rejected.put("type", "inspect");
+                rejected.put("message", "차단된 하위 이동 뒤 현재 페이지 재확인");
+            } catch (Exception ignored) { /* Fixed local values. */ }
+        }
+        String code = BrowserUrlPolicy.isExternalAppNavigation(raw)
+                ? "EXTERNAL_NAVIGATION" : "BLOCKED_NAVIGATION";
+        rejectAction(mGeneration, rejected, message, code);
+    }
+
+    private boolean restoreLastSafePage(WebView view) {
+        String previous = mLastObservation == null ? "" : mLastObservation.optString("url");
+        if (view == null || !allowedUrl(previous) || previous.equals(view.getUrl())) return false;
+        browserActivity("페이지 복구 · 마지막으로 확인한 공개 웹페이지로 돌아갑니다");
+        trackPageLoad(view);
+        view.loadUrl(previous);
+        return true;
+    }
+
+    private static boolean navigationUrlAllowed(String url) {
+        try { BrowserUrlPolicy.requirePublicHttpsNavigation(url); return true; }
+        catch (RuntimeException error) { return false; }
     }
 
     private static boolean allowedUrl(String url) {

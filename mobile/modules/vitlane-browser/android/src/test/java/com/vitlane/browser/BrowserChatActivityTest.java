@@ -480,6 +480,29 @@ public class BrowserChatActivityTest {
         assertEquals("답변 보내기", ((Button)get("mStart")).getText().toString());
     }
 
+    @Test public void androidIntentWithPublicFallbackContinuesInsideTheSameWebView() throws Exception {
+        set("mRunning", true);
+        set("mHasTask", true);
+        set("mGoal", "상품 상세를 확인해줘");
+        set("mDeadline", SystemClock.elapsedRealtime() + 60_000);
+        JSONObject action = new JSONObject().put("type", "click").put("targetId", "e1")
+                .put("message", "상품 상세를 엽니다");
+        set("mPendingAction", action);
+        set("mBeforeAction", page());
+        String raw = "intent://product/123#Intent;scheme=coupang;"
+                + "S.browser_fallback_url=https%3A%2F%2Fm.coupang.com%2Fvm%2Fproducts%2F123;end";
+
+        assertTrue(web.getWebViewClient().shouldOverrideUrlLoading(web, requestFor(raw)));
+        assertTrue((Boolean)get("mRunning"));
+        assertEquals(1, worker.pending.size());
+        worker.runNext();
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+
+        assertEquals("https://m.coupang.com/vm/products/123", web.navigations.get(web.navigations.size() - 1));
+        assertSame(action, get("mPendingAction"));
+        assertTrue((Boolean)get("mExpectedNavigation"));
+    }
+
     @Ignore("0.8 notification reply owns clarification lifecycle") @Test public void clarificationUsesTheExistingComposerAndKeepsTheOriginalBrowserGoal() throws Exception {
         enabled(true); send("Compare public shoes");
         EditText input = composer();

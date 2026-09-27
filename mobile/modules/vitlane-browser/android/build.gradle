@@ -4,13 +4,13 @@ plugins {
 }
 
 group = 'com.vitlane.browser'
-version = '0.8.21'
+version = '0.8.22'
 
 android {
   namespace 'com.vitlane.browser'
   defaultConfig {
-    versionCode 33
-    versionName '0.8.21'
+    versionCode 34
+    versionName '0.8.22'
   }
 }
 

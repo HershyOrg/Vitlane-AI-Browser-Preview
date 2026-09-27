@@ -93,6 +93,16 @@ public class BrowserV08PolicyTest {
         assertTrue(feedback.optString("strategy").contains("직접 입력"));
     }
 
+    @Test public void blockedChildNavigationGivesThePlannerANonRepeatingRecoveryPath() {
+        JSONObject external = BrowserRecoveryPolicy.feedback("EXTERNAL_NAVIGATION");
+        assertEquals("EXTERNAL_NAVIGATION", external.optString("code"));
+        assertTrue(external.optString("strategy").contains("현재 웹페이지를 유지"));
+        assertTrue(external.optString("strategy").contains("반복하지 말고"));
+        JSONObject blocked = BrowserRecoveryPolicy.feedback("BLOCKED_NAVIGATION");
+        assertEquals("BLOCKED_NAVIGATION", blocked.optString("code"));
+        assertTrue(blocked.optString("strategy").contains("다른 공개 HTTPS"));
+    }
+
     @Test public void checkoutPageCanAskForLocallyStoredAddress() throws Exception {
         JSONObject proposal = new JSONObject().put("type", "ask_user")
                 .put("question", "배송 주소를 알려주세요")
