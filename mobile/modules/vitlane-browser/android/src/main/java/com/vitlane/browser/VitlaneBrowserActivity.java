@@ -1036,11 +1036,12 @@ public final class VitlaneBrowserActivity extends Activity {
     private void showSettings() {
         if (mDestroyed || isFinishing() || mSettingsDialog != null) return;
         if (mRestoringSettings) { status("저장된 설정을 불러오는 중이에요."); return; }
-        stopRun("설정에서 API 키·모델·실행 한도를 변경할 수 있어요.");
         hideKeyboard();
+        if (mRunning || mChatBusy || mRouting)
+            browserActivity("설정 열림 · 현재 AI 작업은 중단하지 않고 계속 실행합니다");
         LinearLayout form = column();
         form.setPadding(dp(20), dp(8), dp(20), dp(4));
-        TextView description = label("이 화면에서 바로 API 키와 모델을 입력하세요. 대화 화면의 설정과 함께 저장됩니다.", 13, MUTED);
+        TextView description = label("이 화면에서 바로 API 키와 모델을 입력하세요. 설정을 열거나 닫아도 진행 중인 작업은 계속됩니다.", 13, MUTED);
         description.setPadding(0, 0, 0, dp(12));
         form.addView(description);
         EditText key = settingsField(form, "OpenAI API 키", "sk-로 시작하는 키", "",

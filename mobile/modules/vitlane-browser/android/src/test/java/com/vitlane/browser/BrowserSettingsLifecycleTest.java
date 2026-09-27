@@ -2,6 +2,8 @@ package com.vitlane.browser;
 
 import static org.junit.Assert.*;
 import java.lang.reflect.Field;
+import java.util.concurrent.FutureTask;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -68,6 +70,53 @@ public class BrowserSettingsLifecycleTest {
         assertEquals(false, get(activity, "mRestoringSettings"));
         activity.onDestroy();
     }
+
+    @Test public void openingAndClosingSettingsPreservesEveryActiveAiOperation() throws Exception {
+        VitlaneBrowserActivity activity = Robolectric.buildActivity(VitlaneBrowserActivity.class).get();
+        JSONObject pendingAction = new JSONObject().put("type", "click").put("targetId", "e1");
+        FutureTask<Void> planner = new FutureTask<>(() -> null);
+        set(activity, "mRunning", true);
+        set(activity, "mChatBusy", true);
+        set(activity, "mRouting", true);
+        set(activity, "mBusy", true);
+        set(activity, "mExpectedNavigation", true);
+        set(activity, "mGeneration", 7);
+        set(activity, "mRouteSerial", 11L);
+        set(activity, "mChatSerial", 13L);
+        set(activity, "mObservationSerial", 17L);
+        set(activity, "mPendingAction", pendingAction);
+        set(activity, "mTask", planner);
+
+        java.lang.reflect.Method show = VitlaneBrowserActivity.class.getDeclaredMethod("showSettings");
+        show.setAccessible(true);
+        show.invoke(activity);
+
+        android.app.AlertDialog dialog = (android.app.AlertDialog) get(activity, "mSettingsDialog");
+        assertNotNull(dialog);
+        assertTrue(dialog.isShowing());
+        assertEquals(true, get(activity, "mRunning"));
+        assertEquals(true, get(activity, "mChatBusy"));
+        assertEquals(true, get(activity, "mRouting"));
+        assertEquals(true, get(activity, "mBusy"));
+        assertEquals(true, get(activity, "mExpectedNavigation"));
+        assertEquals(7, get(activity, "mGeneration"));
+        assertEquals(11L, get(activity, "mRouteSerial"));
+        assertEquals(13L, get(activity, "mChatSerial"));
+        assertEquals(17L, get(activity, "mObservationSerial"));
+        assertSame(pendingAction, get(activity, "mPendingAction"));
+        assertFalse(planner.isCancelled());
+
+        dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick();
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+        assertFalse(dialog.isShowing());
+        assertEquals(true, get(activity, "mRunning"));
+        assertEquals(true, get(activity, "mChatBusy"));
+        assertEquals(true, get(activity, "mRouting"));
+        assertSame(pendingAction, get(activity, "mPendingAction"));
+        assertFalse(planner.isCancelled());
+        activity.onDestroy();
+    }
+
     @Test public void earlierRestoreCannotOverwriteSettingsFromLaterResume() throws Exception {
         VitlaneBrowserActivity activity = Robolectric.buildActivity(VitlaneBrowserActivity.class).get();
         java.util.List<VitlaneBrowserActivity.SettingsCallback> pending = new java.util.ArrayList<>();
