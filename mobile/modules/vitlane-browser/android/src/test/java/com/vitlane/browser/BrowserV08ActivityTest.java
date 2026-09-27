@@ -12,6 +12,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.EditText;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.lang.reflect.Field;
@@ -174,12 +176,40 @@ public class BrowserV08ActivityTest {
         assertEquals("PERSONAL_FIELD", feedback.getString("code"));
         assertFalse(((BrowserTaskMemory)get("mMemory")).toJson().toString().contains("local-only-address"));
 
-        call("clearHumanPanel", new Class<?>[]{});
-        set("mRunning", true);
+        LinearLayout panel = (LinearLayout)get("mHumanPanel");
+        LinearLayout actions = (LinearLayout)panel.getChildAt(1);
+        ((Button)actions.getChildAt(0)).performClick();
+        assertEquals("", get("mHumanMode"));
+        assertTrue((Boolean)get("mRunning"));
         call("requestPersonalData", new Class<?>[]{String.class, String.class, String.class},
                 "address", "배송지 입력", "주소를 알려주세요");
-        assertEquals("manual", get("mHumanMode"));
+        assertEquals("", get("mHumanMode"));
         assertEquals(1, web.scripts.stream().filter(script -> script.endsWith(").humanFields()")).count());
+        JSONObject appliedFeedback = ((BrowserTaskMemory)get("mMemory")).toJson().getJSONObject("feedback");
+        assertEquals("PERSONAL_FIELD_APPLIED", appliedFeedback.getString("code"));
+    }
+
+    @Test public void successfulPersonalFieldFillIsAppliedOnlyOnceOnTheSamePage() throws Exception {
+        set("mRunning", false);
+        set("mPrivateData", new BrowserPrivateDataStore(activity));
+        BrowserPrivateDataStore.SavedValue saved = new BrowserPrivateDataStore.SavedValue(9, "email", "local-only@example.com");
+        call("fillPersonalData", new Class<?>[]{BrowserPrivateDataStore.SavedValue.class, String.class},
+                saved, "연락 이메일 입력");
+        web.callbacks.get(0).onReceiveValue(new JSONObject().put("url", web.url).put("documentId", "doc-1")
+                .put("blocked", false).put("fields", new JSONArray().put(new JSONObject()
+                        .put("id", "h1").put("kind", "email").put("label", "이메일"))).toString());
+        web.callbacks.get(1).onReceiveValue(new JSONObject().put("ok", true).put("filled", 1)
+                .put("failed", 0).toString());
+
+        assertTrue((Boolean)get("mRunning"));
+        assertFalse(((BrowserTaskMemory)get("mMemory")).toJson().toString().contains("local-only@example.com"));
+        call("requestPersonalData", new Class<?>[]{String.class, String.class, String.class},
+                "email", "연락 이메일 입력", "이메일을 알려주세요");
+
+        assertEquals(1, web.scripts.stream().filter(script -> script.endsWith(").humanFields()")).count());
+        assertEquals("", get("mHumanMode"));
+        assertEquals("PERSONAL_FIELD_APPLIED",
+                ((BrowserTaskMemory)get("mMemory")).toJson().getJSONObject("feedback").getString("code"));
     }
 
     @Test public void rejectedPersonalFieldFillHandsOffAndDoesNotRetryAutomatically() throws Exception {

@@ -13,7 +13,7 @@ public final class BrowserRecoveryPolicy {
             case "NO_EFFECT": case "APPROVAL_REQUIRED": case "UNSUPPORTED": case "TARGET":
             case "RESPONSE": case "INCOMPLETE": case "CRITERIA": case "REPEATED_SEARCH": case "RESEARCH_FAILED":
             case "REPEATED_ACTION": case "UNCHANGED_PAGE": case "ALREADY_APPLIED":
-            case "SCROLL_BOUNDARY": case "SAME_DESTINATION": case "PERSONAL_FIELD":
+            case "SCROLL_BOUNDARY": case "SAME_DESTINATION": case "PERSONAL_FIELD": case "PERSONAL_FIELD_APPLIED":
             case "EXTERNAL_NAVIGATION": case "BLOCKED_NAVIGATION": return raw;
             default: return "UNKNOWN";
         }
@@ -43,6 +43,8 @@ public final class BrowserRecoveryPolicy {
                 strategy = "현재 주소와 같은 곳으로 다시 이동하려 했습니다. 이 페이지의 결과를 읽거나 다른 링크·검색 경로를 선택하세요."; break;
             case "PERSONAL_FIELD":
                 strategy = "저장된 개인정보와 호환되는 현재 입력란을 찾지 못했거나 사이트가 입력을 거절했습니다. 같은 화면에서 같은 개인정보 요청을 반복하지 말고 사용자의 직접 입력 결과를 기다리세요."; break;
+            case "PERSONAL_FIELD_APPLIED":
+                strategy = "이 개인정보는 현재 페이지에 이미 한 번 입력되었습니다. 같은 값을 다시 입력하거나 다시 질문하지 말고 입력값은 그대로 둔 채 다음·계속·제출 버튼 또는 다음 화면을 확인하세요."; break;
             case "EXTERNAL_NAVIGATION":
                 strategy = "사이트가 외부 앱 주소를 요청해 현재 웹페이지를 유지했습니다. 같은 요소를 반복하지 말고 웹용 링크·다른 버튼 또는 현재 페이지 안의 경로를 선택하세요."; break;
             case "BLOCKED_NAVIGATION":

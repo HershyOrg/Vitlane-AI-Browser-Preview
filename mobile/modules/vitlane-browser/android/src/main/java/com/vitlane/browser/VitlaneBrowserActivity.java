@@ -268,6 +268,7 @@ public final class VitlaneBrowserActivity extends Activity {
     private Future<?> mTask;
     private BrowserPrivateDataStore mPrivateData;
     private final Set<String> mPersonalDataFailures = new HashSet<>();
+    private final Set<String> mPersonalDataApplied = new HashSet<>();
     private final List<String> mSecretRedactions = new ArrayList<>();
     private int mStableObservations;
     private String mStableSignature = "";
@@ -605,6 +606,7 @@ public final class VitlaneBrowserActivity extends Activity {
         mHistory = new JSONArray();
         mMemory.clear();
         mPersonalDataFailures.clear();
+        mPersonalDataApplied.clear();
         mContract = null;
         mResearch = BrowserResearchPlanner.empty("");
         mGoal = "";
@@ -1686,6 +1688,10 @@ public final class VitlaneBrowserActivity extends Activity {
     }
 
     private void requestManualInput(String question) {
+        requestManualInput(question, "", "", "");
+    }
+
+    private void requestManualInput(String question, String personalKind, String purpose, String appliedKey) {
         if (mDestroyed) return;
         stopRun("사용자 입력을 기다리고 있어요.");
         showHumanPanel("manual", clean(question, 1200) + "\n보안정보는 AI에 보내지 않습니다. 기기 보관소로 채우거나 열린 사이트에 직접 입력하세요. 입력이 끝나면 AI가 자동으로 이어갑니다.");
@@ -1693,6 +1699,9 @@ public final class VitlaneBrowserActivity extends Activity {
         LinearLayout actions = row();
         addEqual(actions, button("입력 완료·계속", () -> {
             if (mLoading || mRestoringSettings) { status("페이지와 설정 로딩이 끝난 뒤 계속해 주세요."); return; }
+            if (!personalKind.isEmpty() && !appliedKey.isEmpty())
+                markPersonalDataApplied(personalKind, purpose, appliedKey,
+                        "사용자가 사이트 입력란에 직접 입력을 완료함");
             clearHumanPanel();
             addUserMessage("입력을 완료했어요. 현재 페이지에서 계속해 주세요.");
             setPageVisible(false);
@@ -2112,9 +2121,24 @@ public final class VitlaneBrowserActivity extends Activity {
         final long attemptEpoch = mDocumentEpoch;
         final String attemptUrl = mWeb == null ? "" : mWeb.getUrl();
         final String attemptKey = personalDataAttemptKey(kind, attemptEpoch, attemptUrl);
+        final String appliedKey = personalDataAppliedKey(kind, attemptUrl);
+        if (mPersonalDataApplied.contains(appliedKey)) {
+            try {
+                JSONObject action = new JSONObject().put("type", "ask_user").put("fieldKind", kind)
+                        .put("purpose", clean(purpose, 300));
+                rejectAction(mGeneration, action,
+                        kindLabel(kind) + " 정보는 이 페이지에 이미 한 번 입력했습니다. 값을 다시 쓰지 않고 다음 단계로 진행해야 합니다.",
+                        "PERSONAL_FIELD_APPLIED");
+            } catch (Exception ignored) {
+                mBusy = false;
+                recoverObservation(mGeneration, "이미 입력한 개인정보를 유지하고 다음 단계를 다시 확인합니다.");
+            }
+            return;
+        }
         if (mPersonalDataFailures.contains(attemptKey)) {
             requestManualInput("저장된 " + kindLabel(kind) + " 정보는 이 화면에 자동으로 적용할 수 없었습니다. "
-                    + "같은 자동 입력을 반복하지 않습니다. 사이트에서 직접 입력한 뒤 계속해 주세요.");
+                            + "같은 자동 입력을 반복하지 않습니다. 사이트에서 직접 입력한 뒤 계속해 주세요.",
+                    kind, purpose, appliedKey);
             return;
         }
         stopRun("저장된 개인정보를 확인하고 있어요.");
@@ -2179,6 +2203,7 @@ public final class VitlaneBrowserActivity extends Activity {
         final long attemptEpoch = mDocumentEpoch;
         final String attemptUrl = mWeb == null ? "" : mWeb.getUrl();
         final String attemptKey = personalDataAttemptKey(saved == null ? "" : saved.kind, attemptEpoch, attemptUrl);
+        final String appliedKey = personalDataAppliedKey(saved == null ? "" : saved.kind, attemptUrl);
         if (mWeb == null || mLoading || !allowedUrl(mWeb.getUrl())) {
             personalDataFillFailed(saved, purpose, "현재 페이지가 입력 가능한 상태가 아님", attemptKey);
             return;
@@ -2227,6 +2252,8 @@ public final class VitlaneBrowserActivity extends Activity {
                             try { mPrivateData.recordUse(saved.id, displayOrigin(url), clean(purpose, 300)); }
                             catch (Exception ignored) { }
                         });
+                        markPersonalDataApplied(saved.kind, purpose, appliedKey,
+                                "기기 보관소의 정보를 현재 사이트 입력란에 한 번 입력하고 반영을 확인함");
                         if (mTimeline != null) mTimeline.addAssistant(kindLabel(saved.kind) + " 정보를 사이트에 입력하고 작업을 이어갑니다.");
                         clearHumanPanel();
                         beginRun(true);
@@ -2254,11 +2281,42 @@ public final class VitlaneBrowserActivity extends Activity {
             mMemory.feedback("PERSONAL_FIELD");
         } catch (Exception ignored) { }
         requestManualInput("저장된 " + label + " 정보를 이 사이트의 입력란에 자동으로 적용하지 못했습니다. "
-                + "저장 내용은 변경하지 않았고 사용 기록도 남기지 않았습니다. 열린 사이트에서 직접 입력한 뒤 계속해 주세요.");
+                        + "저장 내용은 변경하지 않았고 사용 기록도 남기지 않았습니다. 열린 사이트에서 직접 입력한 뒤 계속해 주세요.",
+                saved.kind, purpose, personalDataAppliedKey(saved.kind, mWeb == null ? "" : mWeb.getUrl()));
+    }
+
+    private void markPersonalDataApplied(String kind, String purpose, String appliedKey, String outcome) {
+        if (kind == null || kind.isEmpty() || appliedKey == null || appliedKey.isEmpty()) return;
+        mPersonalDataApplied.add(appliedKey);
+        mPersonalDataFailures.remove(personalDataAttemptKey(kind, mDocumentEpoch, mWeb == null ? "" : mWeb.getUrl()));
+        String message = kindLabel(kind) + " 정보를 현재 페이지에 한 번 입력함: " + clean(outcome, 180)
+                + ". 같은 페이지에서는 다시 입력하지 않고 다음 동작을 판단할 것.";
+        try {
+            JSONObject action = new JSONObject().put("type", "ask_user").put("fieldKind", kind)
+                    .put("purpose", clean(purpose, 300));
+            record("ask_user", "applied", message);
+            mMemory.record(action, "applied", message);
+        } catch (Exception ignored) { }
+        mNoProgress = 0;
+        mRecoveries = 0;
+        mLoopRepairs = 0;
     }
 
     private static String personalDataAttemptKey(String kind, long epoch, String url) {
         return epoch + "\n" + (url == null ? "" : url) + "\n" + (kind == null ? "" : kind);
+    }
+
+    private static String personalDataAppliedKey(String kind, String url) {
+        return (url == null ? "" : url) + "\n" + (kind == null ? "" : kind);
+    }
+
+    private void addAppliedPersonalData(JSONObject observation, String url) {
+        if (observation == null || url == null || url.isEmpty()) return;
+        JSONArray applied = new JSONArray();
+        for (String kind : new String[] {"name", "recipient", "address", "postcode", "phone", "email"})
+            if (mPersonalDataApplied.contains(personalDataAppliedKey(kind, url))) applied.put(kind);
+        if (applied.length() > 0) try { observation.put("personalDataApplied", applied); }
+        catch (Exception ignored) { }
     }
 
     private static String personalDataFailure(String code) {
@@ -2461,6 +2519,7 @@ public final class VitlaneBrowserActivity extends Activity {
             mAnswerGrant = null;
             mMemory.clear();
             mPersonalDataFailures.clear();
+            mPersonalDataApplied.clear();
             mContract = new BrowserTaskContract(goal);
             if (!routed) mResearch = BrowserResearchPlanner.empty("");
             mHistory = new JSONArray();
@@ -2544,6 +2603,7 @@ public final class VitlaneBrowserActivity extends Activity {
                     requestManualInput("주소에 보안정보가 포함된 것으로 보여 AI 작업을 중지했습니다. 현재 페이지를 직접 확인해 주세요."); return;
                 }
                 redactRememberedSecrets(observation);
+                addAppliedPersonalData(observation, url);
                 if (!BrowserObservationPolicy.ready(observation, SystemClock.elapsedRealtime() - mSettleStarted)) {
                     mBusy = false;
                     status("페이지 내용과 입력 요소가 준비되기를 기다리고 있어요.");
@@ -3508,6 +3568,7 @@ public final class VitlaneBrowserActivity extends Activity {
         mHistory = new JSONArray();
         mMemory.clear();
         mPersonalDataFailures.clear();
+        mPersonalDataApplied.clear();
         mContract = null;
         mResearch = BrowserResearchPlanner.empty("");
         mLastObservation = null;

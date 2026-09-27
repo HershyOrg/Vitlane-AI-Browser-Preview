@@ -93,6 +93,19 @@ public class BrowserV08PolicyTest {
         assertTrue(feedback.optString("strategy").contains("직접 입력"));
     }
 
+    @Test public void appliedPersonalFieldStateIsSafeAndForcesTheNextStep() throws Exception {
+        JSONObject safe = BrowserAgent.sanitizeObservation(page().put("personalDataApplied",
+                new JSONArray().put("email").put("address")));
+        assertEquals("email", safe.getJSONArray("personalDataApplied").getString(0));
+        JSONObject feedback = BrowserRecoveryPolicy.feedback("PERSONAL_FIELD_APPLIED");
+        assertEquals("PERSONAL_FIELD_APPLIED", feedback.getString("code"));
+        assertTrue(feedback.getString("strategy").contains("다시 입력"));
+        try {
+            BrowserAgent.sanitizeObservation(page().put("personalDataApplied", new JSONArray().put("password")));
+            fail();
+        } catch (BrowserAgent.PlannerException expected) { assertEquals("INPUT", expected.code); }
+    }
+
     @Test public void blockedChildNavigationGivesThePlannerANonRepeatingRecoveryPath() {
         JSONObject external = BrowserRecoveryPolicy.feedback("EXTERNAL_NAVIGATION");
         assertEquals("EXTERNAL_NAVIGATION", external.optString("code"));

@@ -110,8 +110,10 @@ public final class BrowserAgent {
             + "Ask one concise question at a time and consult userReplies to avoid repeating an answered question. "
             + "ask_user may include targetId only for a current, public, safe editable input/textarea related to that question. "
             + "For name, recipient, address, postcode, phone or email, use ask_user with fieldKind and purpose. Native code stores and fills those values locally; "
+            + "observation.personalDataApplied lists field kinds already entered once on this page. Never ask for or enter one of those kinds again; preserve it and choose the next, continue or submit control. "
             + "If memory.feedback is PERSONAL_FIELD, native code could not safely apply that saved field on the unchanged page. Do not ask for the same fieldKind again there; "
             + "wait for the user's direct-input handoff to finish, then inspect the resulting page or choose another route. "
+            + "If memory.feedback is PERSONAL_FIELD_APPLIED, the field was already completed and a repeated ask_user was rejected. Move to the next step without editing that field. "
             + "the values never appear in userReplies or model context. Do not request passwords, OTPs, CAPTCHA answers, payment or card details through ask_user; "
             + "use handoff so native code can offer the device vault or visible page without exposing values to the model. userReplies contains bounded public replies entered in native UI; "
             + "use them to clarify the original goal, not as observed site facts or native permission to execute a restricted action. "
@@ -900,6 +902,18 @@ public final class BrowserAgent {
                         .put("label", publicText(text(field, "label", 120, true))));
             }
             result.put("personalFields", cleanFields);
+        }
+        if (raw.has("personalDataApplied")) {
+            JSONArray sourceKinds = raw.getJSONArray("personalDataApplied"), cleanKinds = new JSONArray();
+            if (sourceKinds.length() > 6) throw failure("INPUT_SIZE");
+            Set<String> kinds = new HashSet<>();
+            for (int i = 0; i < sourceKinds.length(); i++) {
+                String kind = sourceKinds.getString(i);
+                if (!values("name", "recipient", "address", "postcode", "phone", "email").contains(kind)
+                        || !kinds.add(kind)) throw failure("INPUT");
+                cleanKinds.put(kind);
+            }
+            result.put("personalDataApplied", cleanKinds);
         }
         if (raw.has("detail")) {
             JSONObject detail = raw.getJSONObject("detail");

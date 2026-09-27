@@ -310,6 +310,8 @@ public final class BrowserTaskMemory {
                 if (option.optBoolean("selected")) value.append("|selected:").append(option.optString("value"));
             }
         }
+        JSONArray personalDataApplied = safe.optJSONArray("personalDataApplied");
+        if (personalDataApplied != null) value.append("|personalDataApplied:").append(personalDataApplied);
         return value.toString();
     }
 
