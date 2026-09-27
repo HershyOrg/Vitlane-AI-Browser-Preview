@@ -117,7 +117,7 @@ public final class BrowserObservationPolicy {
         String type = action.optString("type");
         if ("navigate".equals(type) || "research".equals(type) || "search".equals(type) || "back".equals(type)
                 || "wait".equals(type) || "inspect".equals(type) || "ask_user".equals(type)
-                || "handoff".equals(type)) return true;
+                || "impossible".equals(type) || "handoff".equals(type)) return true;
         if (!action.has("targetId")) return false;
         JSONObject target = target(observation, action.optString("targetId"));
         return target != null && target.optBoolean("interrupt");

@@ -323,6 +323,38 @@ public class BrowserAgentLifecycleTest {
         assertTrue(get("mLastResult").toString().contains("Red shoes cost 25 dollars"));
     }
 
+    @Test public void verifiedImpossibleDeliveryReportsReasonAndStopsWithoutHandoffLoop() throws Exception {
+        JSONObject observation = page(web.url).put("text", "This item cannot be shipped to South Korea.");
+        JSONObject action = new JSONObject().put("type", "impossible").put("reason", "delivery_unavailable")
+                .put("message", "이 상품은 한국으로 배송되지 않아 구매할 수 없습니다.")
+                .put("evidence", new JSONArray().put(new JSONObject().put("url", web.url)
+                        .put("quote", "This item cannot be shipped to South Korea.")));
+        handle(observation, action);
+        assertEquals(1, web.callbacks.size());
+        web.callbacks.get(0).onReceiveValue(observation.toString());
+
+        assertFalse((Boolean)get("mRunning"));
+        assertTrue((Boolean)get("mCompleted"));
+        assertTrue((Boolean)get("mTerminalImpossible"));
+        assertEquals("", get("mHumanMode"));
+        assertTrue(get("mLastResult").toString().contains("완료할 수 없어 중지"));
+        assertTrue(get("mLastResult").toString().contains("배송 불가"));
+        assertTrue(get("mLastResult").toString().contains("cannot be shipped"));
+    }
+
+    @Test public void unverifiedImpossibleProposalStopsRetryingButLabelsUncertainty() throws Exception {
+        JSONObject action = new JSONObject().put("type", "impossible").put("reason", "no_feasible_option")
+                .put("message", "조건에 맞는 선택지를 찾지 못했습니다.").put("metadataWarning", true);
+        handle(page(web.url), action);
+
+        assertFalse((Boolean)get("mRunning"));
+        assertTrue((Boolean)get("mCompleted"));
+        assertTrue((Boolean)get("mTerminalImpossible"));
+        assertTrue(web.callbacks.isEmpty());
+        assertTrue(get("mLastResult").toString().contains("완료 불가 여부를 확정하지 못했지만"));
+        assertTrue(get("mLastResult").toString().contains("추가 확인 필요"));
+    }
+
     @Test public void discardedFinishMetadataCannotUseOldSupportedContractToClaimCompletion() throws Exception {
         JSONObject action = supportedFinish().put("metadataWarning", true);
         call("handleAction", new Class<?>[]{int.class, long.class, String.class, JSONObject.class, JSONObject.class},

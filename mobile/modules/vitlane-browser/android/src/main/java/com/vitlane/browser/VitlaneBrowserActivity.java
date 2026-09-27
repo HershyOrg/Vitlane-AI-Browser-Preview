@@ -240,6 +240,7 @@ public final class VitlaneBrowserActivity extends Activity {
     private String mLastResult = "";
     private boolean mHasTask;
     private boolean mCompleted;
+    private boolean mTerminalImpossible;
     private volatile long mPlanSerial;
     private long mObservationSerial;
     private long mSettleStarted;
@@ -612,7 +613,7 @@ public final class VitlaneBrowserActivity extends Activity {
         mGoal = "";
         mLastResult = "";
         mLastObservation = null;
-        mHasTask = mCompleted = false;
+        mHasTask = mCompleted = mTerminalImpossible = false;
         mGoalInput.setText("");
         if (mTimeline != null) {
             mTimeline.clear();
@@ -2525,6 +2526,7 @@ public final class VitlaneBrowserActivity extends Activity {
             mHistory = new JSONArray();
             mLastResult = "";
             mCompleted = false;
+            mTerminalImpossible = false;
             mHasTask = true;
             try { mBrowserConversation = BrowserAgent.sanitizeConversation(mChatMessages); }
             catch (Exception invalid) { mBrowserConversation = new JSONArray(); }
@@ -2800,6 +2802,12 @@ public final class VitlaneBrowserActivity extends Activity {
                 }
                 verifyFinish(generation, epoch, url, observation, action); return;
             }
+            if ("impossible".equals(type)) {
+                JSONArray evidence = action.optJSONArray("evidence");
+                if (evidence == null || evidence.length() == 0) showUnverifiedImpossible(action);
+                else verifyFinish(generation, epoch, url, observation, action);
+                return;
+            }
             if ("ask_user".equals(type)) {
                 addCatalog(action.optJSONArray("catalog"), observation);
                 requestUserAnswer(action, observation); return;
@@ -2993,8 +3001,16 @@ public final class VitlaneBrowserActivity extends Activity {
             stopRun("반복 원인을 두 차례 분석하고 다른 경로를 시도했지만 진전을 확인하지 못했어요. " + strategy);
             return false;
         }
-        status("반복 원인을 분석해 다른 경로를 찾고 있어요. " + strategy);
+        status("반복 원인을 분석해 다른 경로를 찾고 있어요. " + strategy
+                + " 필수 조건을 달성할 수 없다는 직접 근거가 있다면 불가능 사유를 알리고 종료합니다.");
         return true;
+    }
+
+    private void showUnverifiedImpossible(JSONObject action) throws Exception {
+        String message = "같은 시도를 반복하지 않도록 작업을 중지했습니다. 다만 요청을 완료할 수 없다는 근거는 충분히 검증하지 못했습니다.\n\n"
+                + "AI가 확인한 내용 (추가 확인 필요)\n" + action.optString("message");
+        JSONObject stopped = new JSONObject(action.toString()).put("terminalVerified", false).put("message", message);
+        finishTask(stopped);
     }
 
     private void showPartialResult(JSONObject action) throws Exception {
@@ -3034,10 +3050,15 @@ public final class VitlaneBrowserActivity extends Activity {
 
     private void finishTask(JSONObject action) {
         String type = action.optString("type");
+        boolean impossible = "impossible".equals(type);
+        boolean terminalVerified = !impossible || action.optBoolean("terminalVerified", true);
         String message = clean(action.optString("message"), 300);
         mMemory.record(action, "handoff".equals(type) ? "handoff" : "applied", message);
         record(type, "handoff".equals(type) ? "handoff" : "applied", message);
-        mLastResult = action.optString("message");
+        mLastResult = impossible
+                ? (terminalVerified ? "요청한 작업을 완료할 수 없어 중지했습니다.\n" : "완료 불가 여부를 확정하지 못했지만 반복을 막기 위해 중지했습니다.\n")
+                        + "분류: " + impossibleReasonLabel(action.optString("reason")) + "\n\n" + action.optString("message")
+                : action.optString("message");
         JSONArray catalog = action.optJSONArray("catalog");
         JSONArray evidence = action.optJSONArray("evidence");
         if (evidence != null && evidence.length() > 0) {
@@ -3049,12 +3070,15 @@ public final class VitlaneBrowserActivity extends Activity {
             }
             mLastResult += sources.toString();
         }
-        mCompleted = "finish".equals(type);
-        stopRun(mCompleted ? "결과를 채팅에 정리했어요. 페이지 보기에서 직접 확인할 수 있습니다."
+        mTerminalImpossible = impossible;
+        mCompleted = "finish".equals(type) || impossible;
+        stopRun(impossible ? "완료할 수 없는 이유를 채팅에 알리고 AI 작업을 중지했습니다."
+                : mCompleted ? "결과를 채팅에 정리했어요. 페이지 보기에서 직접 확인할 수 있습니다."
                 : "추가 확인이 필요한 결과를 채팅에 표시했어요. 이어서 실행할 수 있습니다.");
         addCatalog(catalog, mLastObservation);
         addPageMessage(mLastResult, mLastObservation);
-        BrowserTaskService.complete(this, mCompleted ? "작업을 완료했습니다" : "확인이 필요합니다", clean(mLastResult, 240));
+        BrowserTaskService.complete(this, impossible ? "완료할 수 없어 작업을 중지했습니다"
+                : mCompleted ? "작업을 완료했습니다" : "확인이 필요합니다", clean(mLastResult, 240));
         setPageVisible(false);
     }
 
@@ -3573,6 +3597,7 @@ public final class VitlaneBrowserActivity extends Activity {
         mResearch = BrowserResearchPlanner.empty("");
         mLastObservation = null;
         mLastResult = "";
+        mTerminalImpossible = false;
         mChatMessages = new JSONArray();
         mBrowserConversation = new JSONArray();
         mSecretRedactions.clear();
@@ -3773,7 +3798,20 @@ public final class VitlaneBrowserActivity extends Activity {
             case "scroll": return "스크롤";
             case "wait": return "페이지 대기";
             case "finish": return "최종 검증";
+            case "impossible": return "완료 불가 근거 검증";
             default: return "페이지 확인";
+        }
+    }
+
+    private static String impossibleReasonLabel(String reason) {
+        switch (reason) {
+            case "delivery_unavailable": return "요청 지역 배송 불가";
+            case "sold_out": return "구매 가능한 재고 없음";
+            case "region_restricted": return "지역 제한";
+            case "eligibility_restricted": return "이용 자격 제한";
+            case "unsupported": return "사이트 또는 서비스에서 지원하지 않음";
+            case "no_feasible_option": return "요청 조건을 충족하는 실행 경로 없음";
+            default: return "확인되지 않은 완료 불가 사유";
         }
     }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
@@ -3849,7 +3887,8 @@ public final class VitlaneBrowserActivity extends Activity {
     }
     private void updateStatusPulse(boolean active) {
         if (mStatusDot == null) return;
-        mStatusDot.setBackground(circleBackground(active ? BRAND : mCompleted ? POSITIVE : 0xffa9acb8));
+        mStatusDot.setBackground(circleBackground(active ? BRAND : mCompleted
+                ? (mTerminalImpossible ? 0xffd97706 : POSITIVE) : 0xffa9acb8));
         if (!active || !motionEnabled() || !mStatusDot.isAttachedToWindow()) {
             if (mStatusPulse != null) { mStatusPulse.cancel(); mStatusPulse = null; }
             mStatusDot.setAlpha(1f);

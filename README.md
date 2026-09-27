@@ -32,7 +32,7 @@ Android 앱에는 다음 단계의 네이티브 AI 브라우저가 들어 있습
 - AI에서 격리된 기기 보안정보 보관소, 암호화된 연락·배송 정보와 사용 목적 기록, 카탈로그 결과, 백그라운드 알림 답변
 
 `browser-fork`에는 macOS Chrome harness, Chromium patch, iOS WKWebView adapter와 Go
-BrowserRun 실험 코드가 별도로 남아 있습니다. Android 0.8.24의 동작 범위와 검수 명령은
+BrowserRun 실험 코드가 별도로 남아 있습니다. Android 0.8.25의 동작 범위와 검수 명령은
 [`mobile/README.md`](mobile/README.md)를 확인하세요. 보안정보는 기기 보관소 또는 열린 사이트에서 입력하며 최종 결제는 사용자가 직접 수행합니다.
 
 ## 로컬 실행

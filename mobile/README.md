@@ -1,7 +1,7 @@
 # Vitlane mobile
 
 Expo SDK 57의 iOS·Android 공통 앱이다. 기본 화면은 별도 Vitlane 서버 없이 OpenAI
-Responses API에 직접 연결하는 개인용 대화 앱이다. Android 0.8.24는 일반 대화와 **AI 브라우저**를 하나의 채팅 화면에서 사용한다.
+Responses API에 직접 연결하는 개인용 대화 앱이다. Android 0.8.25는 일반 대화와 **AI 브라우저**를 하나의 채팅 화면에서 사용한다.
 설치 후 **OpenAI 연결**에서 본인의
 API 키를 입력하면 된다. 키와 모델 설정은 기기의 SecureStore에 저장하며 APK나
 `EXPO_PUBLIC_*`에 API 키를 포함하지 않는다. 기본 모델은 `gpt-6-sol`이며 설정에서

@@ -176,6 +176,7 @@ public class BrowserObservationPolicyTest {
         assertTrue(BrowserObservationPolicy.actionAllowedByInterrupt(action("click").put("targetId", "close"), modalPage));
         assertTrue(BrowserObservationPolicy.actionAllowedByInterrupt(new JSONObject().put("type", "back"), modalPage));
         assertFalse(BrowserObservationPolicy.actionAllowedByInterrupt(new JSONObject().put("type", "finish"), modalPage));
+        assertTrue(BrowserObservationPolicy.actionAllowedByInterrupt(new JSONObject().put("type", "impossible"), modalPage));
         assertNotEquals(BrowserObservationPolicy.signature(page()), BrowserObservationPolicy.signature(modalPage));
     }
 

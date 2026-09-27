@@ -135,6 +135,32 @@ public class BrowserV08PolicyTest {
         }
     }
 
+    @Test public void hardDeliveryRestrictionBecomesAnEvidenceBackedTerminalAction() throws Exception {
+        JSONObject observation = page().put("text", "This item cannot be shipped to South Korea.");
+        JSONObject proposal = new JSONObject().put("type", "impossible")
+                .put("reason", "delivery_unavailable")
+                .put("message", "이 상품은 한국 배송을 지원하지 않아 구매를 진행할 수 없습니다.")
+                .put("evidence", new JSONArray().put(new JSONObject().put("url", observation.getString("url"))
+                        .put("quote", "This item cannot be shipped to South Korea.")));
+        JSONObject action = BrowserAgent.actionFromResponse(response(proposal), observation);
+        assertEquals("impossible", action.getString("type"));
+        assertEquals("delivery_unavailable", action.getString("reason"));
+        assertEquals(1, action.getJSONArray("evidence").length());
+
+        proposal.put("evidence", new JSONArray().put(new JSONObject().put("url", observation.getString("url"))
+                .put("quote", "A restriction that was not observed")));
+        JSONObject unverified = BrowserAgent.actionFromResponse(response(proposal), observation);
+        assertTrue(unverified.getBoolean("metadataWarning"));
+        assertFalse(unverified.has("evidence"));
+    }
+
+    @Test public void impossibleActionRejectsUnknownReasonCodes() throws Exception {
+        JSONObject proposal = new JSONObject().put("type", "impossible").put("reason", "temporary_click_failure")
+                .put("message", "클릭이 실패했습니다").put("evidence", new JSONArray());
+        try { BrowserAgent.actionFromResponse(response(proposal), page()); fail(); }
+        catch (BrowserAgent.PlannerException expected) { assertEquals("POLICY", expected.code); }
+    }
+
     @Test public void checkoutNavigationIsAllowedButSecretQueryIsNotSerialized() throws Exception {
         JSONObject proposal = new JSONObject().put("type", "navigate")
                 .put("url", "https://shop.example.com/checkout").put("message", "체크아웃으로 이동");
